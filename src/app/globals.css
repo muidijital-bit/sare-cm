@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * V1 arayüzü şimdilik yalnızca açık (light) tema için tasarlandı — koyu tema desteği
+ * §9 Fonksiyonel Olmayan İsterler kapsamında yok. `color-scheme: light` olmadan,
+ * sistemi koyu temada olan kullanıcılarda tarayıcı form elemanlarına (input vb.)
+ * otomatik koyu stil uygulayabiliyor ve create-next-app'in bıraktığı
+ * `prefers-color-scheme: dark` kuralı gövde yazı rengini beyaza çeviriyordu — beyaz
+ * zeminde beyaz yazı, görünmez oluyordu (gerçek bir kullanıcı raporuyla bulundu).
+ * Koyu tema V1.5+'ta bilinçli olarak eklenecekse bu dosya o zaman genişletilir.
+ */
+:root {
+  color-scheme: light;
+}
+
+body {
+  color: #111827; /* gray-900 */
+  background-color: #f9fafb; /* gray-50 */
+}

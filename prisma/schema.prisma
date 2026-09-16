@@ -1,0 +1,806 @@
+// Prisma şeması — bkz. docs/v1-isterler-dokumani.md §8 (Veri Modeli Taslağı)
+//
+// Kurallar (bkz. .claude/agents/db-schema-architect.md):
+// - `users` hariç tüm iş tablolarında company_id zorunlu
+// - Tutarlar Decimal(18,4), asla Float değil
+// - UUID birincil anahtarlar
+// - created_by/updated_by/deleted_by ham UUID kolonlarıdır (ilişki DEĞİL) — audit amaçlı;
+//   her tabloda 3 ayrı User relation açmanın yarattığı ilişki patlamasını önlemek için
+//   bilinçli bir tercih. Bütünlük DB seviyesinde FK olmadan, uygulama katmanında sağlanır.
+// - Soft delete: deleted_at + deleted_by (audit_logs hariç, o tamamen değişmez/immutable)
+// - RLS politikaları migration SQL'inde ayrıca tanımlanır (bkz. prisma/migrations, RLS.md)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================================================
+// Enum'lar
+// =========================================================
+
+enum CompanyStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+}
+
+/// §4 Roller ve Yetki Matrisi
+enum MembershipRole {
+  OWNER // Sahip
+  ADMIN // Yönetici
+  SALES // Satış
+  ACCOUNTING // Muhasebe
+  VIEWER // Görüntüleyici
+}
+
+enum CustomerType {
+  INDIVIDUAL // bireysel
+  CORPORATE // kurumsal
+}
+
+enum CustomerStatus {
+  POTENTIAL // potansiyel
+  ACTIVE // aktif
+  PASSIVE // pasif
+  LOST // kayıp
+}
+
+enum ActivityType {
+  PHONE
+  EMAIL
+  VISIT
+  WHATSAPP
+  OTHER
+}
+
+/// §6 Durum Makineleri — Teklif
+enum QuoteStatus {
+  DRAFT // taslak
+  SENT // gönderildi
+  ACCEPTED // kabul
+  REJECTED // red
+  EXPIRED // süresi doldu
+}
+
+/// §6 Durum Makineleri — Sipariş
+enum OrderStatus {
+  CONFIRMED // onaylandı
+  PREPARING // hazırlanıyor
+  DELIVERED // teslim edildi
+  COMPLETED // tamamlandı
+  CANCELLED // iptal (herhangi bir aşamadan)
+}
+
+enum DiscountType {
+  PERCENT
+  AMOUNT
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+  CHECK
+}
+
+enum AccountType {
+  CASH // kasa
+  BANK // banka
+}
+
+/// §IG-03 Loglanacak olaylar
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  ROLE_CHANGE
+  USER_INVITE
+  USER_DEACTIVATE
+  EXPORT
+  SUPERADMIN_ACCESS
+}
+
+enum NotificationType {
+  ACTIVITY_REMINDER // MC-08 görüşme hatırlatması
+  ORDER_DUE // SP-09 termin yaklaşan/geçen sipariş
+  QUOTE_EXPIRING // teklif süresi dolmak üzere
+  PAYMENT_OVERDUE // TH-07 vadesi geçmiş alacak
+  SYSTEM
+}
+
+/// PF-01 Belge tipleri — document_sequences için
+enum DocumentType {
+  QUOTE
+  ORDER
+}
+
+// =========================================================
+// Platform
+// =========================================================
+
+model Plan {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  maxUsers     Int      @map("max_users")
+  maxCustomers Int      @map("max_customers")
+  maxStorageMb Int      @map("max_storage_mb")
+  price        Decimal  @db.Decimal(18, 4)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  companies Company[]
+
+  @@map("plans")
+}
+
+model Company {
+  id                 String        @id @default(uuid()) @db.Uuid
+  name               String
+  status             CompanyStatus @default(TRIAL)
+  planId             String        @map("plan_id") @db.Uuid
+  plan               Plan          @relation(fields: [planId], references: [id])
+  trialEndsAt        DateTime?     @map("trial_ends_at")
+  subscriptionEndsAt DateTime?     @map("subscription_ends_at")
+
+  // §SA-01 Şirket bilgileri
+  taxOffice String? @map("tax_office")
+  taxNumber String? @map("tax_number")
+  address   String?
+  phone     String?
+  logoUrl   String? @map("logo_url")
+
+  // §SA-02 / §SA-07
+  defaultVatRate    Decimal @default(20) @map("default_vat_rate") @db.Decimal(5, 2)
+  quoteValidityDays Int     @default(15) @map("quote_validity_days")
+
+  // §SA-03 Belge numaralandırma formatı, örn. "TKF-{yil}-{sira}"
+  quoteNumberFormat String @default("TKF-{yil}-{sira}") @map("quote_number_format")
+  orderNumberFormat String @default("SIP-{yil}-{sira}") @map("order_number_format")
+
+  settings Json @default("{}")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  memberships        Membership[]
+  invitationTokens   InvitationToken[]
+  customers          Customer[]
+  customerSources    CustomerSource[]
+  activities         Activity[]
+  tags               Tag[]
+  products           Product[]
+  quotes             Quote[]
+  orders             Order[]
+  payments           Payment[]
+  accounts           Account[]
+  expenses           Expense[]
+  expenseCategories  ExpenseCategory[]
+  attachments        Attachment[]
+  auditLogs          AuditLog[]
+  notifications      Notification[]
+  documentSequences  DocumentSequence[]
+
+  @@map("companies")
+}
+
+// =========================================================
+// Kimlik
+// =========================================================
+
+model User {
+  id           String  @id @default(uuid()) @db.Uuid
+  email        String  @unique
+  passwordHash String  @map("password_hash")
+  name         String
+  phone        String?
+
+  // §KY-06 Ardışık 5 başarısız girişte geçici kilitleme
+  failedLoginCount Int       @default(0) @map("failed_login_count")
+  lockedUntil      DateTime? @map("locked_until")
+  lastLoginAt      DateTime? @map("last_login_at")
+
+  isActive Boolean @default(true) @map("is_active")
+
+  // §PF-08 Süper admin — ayrı panel, zorunlu 2FA
+  isSuperAdmin    Boolean @default(false) @map("is_super_admin")
+  twoFactorSecret String? @map("two_factor_secret")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  memberships         Membership[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+/// Bir kullanıcının bir şirketteki üyeliği ve rolü.
+/// `users` tablosunda company_id YOK — çok-şirketli ilişki burada kurulur (bkz. §3).
+model Membership {
+  id        String         @id @default(uuid()) @db.Uuid
+  userId    String         @map("user_id") @db.Uuid
+  companyId String         @map("company_id") @db.Uuid
+  role      MembershipRole
+  isActive  Boolean        @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+  @@map("memberships")
+}
+
+/// §KY-04 Kullanıcı davet akışı — 72 saat geçerli token
+model InvitationToken {
+  id         String         @id @default(uuid()) @db.Uuid
+  companyId  String         @map("company_id") @db.Uuid
+  email      String
+  role       MembershipRole
+  token      String         @unique
+  invitedBy  String         @map("invited_by") @db.Uuid
+  expiresAt  DateTime       @map("expires_at")
+  acceptedAt DateTime?      @map("accepted_at")
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("invitation_tokens")
+}
+
+/// §KY-03 Şifre sıfırlama — süreli, tek kullanımlık token
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("password_reset_tokens")
+}
+
+// =========================================================
+// CRM (§5.4 Müşteri)
+// =========================================================
+
+model CustomerSource {
+  id        String  @id @default(uuid()) @db.Uuid
+  companyId String  @map("company_id") @db.Uuid
+  name      String
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company   Company    @relation(fields: [companyId], references: [id])
+  customers Customer[]
+
+  @@unique([companyId, name])
+  @@map("customer_sources")
+}
+
+model Customer {
+  id        String       @id @default(uuid()) @db.Uuid
+  companyId String       @map("company_id") @db.Uuid
+  type      CustomerType
+
+  // MC-01: kurumsal için unvan, bireysel için ad-soyad — tek bir görünen ad alanında tutulur
+  title     String
+  taxOffice String? @map("tax_office")
+  // Kurumsalda vergi no, bireyselde TCKN — aynı kolonda tutulur (MC-01)
+  taxNumber String? @map("tax_number")
+  address   String?
+
+  sourceId    String?        @map("source_id") @db.Uuid
+  status      CustomerStatus @default(POTENTIAL)
+  ownerUserId String?        @map("owner_user_id") @db.Uuid
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  company     Company          @relation(fields: [companyId], references: [id])
+  source      CustomerSource?  @relation(fields: [sourceId], references: [id])
+  contacts    Contact[]
+  activities  Activity[]
+  tags        CustomerTag[]
+  quotes      Quote[]
+  orders      Order[]
+  payments    Payment[]
+
+  @@index([companyId, status])
+  @@index([companyId, ownerUserId])
+  @@map("customers")
+}
+
+/// MC-02 Müşteriye bağlı kişiler
+model Contact {
+  id         String  @id @default(uuid()) @db.Uuid
+  companyId  String  @map("company_id") @db.Uuid
+  customerId String  @map("customer_id") @db.Uuid
+  name       String
+  position   String?
+  phone      String?
+  email      String?
+  isPrimary  Boolean @default(false) @map("is_primary")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  activities Activity[]
+  quotes     Quote[]
+
+  @@index([companyId, customerId])
+  @@map("contacts")
+}
+
+model Tag {
+  id        String @id @default(uuid()) @db.Uuid
+  companyId String @map("company_id") @db.Uuid
+  name      String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company      Company       @relation(fields: [companyId], references: [id])
+  customerTags CustomerTag[]
+
+  @@unique([companyId, name])
+  @@map("tags")
+}
+
+model CustomerTag {
+  customerId String @map("customer_id") @db.Uuid
+  tagId      String @map("tag_id") @db.Uuid
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  tag      Tag      @relation(fields: [tagId], references: [id])
+
+  @@id([customerId, tagId])
+  @@map("customer_tags")
+}
+
+/// MC-07/MC-08 Görüşme kaydı + hatırlatma
+model Activity {
+  id         String       @id @default(uuid()) @db.Uuid
+  companyId  String       @map("company_id") @db.Uuid
+  customerId String       @map("customer_id") @db.Uuid
+  contactId  String?      @map("contact_id") @db.Uuid
+  type       ActivityType
+  occurredAt DateTime     @map("occurred_at")
+  note       String?
+
+  nextAction String?   @map("next_action")
+  remindAt   DateTime? @map("remind_at")
+
+  createdBy String    @map("created_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company  Company  @relation(fields: [companyId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  contact  Contact? @relation(fields: [contactId], references: [id])
+
+  @@index([companyId, customerId])
+  @@index([companyId, remindAt])
+  @@map("activities")
+}
+
+// =========================================================
+// Katalog / Satış (§5.5 Teklif, §5.6 Sipariş)
+// =========================================================
+
+model Product {
+  id          String  @id @default(uuid()) @db.Uuid
+  companyId   String  @map("company_id") @db.Uuid
+  code        String?
+  name        String
+  unit        String  @default("adet")
+  listPrice   Decimal @map("list_price") @db.Decimal(18, 4)
+  defaultCost Decimal? @map("default_cost") @db.Decimal(18, 4)
+  vatRate     Decimal @map("vat_rate") @db.Decimal(5, 2)
+  isActive    Boolean @default(true) @map("is_active")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company    Company     @relation(fields: [companyId], references: [id])
+  quoteItems QuoteItem[]
+  orderItems OrderItem[]
+
+  @@index([companyId, isActive])
+  @@map("products")
+}
+
+model Quote {
+  id        String      @id @default(uuid()) @db.Uuid
+  companyId String      @map("company_id") @db.Uuid
+  number    String
+  customerId String     @map("customer_id") @db.Uuid
+  contactId  String?    @map("contact_id") @db.Uuid
+  status     QuoteStatus @default(DRAFT)
+
+  issueDate  DateTime @map("issue_date")
+  validUntil DateTime @map("valid_until")
+
+  currency     String  @default("TRY")
+  exchangeRate Decimal @default(1) @map("exchange_rate") @db.Decimal(18, 6)
+
+  // TK-05 Belge geneline uygulanan iskonto
+  documentDiscountType  DiscountType? @map("document_discount_type")
+  documentDiscountValue Decimal?      @map("document_discount_value") @db.Decimal(18, 4)
+
+  // TK-04 Otomatik hesaplanan toplamlar (satırlardan türetilir, sunucuda yeniden hesaplanır)
+  subtotal      Decimal @map("subtotal") @db.Decimal(18, 4)
+  discountTotal Decimal @default(0) @map("discount_total") @db.Decimal(18, 4)
+  vatTotal      Decimal @map("vat_total") @db.Decimal(18, 4)
+  grandTotal    Decimal @map("grand_total") @db.Decimal(18, 4)
+
+  // TK-09 Revizyon zinciri: kopya oluşturulduğunda üst teklife referans
+  parentQuoteId   String? @map("parent_quote_id") @db.Uuid
+  revisionNumber  Int     @default(1) @map("revision_number")
+
+  ownerUserId String  @map("owner_user_id") @db.Uuid
+  note        String?
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company      Company     @relation(fields: [companyId], references: [id])
+  customer     Customer    @relation(fields: [customerId], references: [id])
+  contact      Contact?    @relation(fields: [contactId], references: [id])
+  parentQuote  Quote?      @relation("QuoteRevisions", fields: [parentQuoteId], references: [id])
+  revisions    Quote[]     @relation("QuoteRevisions")
+  items        QuoteItem[]
+  orders       Order[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, ownerUserId])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  quoteId     String  @map("quote_id") @db.Uuid
+  productId   String? @map("product_id") @db.Uuid
+  description String
+  quantity    Decimal @db.Decimal(18, 4)
+  unit        String  @default("adet")
+
+  // Katalog fiyatının satıra kopyalanmış hali (snapshot) — bkz. §2
+  unitPrice Decimal  @map("unit_price") @db.Decimal(18, 4)
+  unitCost  Decimal? @map("unit_cost") @db.Decimal(18, 4)
+
+  discountType  DiscountType @default(PERCENT) @map("discount_type")
+  discountValue Decimal      @default(0) @map("discount_value") @db.Decimal(18, 4)
+  vatRate       Decimal      @map("vat_rate") @db.Decimal(5, 2)
+  lineTotal     Decimal      @map("line_total") @db.Decimal(18, 4)
+
+  sortOrder Int @default(0) @map("sort_order")
+
+  quote   Quote    @relation(fields: [quoteId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([quoteId])
+  @@map("quote_items")
+}
+
+model Order {
+  id         String      @id @default(uuid()) @db.Uuid
+  companyId  String      @map("company_id") @db.Uuid
+  number     String
+  customerId String      @map("customer_id") @db.Uuid
+  quoteId    String?     @map("quote_id") @db.Uuid
+  status     OrderStatus @default(CONFIRMED)
+
+  orderDate         DateTime  @map("order_date")
+  dueDate           DateTime? @map("due_date")
+  deliveryAddress   String?   @map("delivery_address")
+
+  currency     String  @default("TRY")
+  exchangeRate Decimal @default(1) @map("exchange_rate") @db.Decimal(18, 6)
+
+  documentDiscountType  DiscountType? @map("document_discount_type")
+  documentDiscountValue Decimal?      @map("document_discount_value") @db.Decimal(18, 4)
+
+  subtotal      Decimal @map("subtotal") @db.Decimal(18, 4)
+  discountTotal Decimal @default(0) @map("discount_total") @db.Decimal(18, 4)
+  vatTotal      Decimal @map("vat_total") @db.Decimal(18, 4)
+  grandTotal    Decimal @map("grand_total") @db.Decimal(18, 4)
+
+  ownerUserId String  @map("owner_user_id") @db.Uuid
+  note        String?
+
+  // SP-05 iptal — tutarlar ciro/açık alacaktan bu alan üzerinden düşülür
+  cancelledAt     DateTime? @map("cancelled_at")
+  cancelledBy     String?   @map("cancelled_by") @db.Uuid
+  cancelReason    String?   @map("cancel_reason")
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company           Company            @relation(fields: [companyId], references: [id])
+  customer          Customer           @relation(fields: [customerId], references: [id])
+  quote             Quote?             @relation(fields: [quoteId], references: [id])
+  items             OrderItem[]
+  paymentSchedules  PaymentSchedule[]
+  paymentAllocations PaymentAllocation[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, ownerUserId])
+  @@index([companyId, dueDate])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  orderId     String  @map("order_id") @db.Uuid
+  productId   String? @map("product_id") @db.Uuid
+  description String
+  quantity    Decimal @db.Decimal(18, 4)
+  unit        String  @default("adet")
+
+  unitPrice Decimal  @map("unit_price") @db.Decimal(18, 4)
+  unitCost  Decimal? @map("unit_cost") @db.Decimal(18, 4)
+
+  discountType  DiscountType @default(PERCENT) @map("discount_type")
+  discountValue Decimal      @default(0) @map("discount_value") @db.Decimal(18, 4)
+  vatRate       Decimal      @map("vat_rate") @db.Decimal(5, 2)
+  lineTotal     Decimal      @map("line_total") @db.Decimal(18, 4)
+
+  sortOrder Int @default(0) @map("sort_order")
+
+  order   Order    @relation(fields: [orderId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+/// SP-06 Ödeme planı (peşinat + taksitler)
+model PaymentSchedule {
+  id          String  @id @default(uuid()) @db.Uuid
+  orderId     String  @map("order_id") @db.Uuid
+  dueDate     DateTime @map("due_date")
+  amount      Decimal  @db.Decimal(18, 4)
+  description String?
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("payment_schedules")
+}
+
+// =========================================================
+// Finans (§5.7 Tahsilat, §5.8 Gider)
+// =========================================================
+
+model Account {
+  id        String      @id @default(uuid()) @db.Uuid
+  companyId String      @map("company_id") @db.Uuid
+  name      String
+  type      AccountType
+  isActive  Boolean     @default(true) @map("is_active")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  payments Payment[]
+  expenses Expense[]
+
+  @@map("accounts")
+}
+
+model Payment {
+  id         String        @id @default(uuid()) @db.Uuid
+  companyId  String        @map("company_id") @db.Uuid
+  customerId String        @map("customer_id") @db.Uuid
+  accountId  String        @map("account_id") @db.Uuid
+  paidAt     DateTime      @map("paid_at")
+  // TH-06 İade kaydı negatif tutarla temsil edilir
+  amount     Decimal       @db.Decimal(18, 4)
+  method     PaymentMethod
+  reference  String?
+  note       String?
+
+  // TH-08 Tahsilat silme yerine iptal
+  isCancelled  Boolean   @default(false) @map("is_cancelled")
+  cancelReason String?   @map("cancel_reason")
+  cancelledAt  DateTime? @map("cancelled_at")
+  cancelledBy  String?   @map("cancelled_by") @db.Uuid
+
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company     Company             @relation(fields: [companyId], references: [id])
+  customer    Customer            @relation(fields: [customerId], references: [id])
+  account     Account             @relation(fields: [accountId], references: [id])
+  allocations PaymentAllocation[]
+
+  @@index([companyId, customerId])
+  @@index([companyId, paidAt])
+  @@map("payments")
+}
+
+/// TH-03 Mahsuplaşma: bir tahsilat çoklu siparişe, bir sipariş çoklu tahsilata dağılabilir
+model PaymentAllocation {
+  id        String  @id @default(uuid()) @db.Uuid
+  paymentId String  @map("payment_id") @db.Uuid
+  orderId   String  @map("order_id") @db.Uuid
+  amount    Decimal @db.Decimal(18, 4)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@map("payment_allocations")
+}
+
+model ExpenseCategory {
+  id        String @id @default(uuid()) @db.Uuid
+  companyId String @map("company_id") @db.Uuid
+  name      String
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  expenses Expense[]
+
+  @@unique([companyId, name])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @map("company_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  spentAt    DateTime @map("spent_at")
+  amount     Decimal  @db.Decimal(18, 4)
+  vatAmount  Decimal  @default(0) @map("vat_amount") @db.Decimal(18, 4)
+  vendor     String?
+  method     PaymentMethod?
+  accountId  String?  @map("account_id") @db.Uuid
+  note       String?
+
+  // GD-03 Tekrarlayan gider
+  recurringRule       String?  @map("recurring_rule") // örn. "MONTHLY"
+  isRecurringTemplate Boolean  @default(false) @map("is_recurring_template")
+  parentExpenseId     String?  @map("parent_expense_id") @db.Uuid
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  company        Company          @relation(fields: [companyId], references: [id])
+  category       ExpenseCategory  @relation(fields: [categoryId], references: [id])
+  account        Account?         @relation(fields: [accountId], references: [id])
+  parentExpense  Expense?         @relation("RecurringExpenses", fields: [parentExpenseId], references: [id])
+  generatedFrom  Expense[]        @relation("RecurringExpenses")
+
+  @@index([companyId, spentAt])
+  @@index([companyId, categoryId])
+  @@map("expenses")
+}
+
+// =========================================================
+// Ortak
+// =========================================================
+
+/// TH-01 dekont, GD-01 fiş/fatura eki gibi genel amaçlı dosya ekleri.
+/// Polimorfik ilişki: entityType (örn. "payment", "expense", "customer") + entityId.
+/// Prisma birden fazla hedef tabloya aynı kolondan tip güvenli FK kuramadığı için
+/// bilinçli olarak ilişkisiz (plain UUID) bırakılmıştır; sorgular uygulama katmanında
+/// entityType'a göre ilgili tabloya yönlendirilir. Bütünlük uygulama katmanında sağlanır.
+model Attachment {
+  id         String  @id @default(uuid()) @db.Uuid
+  companyId  String  @map("company_id") @db.Uuid
+  entityType String  @map("entity_type")
+  entityId   String  @map("entity_id") @db.Uuid
+  filePath   String  @map("file_path")
+  fileName   String  @map("file_name")
+  mimeType   String? @map("mime_type")
+  size       Int
+
+  uploadedBy String   @map("uploaded_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, entityType, entityId])
+  @@map("attachments")
+}
+
+/// IG-01..IG-08 — değiştirilemez/silinemez işlem geçmişi
+model AuditLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  companyId  String?     @map("company_id") @db.Uuid // süper admin olayları için null olabilir
+  userId     String?     @map("user_id") @db.Uuid
+  action     AuditAction
+  entityType String?     @map("entity_type")
+  entityId   String?     @map("entity_id") @db.Uuid
+  // IG-02 alan bazında eski değer -> yeni değer farkı
+  changes    Json?
+  ip         String?
+  userAgent  String?     @map("user_agent")
+  // PF-07 destek amaçlı süper admin erişimi ayrıca işaretlenir
+  isSuperAdminAccess Boolean @default(false) @map("is_super_admin_access")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@index([companyId, entityType, entityId])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  companyId String           @map("company_id") @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  payload   Json
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, userId, readAt])
+  @@map("notifications")
+}
+
+/// SA-03 / TK-11 Şirket bazında ardışık, boşluksuz belge numarası üretimi.
+/// Yarışa açık `MAX(number)+1` yerine bu sayaç satır kilidiyle (SELECT ... FOR UPDATE)
+/// güncellenir — bkz. src/lib/modules/documents/number-sequence.ts
+model DocumentSequence {
+  id         String       @id @default(uuid()) @db.Uuid
+  companyId  String       @map("company_id") @db.Uuid
+  docType    DocumentType @map("doc_type")
+  year       Int
+  lastNumber Int          @default(0) @map("last_number")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, docType, year])
+  @@map("document_sequences")
+}
