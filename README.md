@@ -7,12 +7,27 @@
 - **Next.js 13.5** (App Router) + TypeScript + Tailwind CSS
 - **PostgreSQL (Neon)** + **Prisma ORM** — çok-kiracılı izolasyon, Row-Level Security (RLS)
 - **NextAuth v4** (credentials + JWT) — kimlik doğrulama ve çok-şirketli oturum yönetimi
-- **Vitest** — test altyapısı
 
-> **Node sürümü notu:** Bu proje şu anki geliştirme makinesinde Node 16.15 ile
-> çalışacak şekilde kuruldu (Next 13.5.11, Node 16.14+ destekler). Node 18.18+ veya
-> 20 LTS'e geçildiğinde Next.js 14/15'e ve daha yeni araç sürümlerine yükseltmek
-> sorunsuz olur — o zamana kadar bu sürümlerde kalın.
+> **Node sürümü notu:** Bu proje Node 16.15 ile çalışacak şekilde kuruldu (Next 13.5.11,
+> Node 16.14+ destekler). Node 18.18+/20 LTS'e geçildiğinde Next 14/15'e yükseltmek sorunsuz olur.
+
+## Modüller (V1 durumu)
+
+| Modül | Durum |
+|---|---|
+| Giriş / RBAC / çok-şirketli oturum | ✅ |
+| Müşteri/CRM (kayıt, kişi, kaynak, görüşme+hatırlatma, MC-10 bakiye) | ✅ |
+| Teklif (durum makinesi, revizyon, tekliften sipariş) | ✅ |
+| Sipariş (ödeme planı, durum ilerletme, iptal) | ✅ |
+| Tahsilat (mahsuplaşma, kısmi/fazla ödeme, iade) | ✅ |
+| Gider (kategori raporu, tekrarlayan gider) | ✅ |
+| Dashboard (§7 metrikleri gerçek veriye bağlı) | ✅ |
+| İşlem geçmişi (genel log + kayıt bazlı geçmiş) | ✅ |
+| Şirket Ayarları (bilgiler, kaynak/kategori/hesap CRUD) | ✅ |
+| Kullanıcı davet akışı (rol, son-Sahip koruması, paket limiti) | ✅ |
+| Şifre sıfırlama | ✅ |
+| Platform paneli (şirket/paket oluşturma, askıya alma) | ✅ |
+| **Kapsam dışı / eksik** | Excel içe-dışa aktarma, dosya eki yükleme, e-posta gönderimi (davet/sıfırlama linkleri UI'da gösteriliyor), PF-05 (abonelik bitişi yaklaşanlar), PF-07 (destek erişimi), PF-08 (süper admin 2FA), gerçek deploy |
 
 ## Klasör Yapısı
 
@@ -20,20 +35,19 @@
 docs/                    İsterler dokümanı
 .claude/agents/          Bu proje için tanımlı uzman subagent'lar
 prisma/schema.prisma     Veritabanı şeması (§8)
-prisma/sql/              Güncel RLS politikalarının referans kopyası (bkz. o dosyanın başlığı)
-prisma/migrations/       Gerçek migration geçmişi (init + RLS düzeltmesi)
-prisma/seed.ts           Geliştirme başlangıç verisi
+prisma/sql/              Güncel RLS politikalarının referans kopyası
+prisma/migrations/       Migration geçmişi
+prisma/seed.ts           Geliştirme başlangıç verisi (demo şirket + süper admin)
 scripts/setup-app-role.ts  En-az-ayrıcalıklı `app_user` DB rolünü oluşturan tek seferlik betik
-scripts/verify-infra.ts    RLS izolasyonu + şifre + RBAC'ı canlı DB'ye karşı doğrulayan betik
-src/app/                 Next.js sayfaları (App Router)
-  giris/                 Giriş ekranı
-  app/                   Şirket içi uygulama (aktif şirket bağlamı gerektirir)
+scripts/verify-*.ts        Canlı DB'ye karşı modül doğrulama betikleri (bkz. aşağı)
+src/app/
+  giris/, sifremi-unuttum/, sifre-sifirla/[token]/, davet/[token]/   Public sayfalar
+  app/                   Şirket içi uygulama (müşteriler, teklifler, siparişler, tahsilatlar,
+                          giderler, ayarlar, kullanıcılar, işlem-geçmişi)
   platform/              Süper admin paneli
-  api/auth/              NextAuth route handler
 src/lib/auth/            RBAC matrisi (§4), NextAuth config, şifre/oturum yardımcıları
 src/lib/db/              Prisma client + tenant-context (RLS oturum değişkenleri)
-src/lib/audit/           İşlem geçmişi (audit log) yardımcıları (§5.10)
-src/lib/modules/         Modül bazlı iş mantığı (örn. belge numaralandırma)
+src/lib/modules/         Modül bazlı iş mantığı (her modülün kendi service.ts'i)
 src/lib/i18n/            Türkçe metin sözlüğü
 src/middleware.ts        Route koruması (/app, /platform)
 ```
@@ -42,85 +56,75 @@ src/middleware.ts        Route koruması (/app, /platform)
 
 ### 1. Veritabanı (Neon)
 
-[Neon](https://neon.tech) üzerinde ücretsiz bir proje açılıp bağlantı zaten kuruldu.
-Sıfırdan bir ortam kuruyorsanız:
+[Neon](https://neon.tech) üzerinde proje zaten kuruldu. Sıfırdan kuruyorsanız:
 
 1. neon.tech'te proje oluşturun, **pooled connection string**'i kopyalayın.
-2. `.env.example` dosyasını `.env` olarak kopyalayıp `DATABASE_URL`'e yapıştırın (bu, Neon'un
-   **sahip** rolüdür — yalnızca migration/admin betikleri için kullanılır).
-3. `npm run db:migrate:deploy` ile şemayı ve RLS politikalarını kurun.
-4. `npx tsx scripts/setup-app-role.ts` çalıştırın — RLS'e gerçekten tabi, en-az-ayrıcalıklı
-   `app_user` rolünü oluşturur ve bağlantı bilgisini konsola yazar.
-5. Yazdırılan bilgiyi `.env`'deki `APP_DATABASE_URL`'e yapıştırın.
+2. `.env.example` → `.env`, `DATABASE_URL`'e yapıştırın (Neon'un **sahip** rolü — yalnızca
+   migration/admin betikleri için).
+3. `npm run db:migrate:deploy` — şema + RLS politikalarını kurar.
+4. `npx tsx scripts/setup-app-role.ts` — RLS'e gerçekten tabi `app_user` rolünü oluşturur.
+5. Çıktıdaki bağlantıyı `.env`'deki `APP_DATABASE_URL`'e yapıştırın.
 
-> ⚠️ **Neden iki ayrı rol/URL var?** Neon'un varsayılan sahip rolü (`neondb_owner`)
-> `BYPASSRLS` özniteliğine sahiptir — bununla bağlanmak `FORCE ROW LEVEL SECURITY` dahil
-> TÜM RLS politikalarını sessizce atlar. Bu, gerçek bir Neon veritabanına karşı test
-> edilirken keşfedildi ve düzeltildi (bkz. aşağıdaki "Doğrulanan adımlar"). Uygulama
-> çalışma zamanı (`src/lib/db/prisma.ts`) her zaman `APP_DATABASE_URL`'i kullanır.
+> ⚠️ Neon'un varsayılan sahip rolü `BYPASSRLS` taşır — bununla bağlanmak TÜM RLS'i sessizce
+> atlar. Uygulama çalışma zamanı (`src/lib/db/prisma.ts`) her zaman `APP_DATABASE_URL`'i kullanır.
 
-### 2. Ortam değişkenleri
+### 2. Ortam değişkenleri ve bağımlılıklar
 
 ```bash
-cp .env.example .env
-# NEXTAUTH_SECRET için: openssl rand -base64 32
-```
-
-### 3. Bağımlılıklar
-
-```bash
+cp .env.example .env   # NEXTAUTH_SECRET için: openssl rand -base64 32
 npm install
 ```
 
-> Not: Bu makinede `~/.npmrc` bu projeyle ilgisiz bir kurumsal registry/proxy'ye
-> işaret ediyor olabilir. Gerekirse proje kökündeki `.npmrc` (herkese açık npm
-> registry'sine sabitler) kullanılır; global `~/.npmrc` değiştirilmedi.
+> Not: Bu makinede `~/.npmrc` ilgisiz bir kurumsal registry/proxy'ye işaret ediyor olabilir;
+> proje kökündeki `.npmrc` (genel npm registry'sine sabitler) bunu aşar.
 
-### 4. Şema, RLS ve seed
+### 3. Şema, RLS ve seed
 
 ```bash
-npm run db:generate         # Prisma Client üretir
-npm run db:migrate:deploy   # Tabloları + RLS politikalarını kurar (bkz. yukarıdaki adım 1.3-1.5)
-npm run db:seed             # Demo şirket + sahip kullanıcı oluşturur
+npm run db:generate
+npm run db:migrate:deploy
+npm run db:seed
 ```
 
-Seed sonrası giriş: `sahip@demo.test` / `DemoSifre#2026`
+**Seed sonrası girişler:**
+- Şirket kullanıcısı: `sahip@demo.test` / `DemoSifre#2026` (Demo Şirket A.Ş., Sahip rolü)
+- Platform (süper admin): `admin@platform.test` / `SuperAdmin#2026` → otomatik `/platform`'a yönlenir
 
-### 5. Geliştirme sunucusu
+### 4. Geliştirme sunucusu
 
 ```bash
 npm run dev
 ```
 
-## Doğrulanan adımlar (canlı Neon veritabanına karşı, bu oturumda)
+## Doğrulama
 
-- ✅ `npx prisma validate` / `migrate deploy` — şema ve migration'lar geçerli, canlıda uygulandı
-- ✅ `npx tsc --noEmit`, `npx next lint`, `npx next build` — hepsi temiz
-- ✅ `npm run db:seed` — demo şirket/kullanıcı canlı DB'de oluşturuldu
-- ✅ `npx tsx scripts/verify-infra.ts` — **canlı DB'ye karşı** şu senaryolar doğrulandı:
-  - Şifre hash/doğrulama (bcrypt) doğru çalışıyor
-  - **RLS izolasyonu**: Şirket A, Şirket B'nin kaydını listede GÖRMÜYOR; `company_id`'yi
-    açıkça belirterek dahi erişemiyor
-  - RBAC matrisi (§4) — rol × modül × kapsam kombinasyonları beklendiği gibi
+Her modül canlı Neon veritabanına karşı yazılmış betiklerle doğrulanmıştır (toplam ~120 kontrol):
 
-**Yol boyunca bulunup düzeltilen 2 gerçek hata** (şeffaflık için not düşülüyor):
+```bash
+npx tsx scripts/verify-infra.ts               # RLS izolasyonu, şifre, RBAC
+npx tsx scripts/verify-customers.ts            # Müşteri/CRM
+npx tsx scripts/verify-sales-flow.ts           # Teklif → Sipariş → Tahsilat
+npx tsx scripts/verify-expenses.ts             # Gider + tekrarlayan gider
+npx tsx scripts/verify-dashboard.ts            # Dashboard metrikleri (§7)
+npx tsx scripts/verify-audit-and-balance.ts    # İşlem geçmişi + MC-10 bakiye
+npx tsx scripts/verify-company-settings.ts     # Şirket Ayarları
+npx tsx scripts/verify-user-invite.ts          # Kullanıcı davet akışı
+npx tsx scripts/verify-password-reset.ts       # Şifre sıfırlama
+npx tsx scripts/verify-platform.ts             # Platform paneli
+```
 
-1. Neon'un sahip rolü `BYPASSRLS` taşıyor — tüm RLS'i sessizce atlıyordu. Çözüm: ayrı
-   `app_user` (NOBYPASSRLS) rolü + `APP_DATABASE_URL` (bkz. yukarıdaki kurulum notu).
-2. `current_setting('app.current_company_id', true)::uuid` ifadesi, bir bağlantıda bu
-   GUC bir kez set edildikten sonra sıfırlandığında NULL değil boş dizge (`''`) dönüyor
-   ve cast hata veriyordu. Çözüm: `NULLIF(value, '')` içeren `app_current_company_id()`
-   yardımcı fonksiyonu (bkz. `prisma/migrations/20260914151110_fix_rls_null_guard`).
+`npx tsc --noEmit`, `npx next lint`, `npx next build` her zaman temiz tutulur.
+
+> Not: Bu geliştirme ortamından Neon'a bağlantı ara sıra (`P1017`, "server has closed the
+> connection") kopabiliyor — bu ağ kaynaklı, koddan değil; script'i tekrar çalıştırmak yeterli.
+
+**Yol boyunca bulunup düzeltilen 2 gerçek altyapı hatası** (şeffaflık için):
+1. Neon sahip rolünün `BYPASSRLS` taşıması — ayrı `app_user` rolüyle çözüldü.
+2. `current_setting()` boş-dizge/NULL tutarsızlığı — `NULLIF` içeren yardımcı fonksiyonla çözüldü
+   (`prisma/migrations/20260914151110_fix_rls_null_guard`).
 
 ## Uzman Subagent'lar
 
-`.claude/agents/` altında bu proje için tanımlanmış 5 uzman subagent var:
-
-- `db-schema-architect` — şema, migration, RLS
-- `auth-tenant-security` — kimlik, çok-şirketli oturum, RBAC, audit log
-- `api-backend-dev` — Route Handler'lar, durum makineleri, iş mantığı
-- `frontend-ui-dev` — sayfalar, bileşenler, TR yerelleştirme
-- `qa-tenant-isolation` — izolasyon/yetki/finansal doğruluk testleri
-
-Claude Code içinde bu isimlerle otomatik olarak devreye girerler; ilgili modülde
-çalışırken hangi agent'ın devrede olduğunu görebilirsiniz.
+`.claude/agents/` altında bu proje için tanımlanmış 5 uzman subagent var: `db-schema-architect`,
+`auth-tenant-security`, `api-backend-dev`, `frontend-ui-dev`, `qa-tenant-isolation`. Claude Code
+içinde bu isimlerle otomatik devreye girerler.

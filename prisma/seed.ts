@@ -113,8 +113,25 @@ async function main() {
   );
   console.log("· kasa hesabı hazır");
 
+  const superAdminPasswordHash = await hashPassword("SuperAdmin#2026");
+  await withPlatformBypass((tx) =>
+    tx.user.upsert({
+      where: { email: "admin@platform.test" },
+      update: { isSuperAdmin: true },
+      create: {
+        email: "admin@platform.test",
+        name: "Platform Admin",
+        passwordHash: superAdminPasswordHash,
+        isActive: true,
+        isSuperAdmin: true,
+      },
+    }),
+  );
+  console.log("· süper admin hazır");
+
   console.log("Seed tamamlandı.");
-  console.log(`Giriş: sahip@demo.test / DemoSifre#2026 (şirket: ${demoCompany.name})`);
+  console.log(`Şirket girişi: sahip@demo.test / DemoSifre#2026 (şirket: ${demoCompany.name})`);
+  console.log("Platform (süper admin) girişi: admin@platform.test / SuperAdmin#2026 → /platform");
 }
 
 main()

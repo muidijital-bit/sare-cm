@@ -8,6 +8,11 @@ export default async function RootPage() {
   if (!session?.user) {
     redirect("/giris");
   }
+  // Yalnızca süper admin olup hiçbir şirkete üye olmayan kullanıcı (örn. platform hesabı)
+  // doğrudan platform paneline yönlenir — aksi halde boş bir "şirket seç" ekranında kalırdı.
+  if (session.user.isSuperAdmin && session.memberships.length === 0) {
+    redirect("/platform");
+  }
   if (!session.activeCompanyId) {
     redirect("/app/sirket-sec");
   }
