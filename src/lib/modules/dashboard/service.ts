@@ -1,7 +1,9 @@
+import dayjs from "dayjs";
 import { withTenant } from "@/lib/db/tenant-context";
 import { getRequiredScope } from "@/lib/auth/rbac";
 import type { TenantSession } from "@/lib/auth/session";
 import { listOverdueReceivables } from "@/lib/modules/payments/service";
+import { getCategoryReport } from "@/lib/modules/expenses/service";
 
 export interface DashboardMetrics {
   revenue: number; // Ciro (KDV hariç, dönem, iptal olmayan siparişler — §7)
@@ -121,4 +123,112 @@ export async function getDashboardMetrics(session: TenantSession, from: Date, to
       hasMissingCostData,
     };
   });
+}
+
+export interface DashboardCharts {
+  monthlyRevenueVsCollected: { month: string; label: string; revenue: number; collected: number }[];
+  expenseByCategory: { categoryName: string; total: number }[];
+  quoteFunnel: { stage: string; count: number }[];
+  topCustomers: { customerTitle: string; revenue: number }[];
+  canViewExpense: boolean;
+}
+
+/**
+ * §5.9 Dashboard grafikleri — 4 grafiğin tamamı TEK transaction/round-trip içinde
+ * hesaplanır (performans: bkz. src/lib/db/tenant-context.ts notu — Neon'a her ayrı
+ * withTenant() çağrısı ~750-800ms'lik bir round-trip demek; 4 ayrı çağrı yerine 1
+ * kullanmak sayfa açılışında ölçülebilir kazanç sağlar). Gider kırılımı, kendi
+ * withTenant'ı olan getCategoryReport()'u (GD-02 ile aynı tek kaynak) ayrıca çağırır.
+ */
+export async function getDashboardCharts(session: TenantSession): Promise<DashboardCharts> {
+  const orderScope = getRequiredScope(session.role, "order", "view");
+  const quoteScope = getRequiredScope(session.role, "quote", "view");
+  const expenseScope = getRequiredScope(session.role, "expense", "view");
+
+  const twelveMonthsAgo = dayjs().subtract(11, "month").startOf("month").toDate();
+
+  const combined = await withTenant(session.companyId, async (tx) => {
+    // --- 1) Aylık ciro / tahsilat (son 12 ay) ---
+    const [periodOrders, periodPayments] = await Promise.all([
+      tx.order.findMany({
+        where: {
+          orderDate: { gte: twelveMonthsAgo },
+          status: { not: "CANCELLED" },
+          deletedAt: null,
+          ...(orderScope === "own" ? { ownerUserId: session.userId } : {}),
+        },
+        select: { orderDate: true, grandTotal: true, vatTotal: true },
+      }),
+      tx.payment.findMany({
+        where: { paidAt: { gte: twelveMonthsAgo }, isCancelled: false },
+        select: { paidAt: true, amount: true },
+      }),
+    ]);
+
+    const months: { month: string; label: string; revenue: number; collected: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = dayjs().subtract(i, "month");
+      months.push({ month: d.format("YYYY-MM"), label: d.format("MMM YY"), revenue: 0, collected: 0 });
+    }
+    const byMonth = new Map(months.map((m) => [m.month, m]));
+    for (const o of periodOrders) {
+      const key = dayjs(o.orderDate).format("YYYY-MM");
+      const bucket = byMonth.get(key);
+      if (bucket) bucket.revenue += Number(o.grandTotal) - Number(o.vatTotal);
+    }
+    for (const p of periodPayments) {
+      const key = dayjs(p.paidAt).format("YYYY-MM");
+      const bucket = byMonth.get(key);
+      if (bucket) bucket.collected += Number(p.amount);
+    }
+
+    // --- 2) Teklif durum hunisi (tüm zamanlar) ---
+    const quotes = await tx.quote.findMany({
+      where: { deletedAt: null, ...(quoteScope === "own" ? { ownerUserId: session.userId } : {}) },
+      select: { status: true, orders: { select: { id: true }, take: 1 } },
+    });
+    const sentCount = quotes.filter((q) => q.status !== "DRAFT").length;
+    const acceptedCount = quotes.filter((q) => q.status === "ACCEPTED").length;
+    const convertedCount = quotes.filter((q) => q.status === "ACCEPTED" && q.orders.length > 0).length;
+
+    // --- 3) En yüksek cirolu 10 müşteri (son 12 ay) ---
+    const topOrders = await tx.order.findMany({
+      where: {
+        orderDate: { gte: twelveMonthsAgo },
+        status: { not: "CANCELLED" },
+        deletedAt: null,
+        ...(orderScope === "own" ? { ownerUserId: session.userId } : {}),
+      },
+      select: { grandTotal: true, vatTotal: true, customer: { select: { title: true } } },
+    });
+    const byCustomer = new Map<string, number>();
+    for (const o of topOrders) {
+      const net = Number(o.grandTotal) - Number(o.vatTotal);
+      byCustomer.set(o.customer.title, (byCustomer.get(o.customer.title) ?? 0) + net);
+    }
+    const topCustomers = Array.from(byCustomer.entries())
+      .map(([customerTitle, revenue]) => ({ customerTitle, revenue }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    return {
+      monthlyRevenueVsCollected: months,
+      quoteFunnel: [
+        { stage: "Gönderildi", count: sentCount },
+        { stage: "Kabul Edildi", count: acceptedCount },
+        { stage: "Siparişe Dönüştü", count: convertedCount },
+      ],
+      topCustomers,
+    };
+  });
+
+  let expenseByCategory: { categoryName: string; total: number }[] = [];
+  if (expenseScope) {
+    const report = await getCategoryReport(session, twelveMonthsAgo, new Date());
+    if (report.ok) {
+      expenseByCategory = report.data.map((r) => ({ categoryName: r.categoryName, total: r.total }));
+    }
+  }
+
+  return { ...combined, expenseByCategory, canViewExpense: !!expenseScope };
 }

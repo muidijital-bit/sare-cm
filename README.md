@@ -22,6 +22,7 @@
 | Tahsilat (mahsuplaşma, kısmi/fazla ödeme, iade) | ✅ |
 | Gider (kategori raporu, tekrarlayan gider) | ✅ |
 | Dashboard (§7 metrikleri gerçek veriye bağlı) | ✅ |
+| Dashboard grafikleri (§5.9 — aylık ciro/tahsilat, gider dağılımı, teklif hunisi, en yüksek cirolu müşteriler) | ✅ |
 | İşlem geçmişi (genel log + kayıt bazlı geçmiş) | ✅ |
 | Şirket Ayarları (bilgiler, kaynak/kategori/hesap CRUD) | ✅ |
 | Kullanıcı davet akışı (rol, son-Sahip koruması, paket limiti) | ✅ |
@@ -106,6 +107,7 @@ npx tsx scripts/verify-customers.ts            # Müşteri/CRM
 npx tsx scripts/verify-sales-flow.ts           # Teklif → Sipariş → Tahsilat
 npx tsx scripts/verify-expenses.ts             # Gider + tekrarlayan gider
 npx tsx scripts/verify-dashboard.ts            # Dashboard metrikleri (§7)
+npx tsx scripts/verify-dashboard-charts.ts     # Dashboard grafikleri (§5.9)
 npx tsx scripts/verify-audit-and-balance.ts    # İşlem geçmişi + MC-10 bakiye
 npx tsx scripts/verify-company-settings.ts     # Şirket Ayarları
 npx tsx scripts/verify-user-invite.ts          # Kullanıcı davet akışı
@@ -122,6 +124,23 @@ npx tsx scripts/verify-platform.ts             # Platform paneli
 1. Neon sahip rolünün `BYPASSRLS` taşıması — ayrı `app_user` rolüyle çözüldü.
 2. `current_setting()` boş-dizge/NULL tutarsızlığı — `NULLIF` içeren yardımcı fonksiyonla çözüldü
    (`prisma/migrations/20260914151110_fix_rls_null_guard`).
+
+### Performans notu (sayfa açılış hızı)
+
+`scripts/measure-latency.ts` ile ölçülen gerçek rakamlar: bu geliştirme ortamından Neon'un
+`us-east-2` bölgesine tek yönlü ağ gecikmesi ~150-250ms — coğrafi mesafeden kaynaklanır, kodla
+çözülemez. Buna ek olarak her `withTenant()` çağrısı 2 ayrı `set_config` sorgusu gönderiyordu;
+bunlar tek sorguda birleştirildi ([tenant-context.ts](src/lib/db/tenant-context.ts)) ve ölçülen
+süre ~880-1300ms'den ~750-800ms'ye indi (kayıt yükü fark etmeden — az veriyle de bu gecikme
+ağdan kaynaklanıyor, sorgu hacminden değil). Kalan ~750-800ms'lik taban, büyük ölçüde
+BEGIN+SET+sorgu+COMMIT'in gerektirdiği ağ round-trip sayısı × mesafe gecikmesinden geliyor.
+Bunu daha da aşağı çekmenin en büyük kaldıracı **Neon projesini kullanıcıya coğrafi olarak daha
+yakın bir bölgeye (örn. AWS eu-central-1) taşımak** — bu, yeni bir Neon projesi oluşturup veriyi
+taşımayı gerektirir ve kullanıcının kendi Neon hesabında yapması gereken bir adımdır.
+Ayrıca her sayfa geçişinde Next.js App Router'ın `loading.tsx` kuralına göre otomatik bir
+yükleniyor göstergesi eklendi ([app/loading.tsx](src/app/app/loading.tsx),
+[platform/loading.tsx](src/app/platform/loading.tsx)) — gecikmeyi ortadan kaldırmaz ama "tıkladım,
+hiçbir şey olmuyor" hissini giderir.
 
 ## Uzman Subagent'lar
 

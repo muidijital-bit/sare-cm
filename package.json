@@ -17,28 +17,29 @@
     "verify:infra": "tsx scripts/verify-infra.ts"
   },
   "dependencies": {
+    "@prisma/client": "5.22.0",
+    "bcryptjs": "2.4.3",
+    "dayjs": "1.11.13",
+    "next": "13.5.11",
+    "next-auth": "4.24.15",
     "react": "^18",
     "react-dom": "^18",
-    "next": "13.5.11",
-    "@prisma/client": "5.22.0",
-    "next-auth": "4.24.15",
-    "bcryptjs": "2.4.3",
-    "zod": "3.23.8",
-    "dayjs": "1.11.13"
+    "recharts": "^2.15.0",
+    "zod": "3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@types/bcryptjs": "2.4.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@types/bcryptjs": "2.4.6",
     "autoprefixer": "^10",
-    "postcss": "^8",
-    "tailwindcss": "^3",
     "eslint": "^8",
     "eslint-config-next": "13.5.11",
+    "postcss": "^8",
     "prisma": "5.22.0",
+    "tailwindcss": "^3",
     "tsx": "3.14.0",
+    "typescript": "^5",
     "vitest": "0.34.6"
   },
   "prisma": {

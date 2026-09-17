@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
-import { getDashboardMetrics } from "@/lib/modules/dashboard/service";
+import { getDashboardCharts, getDashboardMetrics } from "@/lib/modules/dashboard/service";
 import { tr, formatCurrencyTRY } from "@/lib/i18n/tr";
 import { DashboardPeriodPicker } from "./_components/dashboard-period-picker";
+import {
+  ExpenseCategoryChart,
+  MonthlyRevenueChart,
+  QuoteFunnelChart,
+  TopCustomersChart,
+} from "./_components/dashboard-charts";
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -25,7 +31,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   const from = searchParams.from ? new Date(searchParams.from) : defaultFrom;
   const to = searchParams.to ? new Date(`${searchParams.to}T23:59:59`) : defaultTo;
 
-  const metrics = await getDashboardMetrics(session, from, to);
+  const [metrics, charts] = await Promise.all([
+    getDashboardMetrics(session, from, to),
+    getDashboardCharts(session),
+  ]);
 
   return (
     <div>
@@ -75,6 +84,34 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         <Link href="/app/tahsilatlar" className="text-gray-600 hover:underline">
           Vadesi geçmiş alacakları gör →
         </Link>
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="lg:col-span-2">
+          <MonthlyRevenueChart
+            data={charts.monthlyRevenueVsCollected}
+            labels={{
+              title: tr.dashboard.charts.monthlyTitle,
+              revenue: tr.dashboard.charts.monthlyRevenue,
+              collected: tr.dashboard.charts.monthlyCollected,
+            }}
+          />
+        </div>
+        <QuoteFunnelChart data={charts.quoteFunnel} title={tr.dashboard.charts.funnelTitle} />
+        {charts.canViewExpense && (
+          <ExpenseCategoryChart
+            data={charts.expenseByCategory}
+            title={tr.dashboard.charts.expenseTitle}
+            emptyLabel={tr.dashboard.charts.expenseEmpty}
+          />
+        )}
+        <div className={charts.canViewExpense ? "lg:col-span-2" : ""}>
+          <TopCustomersChart
+            data={charts.topCustomers}
+            title={tr.dashboard.charts.topCustomersTitle}
+            emptyLabel={tr.dashboard.charts.topCustomersEmpty}
+          />
+        </div>
       </div>
     </div>
   );

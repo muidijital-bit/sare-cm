@@ -31,8 +31,11 @@ export async function withTenant<T>(
   }
   return prisma.$transaction(
     async (tx) => {
-      await tx.$executeRaw`SELECT set_config('app.current_company_id', ${companyId}, true)`;
-      await tx.$executeRaw`SELECT set_config('app.bypass_rls', 'off', true)`;
+      // İki set_config çağrısı TEK sorguda birleştirilir — her ayrı $executeRaw çağrısı
+      // Neon'a (bu ortamdan ~150-250ms) bir tam network round-trip demek; bunu iki yerine
+      // bir round-trip'e indirmek her tenant-kapsamlı sorguda ölçülebilir gecikme kazandırır
+      // (bkz. scripts/measure-latency.ts ile ölçülen gerçek rakamlar).
+      await tx.$executeRaw`SELECT set_config('app.current_company_id', ${companyId}, true), set_config('app.bypass_rls', 'off', true)`;
       return fn(tx);
     },
     // Neon gibi serverless sağlayıcılarda uyanma (cold start) gecikmesi olabilir;
