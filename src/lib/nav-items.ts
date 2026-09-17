@@ -24,8 +24,8 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "payments", label: "Tahsilatlar", href: "/app/tahsilatlar", module: "payment", built: true },
   { key: "expenses", label: "Giderler", href: "/app/giderler", module: "expense", built: true },
   { key: "audit", label: "İşlem Geçmişi", href: "/app/islem-gecmisi", module: "auditLog", built: true },
-  { key: "users", label: "Kullanıcılar", href: "/app/kullanicilar", module: "userManagement", built: false },
-  { key: "settings", label: "Şirket Ayarları", href: "/app/ayarlar", module: "companySettings", built: false },
+  { key: "users", label: "Kullanıcılar", href: "/app/kullanicilar", module: "userManagement", built: true },
+  { key: "settings", label: "Şirket Ayarları", href: "/app/ayarlar", module: "companySettings", built: true },
 ];
 
 /** Rol bu modülü hiç göremiyorsa (§4'te "—") menüde de hiç görünmez. */
