@@ -57,10 +57,12 @@ async function main() {
   const owner = await withPlatformBypass((tx) =>
     tx.user.upsert({
       where: { email: "sahip@demo.test" },
-      update: {},
+      // Görünen ad "Demo Sahip" gibi kalmasın diye re-seed'de de düzeltilir — giriş bilgileri
+      // (e-posta/şifre) sabit kalır, yalnızca kullanıcıya gösterilen ad güncellenir.
+      update: { name: "Merve Kaplan" },
       create: {
         email: "sahip@demo.test",
-        name: "Demo Sahip",
+        name: "Merve Kaplan",
         passwordHash: ownerPasswordHash,
         isActive: true,
       },
