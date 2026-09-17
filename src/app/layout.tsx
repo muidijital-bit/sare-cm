@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
+import { RouteLoadingOverlay } from "@/components/ui/route-loading-overlay";
 import { tr } from "@/lib/i18n/tr";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -15,7 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="tr">
       <body className={inter.className}>
-        <AuthSessionProvider>{children}</AuthSessionProvider>
+        <AuthSessionProvider>
+          {children}
+          <RouteLoadingOverlay />
+        </AuthSessionProvider>
       </body>
     </html>
   );

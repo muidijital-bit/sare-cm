@@ -27,21 +27,22 @@ export default async function MusterilerPage({
   const parsedQuery = listCustomersQuerySchema.safeParse(searchParams);
   const query = parsedQuery.success ? parsedQuery.data : { page: 1, pageSize: 20 };
 
-  const [result, sources, users] = await Promise.all([
-    listCustomers(session, query),
-    withTenant(session.companyId, (tx) =>
+  // PERFORMANS: üç sorgu TEK transaction'da — her ayrı withTenant() çağrısı Neon'a tam bir
+  // transaction round-trip'i (ölçüldü: ~1,4sn) demek ve bunlar Promise.all ile bile gerçek
+  // anlamda paralelleşmiyor (3 ayrı çağrı ~4sn sürüyordu). Tek transaction'da ~1,4sn.
+  const [result, sources, users] = await withTenant(session.companyId, (tx) =>
+    Promise.all([
+      listCustomers(session, query, tx),
       tx.customerSource.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    ),
-    scope === "all"
-      ? withTenant(session.companyId, (tx) =>
-          tx.membership.findMany({
+      scope === "all"
+        ? tx.membership.findMany({
             where: { isActive: true },
             include: { user: { select: { id: true, name: true } } },
             orderBy: { user: { name: "asc" } },
-          }),
-        )
-      : Promise.resolve([]),
-  ]);
+          })
+        : Promise.resolve([] as { user: { id: string; name: string } }[]),
+    ]),
+  );
 
   if (!result.ok) {
     return <p className="text-sm text-red-600">{result.message}</p>;
@@ -70,6 +71,7 @@ export default async function MusterilerPage({
         sources={sources}
         showOwnerFilter={scope === "all"}
         users={users.map((m) => ({ id: m.user.id, name: m.user.name }))}
+        rowCount={items.length}
       />
 
       {canDelete && (
@@ -118,7 +120,13 @@ export default async function MusterilerPage({
               const rowCanEdit = !!editScope && (editScope === "all" || c.ownerUserId === session.userId);
               const rowCanDelete = !!deleteScope && (deleteScope === "all" || c.ownerUserId === session.userId);
               return (
-                <tr key={c.id} className="hover:bg-gray-50">
+                <tr
+                  key={c.id}
+                  className="searchable-row-customers hover:bg-gray-50"
+                  data-search={[c.title, c.taxNumber, c.source?.name, tr.customer.status[c.status], tr.customer.type[c.type]]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
                   {canDelete && (
                     <td className="px-4 py-3">
                       <input type="checkbox" className="row-select-customers" data-id={c.id} />

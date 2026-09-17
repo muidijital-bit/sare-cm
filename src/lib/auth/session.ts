@@ -1,6 +1,7 @@
+import { cache } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/options";
-import { withTenant, InvalidCompanyIdError } from "@/lib/db/tenant-context";
+import { withTenantRead, InvalidCompanyIdError } from "@/lib/db/tenant-context";
 import type { MembershipRole } from "@/lib/auth/rbac";
 
 export interface TenantSession {
@@ -23,8 +24,14 @@ export interface TenantSession {
  *
  * Dönüş `null` ise: oturum yok, aktif şirket seçilmemiş, ya da üyelik artık geçerli değil
  * (pasifleştirilmiş kullanıcı, silinmiş şirket) — çağıran taraf 401/403 dönmelidir.
+ *
+ * PERFORMANS: React `cache()` ile sarılıdır — aynı istek içinde hem layout hem page (hem de
+ * varsa iç bileşenler) bunu çağırıyor; sarmadan önce her çağrı Neon'a ayrı bir transaction
+ * round-trip'i (~1,4sn) açıyordu ve tek sayfa açılışı 3 ayrı doğrulama sorgusu yapıyordu.
+ * `cache()` istek başına tek çağrıya indirir (güvenlik davranışı aynı: her İSTEKTE
+ * veritabanından yeniden doğrulanır, sadece istek içinde tekrarlanmaz).
  */
-export async function getTenantSession(): Promise<TenantSession | null> {
+export const getTenantSession = cache(async function getTenantSession(): Promise<TenantSession | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id || !session.activeCompanyId) return null;
 
@@ -33,8 +40,10 @@ export async function getTenantSession(): Promise<TenantSession | null> {
   // RLS'i doğru şekilde tatmin eder hem de erişimi tam olarak o şirketle sınırlar.
   let membership;
   try {
-    membership = await withTenant(session.activeCompanyId, (tx) =>
-      tx.membership.findFirst({
+    // Tek sorgu + tek round-trip (withTenantRead): bu fonksiyon HER istekte çalıştığı için
+    // interactive transaction'ın 4 round-trip'i doğrudan sayfa açılış süresine biniyordu.
+    [membership] = await withTenantRead(session.activeCompanyId, (db) => [
+      db.membership.findFirst({
         where: {
           userId: session.user.id,
           companyId: session.activeCompanyId!,
@@ -43,7 +52,7 @@ export async function getTenantSession(): Promise<TenantSession | null> {
         },
         include: { company: { select: { status: true, name: true } } },
       }),
-    );
+    ]);
   } catch (e) {
     if (e instanceof InvalidCompanyIdError) return null; // bozuk/uydurma companyId — 401/403'e düşer
     throw e;
@@ -60,7 +69,7 @@ export async function getTenantSession(): Promise<TenantSession | null> {
     role: membership.role,
     membershipCount: session.memberships?.length ?? 1,
   };
-}
+});
 
 /**
  * PF-04: Askıya alınmış şirket salt-okunur moda geçer — veri silinmez, okunabilir,

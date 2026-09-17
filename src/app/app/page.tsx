@@ -19,7 +19,27 @@ function startOfMonth(d: Date) {
 function endOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
 }
-const toDateInput = (d: Date) => d.toISOString().slice(0, 10);
+
+/**
+ * `<input type="date">` için YYYY-MM-DD. `toISOString()` KULLANILMAZ: o UTC'ye çevirir ve
+ * UTC+3'te yerel gece yarısı bir önceki güne kayıyordu (ay başı 01 yerine 31 görünüyor,
+ * filtre bir gün şaşıyordu). Yerel takvim alanlarıyla kuruluyor.
+ */
+function toDateInput(d: Date) {
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+/** "YYYY-MM-DD" → YEREL gün başlangıcı/sonu. `new Date("YYYY-MM-DD")` UTC yorumlar; karışmasın. */
+function parseDateInput(value: string, endOfDay: boolean): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const [, y, m, d] = match;
+  return endOfDay
+    ? new Date(Number(y), Number(m) - 1, Number(d), 23, 59, 59, 999)
+    : new Date(Number(y), Number(m) - 1, Number(d), 0, 0, 0, 0);
+}
 
 export default async function DashboardPage({ searchParams }: { searchParams: { from?: string; to?: string } }) {
   const session = await getTenantSession();
@@ -30,8 +50,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   const now = new Date();
   const defaultFrom = startOfMonth(now);
   const defaultTo = endOfMonth(now);
-  const from = searchParams.from ? new Date(searchParams.from) : defaultFrom;
-  const to = searchParams.to ? new Date(`${searchParams.to}T23:59:59`) : defaultTo;
+  const from = (searchParams.from && parseDateInput(searchParams.from, false)) || defaultFrom;
+  const to = (searchParams.to && parseDateInput(searchParams.to, true)) || defaultTo;
 
   const [metrics, charts] = await Promise.all([
     getDashboardMetrics(session, from, to),
@@ -40,9 +60,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold text-gray-900">{tr.dashboard.title}</h1>
-        <DashboardPeriodPicker defaultFrom={toDateInput(defaultFrom)} defaultTo={toDateInput(defaultTo)} />
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
+        <DashboardPeriodPicker
+          defaultFrom={toDateInput(defaultFrom)}
+          defaultTo={toDateInput(defaultTo)}
+          activeFrom={toDateInput(from)}
+          activeTo={toDateInput(to)}
+        />
       </div>
 
       {session.companyStatus === "SUSPENDED" && (

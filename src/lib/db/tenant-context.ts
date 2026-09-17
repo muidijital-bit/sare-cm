@@ -47,6 +47,37 @@ export async function withTenant<T>(
 }
 
 /**
+ * SALT-OKUNUR hızlı yol. `withTenant()` bir "interactive transaction" açar: BEGIN → SET →
+ * sorgu → COMMIT, yani Neon'a DÖRT ayrı network round-trip (bu ortamdan ölçülen: toplam
+ * ~1,4sn). Prisma'nın dizi formundaki `$transaction([...])` ise tüm ifadeleri TEK round-trip
+ * içinde gönderir. Sorgular önceden biliniyorsa (araya JS mantığı girmiyorsa) bu fonksiyon
+ * aynı RLS güvencesini ~4 kat daha hızlı verir.
+ *
+ * Kullanım:
+ *   const [customers, sources] = await withTenantRead(companyId, (db) => [
+ *     db.customer.findMany({ ... }),
+ *     db.customerSource.findMany({ ... }),
+ *   ]);
+ *
+ * NOT: RLS bağlamı (`set_config(..., true)`) aynı transaction'ın parçası olarak ilk ifade
+ * olarak gönderilir; "local" olduğu için transaction bitince otomatik temizlenir — havuzdan
+ * başka bir isteğe sızmaz (bkz. withTenant açıklaması).
+ */
+export async function withTenantRead<T extends readonly unknown[]>(
+  companyId: string,
+  build: (db: typeof prisma) => [...{ [K in keyof T]: Prisma.PrismaPromise<T[K]> }],
+): Promise<T> {
+  if (!UUID_RE.test(companyId)) {
+    throw new InvalidCompanyIdError(`Geçersiz company_id: ${companyId}`);
+  }
+
+  const setContext = prisma.$executeRaw`SELECT set_config('app.current_company_id', ${companyId}, true), set_config('app.bypass_rls', 'off', true)`;
+  const results = await prisma.$transaction([setContext, ...build(prisma)]);
+  // İlk eleman set_config sonucudur, atılır.
+  return results.slice(1) as unknown as T;
+}
+
+/**
  * Yalnızca platform/süper admin kod yollarında kullanılır — RLS'i bilinçli olarak atlayıp
  * çoklu şirket verisine erişim gerektiren raporlar için (örn. PF-05, PF-06). Bu fonksiyonu
  * çağıran kod, erişimi mutlaka `writeAuditLog(..., { isSuperAdminAccess: true })` ile

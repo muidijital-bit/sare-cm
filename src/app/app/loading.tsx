@@ -1,16 +1,12 @@
 /**
- * Next.js App Router'ın özel `loading.tsx` dosyası — bu segment altındaki (tüm /app/*
- * sayfaları) sunucu verisi çekilirken (özellikle Neon'a giden sorgular gecikirse)
- * otomatik olarak gösterilir. Kullanıcı "sayfa tıklandı, 5sn boş ekran" hissi yerine
- * anında bir geri bildirim görür.
+ * Next.js App Router'ın `loading.tsx` Suspense fallback'i — BİLEREK görsel olarak boş
+ * bırakıldı. Daha önce burada gri bir "Yükleniyor…" ekranı vardı; Suspense fallback'i eski
+ * içeriği DOM'dan söktüğü için sayfa geçişlerinde içerik kaybolup gri ekran görünüyordu.
+ * Bunun yerine yükleniyor göstergesi, içeriği yerinde bırakıp üzerini karartan
+ * `RouteLoadingOverlay` (src/components/ui/route-loading-overlay.tsx, root layout'ta) ile
+ * gösteriliyor. Bu dosya yine de gerekli: yoksa Next.js bu segment için en yakın üst
+ * Suspense sınırına düşer.
  */
 export default function Loading() {
-  return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="flex items-center gap-3 text-sm text-gray-500">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-brand-800" />
-        Yükleniyor…
-      </div>
-    </div>
-  );
+  return null;
 }

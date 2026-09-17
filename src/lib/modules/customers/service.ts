@@ -16,13 +16,21 @@ interface ListParams {
   pageSize: number;
 }
 
-/** MC-11 Liste ekranı: arama (unvan, telefon, vergi no) + filtre + sunucu taraflı sayfalama. */
-export async function listCustomers(session: TenantSession, params: ListParams) {
+/**
+ * MC-11 Liste ekranı: arama (unvan, telefon, vergi no) + filtre + sunucu taraflı sayfalama.
+ *
+ * Opsiyonel `tx`: sayfa bu listeyle AYNI anda başka sorgular da yapıyorsa (örn. filtre
+ * dropdown'ları için kaynak/kullanıcı listesi), çağıran taraf kendi `withTenant()` bloğunu
+ * açıp o `tx`'i buraya geçirebilir — performans: her ayrı `withTenant()` çağrısı Neon'a
+ * tam bir transaction round-trip'i demek (bkz. tenant-context.ts notu), bunları TEK
+ * transaction'da birleştirmek sayfa başına ölçülebilir gecikme kazandırır.
+ */
+export async function listCustomers(session: TenantSession, params: ListParams, tx?: Prisma.TransactionClient) {
   const scope = getRequiredScope(session.role, "customer", "view");
   if (!scope) return forbidden();
   const ownScope = scope === "own";
 
-  return withTenant(session.companyId, async (tx) => {
+  const run = async (tx: Prisma.TransactionClient) => {
     const where: Prisma.CustomerWhereInput = {
       deletedAt: null,
       ...(ownScope ? { ownerUserId: session.userId } : params.ownerUserId ? { ownerUserId: params.ownerUserId } : {}),
@@ -55,7 +63,9 @@ export async function listCustomers(session: TenantSession, params: ListParams) 
     ]);
 
     return { ok: true as const, data: { items, total, page: params.page, pageSize: params.pageSize } };
-  });
+  };
+
+  return tx ? run(tx) : withTenant(session.companyId, run);
 }
 
 const CUSTOMER_DETAIL_INCLUDE = {
