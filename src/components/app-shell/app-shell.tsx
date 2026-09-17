@@ -35,8 +35,13 @@ function HamburgerIcon() {
  * bir Next.js 13.5 build hatasına (`Cannot find module for page: /_document`) yol açıyordu.
  */
 function LogoMark() {
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src="/logo.png" alt={tr.common.appName} className="h-6 w-auto" />;
+  return (
+    <span className="flex items-center gap-2">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt={tr.common.appName} className="h-9 w-auto" />
+      <span className="text-2xl font-bold tracking-wide text-white/80">CM</span>
+    </span>
+  );
 }
 
 export function AppShell({ companyName, role, userName, userEmail, hasMultipleCompanies, children }: AppShellProps) {
