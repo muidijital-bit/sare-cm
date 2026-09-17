@@ -33,7 +33,7 @@ function assert(cond: boolean, label: string) {
 
 async function main() {
   // Sahip kullanıcı + geçici bir SALES kullanıcı (own-scope testleri için)
-  const owner = await withPlatformBypass((tx) => tx.user.findUniqueOrThrow({ where: { email: "sahip@demo.test" } }));
+  const owner = await withPlatformBypass((tx) => tx.user.findUniqueOrThrow({ where: { email: "sare@demo.test" } }));
 
   const salesEmail = `satis-test-${randomUUID().slice(0, 8)}@demo.test`;
   const salesUser = await withPlatformBypass((tx) =>

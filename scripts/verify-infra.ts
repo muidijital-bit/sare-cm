@@ -25,7 +25,7 @@ function assert(cond: boolean, label: string) {
 
 async function main() {
   // 1) Şifre doğrulama — seed'de oluşturulan sahip kullanıcı
-  const owner = await withPlatformBypass((tx) => tx.user.findUnique({ where: { email: "sahip@demo.test" } }));
+  const owner = await withPlatformBypass((tx) => tx.user.findUnique({ where: { email: "sare@demo.test" } }));
   assert(!!owner, "Seed'deki sahip kullanıcı bulunuyor");
   if (owner) {
     const ok = await verifyPassword("DemoSifre#2026", owner.passwordHash);

@@ -89,7 +89,7 @@ npm run db:seed
 ```
 
 **Seed sonrası girişler:**
-- Şirket kullanıcısı: `sahip@demo.test` / `DemoSifre#2026` (Demo Şirket A.Ş., Sahip rolü)
+- Şirket kullanıcısı: `sare@demo.test` / `DemoSifre#2026` (Demo Şirket A.Ş., Sahip rolü)
 - Platform (süper admin): `admin@platform.test` / `SuperAdmin#2026` → otomatik `/platform`'a yönlenir
 
 ### 4. Geliştirme sunucusu

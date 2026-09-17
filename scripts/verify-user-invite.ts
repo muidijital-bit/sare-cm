@@ -23,7 +23,7 @@ function assert(cond: boolean, label: string) {
 }
 
 async function main() {
-  const owner = await withPlatformBypass((tx) => tx.user.findUniqueOrThrow({ where: { email: "sahip@demo.test" } }));
+  const owner = await withPlatformBypass((tx) => tx.user.findUniqueOrThrow({ where: { email: "sare@demo.test" } }));
   const ownerSession: TenantSession = {
     userId: owner.id,
     userName: owner.name,

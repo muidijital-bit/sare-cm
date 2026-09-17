@@ -59,7 +59,7 @@ async function main() {
   );
   console.log(`· şirket adı değiştirildi: ${company.name}`);
 
-  const owner = await withPlatformBypass((tx) => tx.user.findUniqueOrThrow({ where: { email: "sahip@demo.test" } }));
+  const owner = await withPlatformBypass((tx) => tx.user.findUniqueOrThrow({ where: { email: "sare@demo.test" } }));
   const session: TenantSession = {
     userId: owner.id,
     userName: owner.name,

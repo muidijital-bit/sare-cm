@@ -56,12 +56,12 @@ async function main() {
   const ownerPasswordHash = await hashPassword("DemoSifre#2026");
   const owner = await withPlatformBypass((tx) =>
     tx.user.upsert({
-      where: { email: "sahip@demo.test" },
+      where: { email: "sare@demo.test" },
       // Görünen ad "Demo Sahip" gibi kalmasın diye re-seed'de de düzeltilir — giriş bilgileri
       // (e-posta/şifre) sabit kalır, yalnızca kullanıcıya gösterilen ad güncellenir.
       update: { name: "Merve Kaplan" },
       create: {
-        email: "sahip@demo.test",
+        email: "sare@demo.test",
         name: "Merve Kaplan",
         passwordHash: ownerPasswordHash,
         isActive: true,
@@ -132,7 +132,7 @@ async function main() {
   console.log("· süper admin hazır");
 
   console.log("Seed tamamlandı.");
-  console.log(`Şirket girişi: sahip@demo.test / DemoSifre#2026 (şirket: ${demoCompany.name})`);
+  console.log(`Şirket girişi: sare@demo.test / DemoSifre#2026 (şirket: ${demoCompany.name})`);
   console.log("Platform (süper admin) girişi: admin@platform.test / SuperAdmin#2026 → /platform");
 }
 
