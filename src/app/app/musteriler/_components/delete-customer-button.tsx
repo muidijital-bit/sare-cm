@@ -2,25 +2,24 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { confirmDelete, notifyError } from "@/lib/ui/sweetalert";
 import { tr } from "@/lib/i18n/tr";
 
 export function DeleteCustomerButton({ customerId }: { customerId: string }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function handleDelete() {
-    if (!confirm(tr.customer.deleteConfirm)) return;
+    const ok = await confirmDelete(tr.customer.deleteConfirm);
+    if (!ok) return;
     setBusy(true);
-    setError(null);
 
     const res = await fetch(`/api/customers/${customerId}`, { method: "DELETE" });
     const body = await res.json().catch(() => ({}));
-
     setBusy(false);
 
     if (!res.ok) {
-      setError(body.error ?? tr.common.error);
+      await notifyError(body.error ?? tr.common.error);
       return;
     }
     router.push("/app/musteriler");
@@ -36,7 +35,6 @@ export function DeleteCustomerButton({ customerId }: { customerId: string }) {
       >
         {tr.customer.delete}
       </button>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }

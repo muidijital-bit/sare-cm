@@ -2,26 +2,37 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { confirmDelete, notifyError } from "@/lib/ui/sweetalert";
+import { tr } from "@/lib/i18n/tr";
 
 interface Props {
-  endpoint: string; // DELETE isteği atılacak URL
+  endpoint: string;
+  /** Varsayılan DELETE. Sipariş/tahsilat gibi "silme yerine iptal" iş kuralına sahip
+   *  kayıtlarda arayüz "Sil" olarak gösterilir ama arkada ilgili POST /cancel uç noktasına
+   *  sabit bir gerekçeyle (`body`) gidilir — kullanıcıdan gerekçe İSTENMEZ. */
+  method?: "DELETE" | "POST";
+  body?: Record<string, unknown>;
   confirmMessage: string;
   label?: string;
 }
 
-/** Tek satır silme — DeleteExpenseButton ile aynı desen, tüm gridlerde ortak kullanım için genelleştirildi. */
-export function RowDeleteButton({ endpoint, confirmMessage, label = "Sil" }: Props) {
+/** Tüm gridlerdeki tek satır "Sil" aksiyonu — ortak SweetAlert2 onayı kullanır. */
+export function RowDeleteButton({ endpoint, method = "DELETE", body, confirmMessage, label = tr.common.delete }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
   async function handleDelete() {
-    if (!confirm(confirmMessage)) return;
+    const ok = await confirmDelete(confirmMessage);
+    if (!ok) return;
     setBusy(true);
-    const res = await fetch(endpoint, { method: "DELETE" });
-    const body = await res.json().catch(() => ({}));
+    const res = await fetch(endpoint, {
+      method,
+      ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
+    });
+    const responseBody = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      alert(body.error ?? "İşlem başarısız oldu.");
+      await notifyError(responseBody.error ?? tr.common.error);
       return;
     }
     router.refresh();

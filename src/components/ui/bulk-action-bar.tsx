@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { confirmDelete, notifyError } from "@/lib/ui/sweetalert";
 
 export interface BulkAction {
   key: string;
   label: string;
-  endpoint: string; // POST endpoint, body: { ids: string[], reason?: string }
+  endpoint: string; // POST endpoint, body: { ids: string[], ...extraBody }
   variant?: "danger" | "default";
   /** "{n}" seçili kayıt sayısıyla değiştirilir. */
   confirmMessage: string;
-  requireReason?: boolean;
-  reasonLabel?: string;
+  /** Sabit ek alanlar (örn. sipariş/tahsilat "silme yerine iptal" kuralı için otomatik
+   *  gerekçe) — kullanıcıdan İSTENMEZ, isteğe doğrudan eklenir. */
+  extraBody?: Record<string, unknown>;
 }
 
 interface Props {
@@ -65,30 +67,25 @@ export function BulkActionBar({ rowSelector, selectAllSelector, actions, entityL
   }
 
   async function runAction(action: BulkAction) {
-    if (!confirm(action.confirmMessage.replace("{n}", String(selected.length)))) return;
-
-    let reason: string | undefined;
-    if (action.requireReason) {
-      const input = window.prompt(action.reasonLabel ?? "Gerekçe girin:") ?? "";
-      if (!input.trim()) return;
-      reason = input.trim();
-    }
+    const ok = await confirmDelete(action.confirmMessage.replace("{n}", String(selected.length)));
+    if (!ok) return;
 
     setBusy(true);
     try {
       const res = await fetch(action.endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selected, ...(reason ? { reason } : {}) }),
+        body: JSON.stringify({ ids: selected, ...(action.extraBody ?? {}) }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(data.error ?? "İşlem başarısız oldu.");
+        await notifyError(data.error ?? "İşlem başarısız oldu.");
       } else if (Array.isArray(data.failed) && data.failed.length > 0) {
         const succeededCount = Array.isArray(data.succeeded) ? data.succeeded.length : 0;
-        alert(
+        await notifyError(
           `${succeededCount} kayıt işlendi, ${data.failed.length} kayıt başarısız oldu:\n` +
             data.failed.map((f: { message: string }) => `- ${f.message}`).join("\n"),
+          "Kısmi başarı",
         );
       }
       resetSelection();

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { confirmDelete, notifyError } from "@/lib/ui/sweetalert";
 import { tr } from "@/lib/i18n/tr";
 
 interface Props {
@@ -12,42 +13,39 @@ interface Props {
 
 export function OrderActions({ orderId, status, canEdit }: Props) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function advance() {
     setBusy(true);
-    setError(null);
     const res = await fetch(`/api/orders/${orderId}/advance`, { method: "POST" });
     const body = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      setError(body.error ?? tr.common.error);
+      await notifyError(body.error ?? tr.common.error);
       return;
     }
     router.refresh();
   }
 
   async function cancelOrder() {
-    const reason = window.prompt(tr.order.cancelReasonPrompt);
-    if (!reason) return;
+    const ok = await confirmDelete("Bu siparişi silmek istediğinize emin misiniz?");
+    if (!ok) return;
     setBusy(true);
-    setError(null);
     const res = await fetch(`/api/orders/${orderId}/cancel`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify({ reason: tr.common.autoDeleteReason }),
     });
     const body = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      setError(body.error ?? tr.common.error);
+      await notifyError(body.error ?? tr.common.error);
       return;
     }
     router.refresh();
   }
 
-  if (!canEdit) return error ? <p className="text-sm text-red-600">{error}</p> : null;
+  if (!canEdit) return null;
 
   const canAdvance = status !== "COMPLETED" && status !== "CANCELLED";
   const canCancel = status !== "COMPLETED" && status !== "CANCELLED";
@@ -72,7 +70,6 @@ export function OrderActions({ orderId, status, canEdit }: Props) {
           {tr.order.actions.cancel}
         </button>
       )}
-      {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );
 }

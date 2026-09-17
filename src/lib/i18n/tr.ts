@@ -11,6 +11,11 @@ export const tr = {
     cancel: "Vazgeç",
     loading: "Yükleniyor…",
     error: "Bir hata oluştu",
+    delete: "Sil",
+    /** Sipariş/tahsilat "silme" arayüzde tek onayla çalışır (bkz. RowDeleteButton), ama
+     *  bu kayıtlar iş kuralı gereği (TH-08, §6) gerçekte silinmez — durumu iptale çevrilir
+     *  ve işlem geçmişine bu sabit gerekçe yazılır. Kullanıcıdan gerekçe İSTENMEZ. */
+    autoDeleteReason: "Kullanıcı arayüzünden silindi.",
   },
   auth: {
     login: "Giriş Yap",
@@ -187,8 +192,7 @@ export const tr = {
     edit: "Düzenle",
     searchPlaceholder: "Sipariş no veya müşteri ara…",
     status: { CONFIRMED: "Onaylandı", PREPARING: "Hazırlanıyor", DELIVERED: "Teslim Edildi", COMPLETED: "Tamamlandı", CANCELLED: "İptal" },
-    actions: { advance: "Sonraki Aşama", cancel: "İptal Et" },
-    cancelReasonPrompt: "İptal gerekçesi",
+    actions: { advance: "Sonraki Aşama", cancel: "Sil" },
     empty: "Sipariş bulunamadı.",
     paymentStatus: { total: "Toplam", collected: "Tahsil Edilen", remaining: "Kalan", overdue: "Vadesi Geçmiş" },
     paymentSchedule: "Ödeme Planı",
@@ -211,10 +215,9 @@ export const tr = {
     method: { CASH: "Nakit", BANK_TRANSFER: "Havale/EFT", CREDIT_CARD: "Kredi Kartı", CHECK: "Çek" },
     isRefund: "İade kaydı (negatif tutar)",
     cancelled: "İptal Edildi",
-    cancelAction: "İptal Et",
-    cancelReasonPrompt: "İptal gerekçesi",
-    bulkCancel: "Seçilenleri İptal Et",
-    bulkCancelConfirm: "{n} tahsilatı iptal etmek istediğinize emin misiniz?",
+    cancelAction: "Sil",
+    bulkCancel: "Seçilenleri Sil",
+    bulkCancelConfirm: "{n} tahsilatı silmek istediğinize emin misiniz?",
     export: "Excel'e Aktar",
     empty: "Tahsilat bulunamadı.",
     overdueTitle: "Vadesi Geçmiş Alacaklar",

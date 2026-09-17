@@ -8,7 +8,7 @@ import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge } from "@/components/ui/badge";
 import { PaymentFilterBar } from "./_components/payment-filter-bar";
 import { BulkActionBar } from "@/components/ui/bulk-action-bar";
-import { RowCancelButton } from "@/components/ui/row-cancel-button";
+import { RowDeleteButton } from "@/components/ui/row-delete-button";
 
 export default async function TahsilatlarPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -86,8 +86,7 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
               endpoint: "/api/payments/bulk-cancel",
               variant: "danger",
               confirmMessage: tr.payment.bulkCancelConfirm,
-              requireReason: true,
-              reasonLabel: tr.payment.cancelReasonPrompt,
+              extraBody: { reason: tr.common.autoDeleteReason },
             },
           ]}
         />
@@ -139,7 +138,13 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
                 {canCancel && (
                   <td className="px-4 py-3">
                     {!p.isCancelled && (
-                      <RowCancelButton endpoint={`/api/payments/${p.id}/cancel`} reasonPrompt={tr.payment.cancelReasonPrompt} label={tr.payment.cancelAction} />
+                      <RowDeleteButton
+                        endpoint={`/api/payments/${p.id}/cancel`}
+                        method="POST"
+                        body={{ reason: tr.common.autoDeleteReason }}
+                        confirmMessage="Bu tahsilatı silmek istediğinize emin misiniz?"
+                        label={tr.payment.cancelAction}
+                      />
                     )}
                   </td>
                 )}

@@ -1,3 +1,7 @@
+/* Tüm onay/uyarı diyalogları SweetAlert2 ile gösterilir — bkz. src/lib/ui/sweetalert.ts.
+   CSS @import kuralı spesifikasyon gereği dosyanın en başında olmalı. */
+@import "sweetalert2/dist/sweetalert2.min.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

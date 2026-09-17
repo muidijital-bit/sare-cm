@@ -8,7 +8,7 @@ import { getRequiredScope } from "@/lib/auth/rbac";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, ORDER_STATUS_COLORS } from "@/components/ui/badge";
 import { OrderFilterBar } from "./_components/order-filter-bar";
-import { RowCancelButton } from "@/components/ui/row-cancel-button";
+import { RowDeleteButton } from "@/components/ui/row-delete-button";
 
 export default async function SiparislerPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -96,7 +96,13 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
                           </Link>
                         )}
                         {canAdvanceOrCancel && (
-                          <RowCancelButton endpoint={`/api/orders/${o.id}/cancel`} reasonPrompt={tr.order.cancelReasonPrompt} label={tr.order.actions.cancel} />
+                          <RowDeleteButton
+                            endpoint={`/api/orders/${o.id}/cancel`}
+                            method="POST"
+                            body={{ reason: tr.common.autoDeleteReason }}
+                            confirmMessage={`"${o.number}" numaralı siparişi silmek istediğinize emin misiniz?`}
+                            label={tr.order.actions.cancel}
+                          />
                         )}
                       </div>
                     </td>
