@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { tr } from "@/lib/i18n/tr";
 
 export default function GirisPage() {
@@ -96,6 +97,12 @@ export default function GirisPage() {
             {loading ? tr.common.loading : tr.auth.login}
           </button>
         </form>
+
+        <p className="text-center text-sm">
+          <Link href="/sifremi-unuttum" className="text-brand-700 hover:underline">
+            {tr.passwordReset.forgotLink}
+          </Link>
+        </p>
       </div>
     </main>
   );
