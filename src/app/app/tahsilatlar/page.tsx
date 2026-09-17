@@ -6,6 +6,8 @@ import { listPaymentsQuerySchema } from "@/lib/validation/payment";
 import { getRequiredScope } from "@/lib/auth/rbac";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge } from "@/components/ui/badge";
+import { PaymentFilterBar } from "./_components/payment-filter-bar";
+import { BulkActionBar } from "@/components/ui/bulk-action-bar";
 
 export default async function TahsilatlarPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -22,17 +24,30 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canCreate = !!getRequiredScope(session.role, "payment", "create");
+  const canCancel = !!getRequiredScope(session.role, "payment", "delete");
+  const canExport = !!getRequiredScope(session.role, "payment", "export");
   const overdue = overdueResult.ok ? overdueResult.data : [];
+  const exportQuery = new URLSearchParams(searchParams as Record<string, string>).toString();
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold text-gray-900">{tr.payment.title}</h1>
-        {canCreate && (
-          <Link href="/app/tahsilatlar/yeni" className="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
-            + {tr.payment.new}
-          </Link>
-        )}
+        <div className="flex items-center gap-3">
+          {canExport && (
+            <a
+              href={`/api/payments/export${exportQuery ? `?${exportQuery}` : ""}`}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              {tr.payment.export}
+            </a>
+          )}
+          {canCreate && (
+            <Link href="/app/tahsilatlar/yeni" className="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
+              + {tr.payment.new}
+            </Link>
+          )}
+        </div>
       </div>
 
       {overdue.length > 0 && (
@@ -56,10 +71,36 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
         </div>
       )}
 
+      <PaymentFilterBar />
+
+      {canCancel && (
+        <BulkActionBar
+          rowSelector="row-select-payments"
+          selectAllSelector="row-select-all-payments"
+          entityLabel="tahsilat"
+          actions={[
+            {
+              key: "cancel",
+              label: tr.payment.bulkCancel,
+              endpoint: "/api/payments/bulk-cancel",
+              variant: "danger",
+              confirmMessage: tr.payment.bulkCancelConfirm,
+              requireReason: true,
+              reasonLabel: tr.payment.cancelReasonPrompt,
+            },
+          ]}
+        />
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
             <tr>
+              {canCancel && (
+                <th className="w-8 px-4 py-3">
+                  <input type="checkbox" className="row-select-all-payments" aria-label="Tümünü seç" />
+                </th>
+              )}
               <th className="px-4 py-3">{tr.payment.fields.paidAt}</th>
               <th className="px-4 py-3">{tr.document.customer}</th>
               <th className="px-4 py-3">{tr.payment.fields.method}</th>
@@ -70,13 +111,18 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
           <tbody className="divide-y divide-gray-100">
             {items.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                   {tr.payment.empty}
                 </td>
               </tr>
             )}
             {items.map((p) => (
               <tr key={p.id} className="hover:bg-gray-50">
+                {canCancel && (
+                  <td className="px-4 py-3">
+                    <input type="checkbox" className="row-select-payments" data-id={p.id} disabled={p.isCancelled} />
+                  </td>
+                )}
                 <td className="px-4 py-3">
                   <Link href={`/app/tahsilatlar/${p.id}`} className="font-medium text-gray-900 hover:underline">
                     {formatDateTR(new Date(p.paidAt))}

@@ -28,7 +28,8 @@
 | Kullanıcı davet akışı (rol, son-Sahip koruması, paket limiti) | ✅ |
 | Şifre sıfırlama | ✅ |
 | Platform paneli (şirket/paket oluşturma, askıya alma) | ✅ |
-| **Kapsam dışı / eksik** | Excel içe-dışa aktarma, dosya eki yükleme, e-posta gönderimi (davet/sıfırlama linkleri UI'da gösteriliyor), PF-05 (abonelik bitişi yaklaşanlar), PF-07 (destek erişimi), PF-08 (süper admin 2FA), gerçek deploy |
+| Tablo iyileştirmeleri (filtreleme, toplu seçme/silme/iptal, Excel/CSV dışa aktarma) | ✅ |
+| **Kapsam dışı / eksik** | Dosya eki yükleme, e-posta gönderimi (davet/sıfırlama linkleri UI'da gösteriliyor), PF-05 (abonelik bitişi yaklaşanlar), PF-07 (destek erişimi), PF-08 (süper admin 2FA), gerçek deploy |
 
 ## Klasör Yapısı
 
@@ -113,6 +114,7 @@ npx tsx scripts/verify-company-settings.ts     # Şirket Ayarları
 npx tsx scripts/verify-user-invite.ts          # Kullanıcı davet akışı
 npx tsx scripts/verify-password-reset.ts       # Şifre sıfırlama
 npx tsx scripts/verify-platform.ts             # Platform paneli
+npx tsx scripts/verify-table-actions.ts        # Toplu sil/iptal + Excel/CSV dışa aktarma
 ```
 
 `npx tsc --noEmit`, `npx next lint`, `npx next build` her zaman temiz tutulur.

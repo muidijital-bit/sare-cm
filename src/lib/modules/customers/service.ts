@@ -311,6 +311,21 @@ export async function deleteCustomer(session: TenantSession, id: string): Promis
   });
 }
 
+/** Toplu silme — her kayıt için tek tek deleteCustomer() iş kurallarını (bağlı belge kontrolü, sahiplik) uygular. */
+export async function bulkDeleteCustomers(
+  session: TenantSession,
+  ids: string[],
+): Promise<{ succeeded: string[]; failed: { id: string; message: string }[] }> {
+  const succeeded: string[] = [];
+  const failed: { id: string; message: string }[] = [];
+  for (const id of ids) {
+    const res = await deleteCustomer(session, id);
+    if (res.ok) succeeded.push(id);
+    else failed.push({ id, message: res.message });
+  }
+  return { succeeded, failed };
+}
+
 /** MC-07/MC-08: Görüşme kaydı + hatırlatma. */
 export async function createActivity(
   session: TenantSession,

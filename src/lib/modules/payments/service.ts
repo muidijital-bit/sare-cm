@@ -145,6 +145,67 @@ export async function cancelPayment(session: TenantSession, id: string, reason: 
   });
 }
 
+/** Toplu iptal — her kayıt için tek tek cancelPayment() iş kurallarını uygular, sonucu özetler. */
+export async function bulkCancelPayments(
+  session: TenantSession,
+  ids: string[],
+  reason: string,
+): Promise<{ succeeded: string[]; failed: { id: string; message: string }[] }> {
+  const succeeded: string[] = [];
+  const failed: { id: string; message: string }[] = [];
+  for (const id of ids) {
+    const res = await cancelPayment(session, id, reason);
+    if (res.ok) succeeded.push(id);
+    else failed.push({ id, message: res.message });
+  }
+  return { succeeded, failed };
+}
+
+export interface PaymentExportRow {
+  paidAt: Date;
+  customerTitle: string;
+  method: string;
+  accountName: string;
+  amount: number;
+  isCancelled: boolean;
+  reference: string | null;
+  note: string | null;
+}
+
+/** Dışa aktarma (Excel/CSV) — listedekiyle AYNI filtreleri kullanır, sayfalama olmadan (üst sınır: 5000 satır). */
+export async function exportPayments(session: TenantSession, params: Omit<ListParams, "page" | "pageSize">): Promise<ServiceResult<PaymentExportRow[]>> {
+  if (!getRequiredScope(session.role, "payment", "export")) return forbidden();
+
+  return withTenant(session.companyId, async (tx) => {
+    const where: Prisma.PaymentWhereInput = {
+      ...(params.customerId ? { customerId: params.customerId } : {}),
+      ...(params.method ? { method: params.method as Prisma.EnumPaymentMethodFilter["equals"] } : {}),
+      ...(params.q ? { customer: { title: { contains: params.q, mode: "insensitive" } } } : {}),
+    };
+
+    const rows = await tx.payment.findMany({
+      where,
+      orderBy: { paidAt: "desc" },
+      take: 5000,
+      include: { customer: { select: { title: true } }, account: { select: { name: true } } },
+    });
+
+    return {
+      ok: true as const,
+      data: rows.map((r) => ({
+        paidAt: r.paidAt,
+        customerTitle: r.customer.title,
+        method: r.method,
+        accountName: r.account.name,
+        amount: Number(r.amount),
+        isCancelled: r.isCancelled,
+        reference: r.reference,
+        note: r.note,
+      })),
+    };
+  });
+}
+
 export interface OverdueReceivable {
   orderId: string;
   orderNumber: string;

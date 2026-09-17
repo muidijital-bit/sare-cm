@@ -8,6 +8,7 @@ import { getRequiredScope } from "@/lib/auth/rbac";
 import { tr } from "@/lib/i18n/tr";
 import { Badge, CUSTOMER_STATUS_COLORS } from "@/components/ui/badge";
 import { CustomerFilterBar } from "./_components/customer-filter-bar";
+import { BulkActionBar } from "@/components/ui/bulk-action-bar";
 
 export default async function MusterilerPage({
   searchParams,
@@ -47,6 +48,7 @@ export default async function MusterilerPage({
 
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const canDelete = !!getRequiredScope(session.role, "customer", "delete");
 
   return (
     <div>
@@ -66,10 +68,32 @@ export default async function MusterilerPage({
         users={users.map((m) => ({ id: m.user.id, name: m.user.name }))}
       />
 
+      {canDelete && (
+        <BulkActionBar
+          rowSelector="row-select-customers"
+          selectAllSelector="row-select-all-customers"
+          entityLabel="müşteri"
+          actions={[
+            {
+              key: "delete",
+              label: tr.customer.bulkDelete,
+              endpoint: "/api/customers/bulk-delete",
+              variant: "danger",
+              confirmMessage: tr.customer.bulkDeleteConfirm,
+            },
+          ]}
+        />
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
             <tr>
+              {canDelete && (
+                <th className="w-8 px-4 py-3">
+                  <input type="checkbox" className="row-select-all-customers" aria-label="Tümünü seç" />
+                </th>
+              )}
               <th className="px-4 py-3">{tr.customer.fields.title}</th>
               <th className="px-4 py-3">{tr.customer.fields.type}</th>
               <th className="px-4 py-3">{tr.customer.fields.status}</th>
@@ -80,13 +104,18 @@ export default async function MusterilerPage({
           <tbody className="divide-y divide-gray-100">
             {items.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                   {tr.customer.empty}
                 </td>
               </tr>
             )}
             {items.map((c) => (
               <tr key={c.id} className="hover:bg-gray-50">
+                {canDelete && (
+                  <td className="px-4 py-3">
+                    <input type="checkbox" className="row-select-customers" data-id={c.id} />
+                  </td>
+                )}
                 <td className="px-4 py-3">
                   <Link href={`/app/musteriler/${c.id}`} className="font-medium text-gray-900 hover:underline">
                     {c.title}

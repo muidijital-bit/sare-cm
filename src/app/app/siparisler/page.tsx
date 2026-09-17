@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
+import { withTenant } from "@/lib/db/tenant-context";
 import { listOrders } from "@/lib/modules/orders/service";
 import { listOrdersQuerySchema } from "@/lib/validation/order";
 import { getRequiredScope } from "@/lib/auth/rbac";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, ORDER_STATUS_COLORS } from "@/components/ui/badge";
+import { OrderFilterBar } from "./_components/order-filter-bar";
 
 export default async function SiparislerPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -16,7 +18,18 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
 
   const parsed = listOrdersQuerySchema.safeParse(searchParams);
   const query = parsed.success ? parsed.data : { page: 1, pageSize: 20 };
-  const result = await listOrders(session, query);
+  const [result, users] = await Promise.all([
+    listOrders(session, query),
+    scope === "all"
+      ? withTenant(session.companyId, (tx) =>
+          tx.membership.findMany({
+            where: { isActive: true },
+            include: { user: { select: { id: true, name: true } } },
+            orderBy: { user: { name: "asc" } },
+          }),
+        )
+      : Promise.resolve([]),
+  ]);
   if (!result.ok) return <p className="text-sm text-red-600">{result.message}</p>;
 
   const { items, total, page, pageSize } = result.data;
@@ -33,6 +46,8 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
           </Link>
         )}
       </div>
+
+      <OrderFilterBar showOwnerFilter={scope === "all"} users={users.map((m) => ({ id: m.user.id, name: m.user.name }))} />
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-200 text-sm">

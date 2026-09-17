@@ -185,6 +185,70 @@ export async function deleteExpense(session: TenantSession, id: string): Promise
   });
 }
 
+/** Toplu silme — her kayıt için tek tek deleteExpense() iş kurallarını uygular, sonucu özetler. */
+export async function bulkDeleteExpenses(
+  session: TenantSession,
+  ids: string[],
+): Promise<{ succeeded: string[]; failed: { id: string; message: string }[] }> {
+  const succeeded: string[] = [];
+  const failed: { id: string; message: string }[] = [];
+  for (const id of ids) {
+    const res = await deleteExpense(session, id);
+    if (res.ok) succeeded.push(id);
+    else failed.push({ id, message: res.message });
+  }
+  return { succeeded, failed };
+}
+
+export interface ExpenseExportRow {
+  spentAt: Date;
+  categoryName: string;
+  vendor: string | null;
+  method: string | null;
+  amount: number;
+  vatAmount: number;
+  note: string | null;
+}
+
+/** Dışa aktarma (Excel/CSV) — listedekiyle AYNI filtreleri kullanır, sayfalama olmadan (üst sınır: 5000 satır). */
+export async function exportExpenses(session: TenantSession, params: Omit<ListParams, "page" | "pageSize">): Promise<ServiceResult<ExpenseExportRow[]>> {
+  if (!getRequiredScope(session.role, "expense", "export")) return forbidden();
+
+  return withTenant(session.companyId, async (tx) => {
+    await generateDueRecurringExpenses(tx, session.companyId);
+
+    const where: Prisma.ExpenseWhereInput = {
+      deletedAt: null,
+      isRecurringTemplate: false,
+      ...(params.categoryId ? { categoryId: params.categoryId } : {}),
+      ...(params.dateFrom || params.dateTo
+        ? { spentAt: { ...(params.dateFrom ? { gte: params.dateFrom } : {}), ...(params.dateTo ? { lte: params.dateTo } : {}) } }
+        : {}),
+      ...(params.q ? { OR: [{ vendor: { contains: params.q, mode: "insensitive" } }, { note: { contains: params.q, mode: "insensitive" } }] } : {}),
+    };
+
+    const rows = await tx.expense.findMany({
+      where,
+      orderBy: { spentAt: "desc" },
+      take: 5000,
+      include: { category: { select: { name: true } } },
+    });
+
+    return {
+      ok: true as const,
+      data: rows.map((r) => ({
+        spentAt: r.spentAt,
+        categoryName: r.category.name,
+        vendor: r.vendor,
+        method: r.method,
+        amount: Number(r.amount),
+        vatAmount: Number(r.vatAmount),
+        note: r.note,
+      })),
+    };
+  });
+}
+
 export interface CategoryReportRow {
   categoryId: string;
   categoryName: string;

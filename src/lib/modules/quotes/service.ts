@@ -255,6 +255,43 @@ async function transitionStatus(
   });
 }
 
+/**
+ * Yalnızca TASLAK teklifler silinebilir — gönderilmiş/kabul edilmiş bir teklif işlem
+ * geçmişinin ve (varsa) sipariş bağlantısının bir parçasıdır, silinmez (bkz. §6 durum
+ * makinesi). Diğer durumlar için "sil" yerine ilgili geçiş (red/süre doldu) kullanılır.
+ */
+export async function deleteQuote(session: TenantSession, id: string): Promise<ServiceResult<{ id: string }>> {
+  const scope = getRequiredScope(session.role, "quote", "delete");
+  if (!scope) return forbidden();
+
+  return withTenant(session.companyId, async (tx) => {
+    const existing = await tx.quote.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) return notFound();
+    if (scope === "own" && existing.ownerUserId !== session.userId) return forbidden();
+    if (existing.status !== "DRAFT") return conflict("Yalnızca taslak teklifler silinebilir.");
+
+    await tx.quote.update({ where: { id }, data: { deletedAt: new Date() } });
+    await writeAuditLog(tx, { companyId: session.companyId, userId: session.userId, action: "DELETE", entityType: "quote", entityId: id });
+
+    return { ok: true as const, data: { id } };
+  });
+}
+
+/** Toplu silme — her kayıt için tek tek deleteQuote() iş kurallarını uygular, sonucu özetler. */
+export async function bulkDeleteQuotes(
+  session: TenantSession,
+  ids: string[],
+): Promise<{ succeeded: string[]; failed: { id: string; message: string }[] }> {
+  const succeeded: string[] = [];
+  const failed: { id: string; message: string }[] = [];
+  for (const id of ids) {
+    const res = await deleteQuote(session, id);
+    if (res.ok) succeeded.push(id);
+    else failed.push({ id, message: res.message });
+  }
+  return { succeeded, failed };
+}
+
 /** TK-06: taslak → gönderildi */
 export const sendQuote = (session: TenantSession, id: string) => transitionStatus(session, id, ["DRAFT"], "SENT");
 /** TK-06: gönderildi → kabul */
