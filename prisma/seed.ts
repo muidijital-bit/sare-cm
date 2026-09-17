@@ -59,10 +59,10 @@ async function main() {
       where: { email: "sare@demo.test" },
       // Görünen ad "Demo Sahip" gibi kalmasın diye re-seed'de de düzeltilir — giriş bilgileri
       // (e-posta/şifre) sabit kalır, yalnızca kullanıcıya gösterilen ad güncellenir.
-      update: { name: "Merve Kaplan" },
+      update: { name: "Mehmet Yavaş" },
       create: {
         email: "sare@demo.test",
-        name: "Merve Kaplan",
+        name: "Mehmet Yavaş",
         passwordHash: ownerPasswordHash,
         isActive: true,
       },
