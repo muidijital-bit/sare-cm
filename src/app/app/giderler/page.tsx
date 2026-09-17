@@ -71,7 +71,7 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
         </div>
       )}
 
-      <ExpenseFilterBar categories={categories} />
+      <ExpenseFilterBar categories={categories} rowCount={items.length} />
 
       {canDelete && (
         <BulkActionBar
@@ -115,7 +115,11 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
               </tr>
             )}
             {items.map((e) => (
-              <tr key={e.id} className="hover:bg-gray-50">
+              <tr
+                key={e.id}
+                className="searchable-row-expenses hover:bg-gray-50"
+                data-search={[e.category.name, e.vendor].filter(Boolean).join(" ")}
+              >
                 {canDelete && (
                   <td className="px-4 py-3">
                     <input type="checkbox" className="row-select-expenses" data-id={e.id} />

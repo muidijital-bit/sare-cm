@@ -1,80 +1,16 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { ROUTE_LOADING_EVENT } from "@/lib/ui/route-loading";
+import { useNavigationPending } from "@/lib/ui/navigation-pending";
 
 /**
  * Sayfa geçişlerinde İÇERİĞİ KALDIRMADAN üstüne yarı saydam siyah bir katman + beyaz
- * spinner koyar. Next.js'in `loading.tsx` mekanizması Suspense fallback'i olduğu için
- * eski içeriği DOM'dan söküp gri bir ekran gösteriyordu; kullanıcı deneyimi olarak
- * istenen "sayfa kalsın, üzeri kararsın" davranışı ancak bunun gibi kendi pending
- * göstergemizle mümkün (bkz. app/loading.tsx artık görsel olarak boş).
- *
- * Nasıl çalışır:
- * - `<Link>` tıklamaları anchor yakalayıcısıyla (olay delegasyonu) anında algılanır.
- * - Programatik `router.push()` çağrıları `startRouteLoading()` ile aynı katmanı açar.
- * - URL (pathname + query) değiştiğinde yeni sayfa render edilmiş sayılır ve katman kapanır.
+ * spinner koyar. `isPending`, NavigationPendingProvider'dan (bkz. src/lib/ui/navigation-pending.tsx)
+ * gelir — React'ın kendi `useTransition()` durumuna dayanır, tıklama tahminine değil.
  */
 export function RouteLoadingOverlay() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [pending, setPending] = useState(false);
+  const { isPending } = useNavigationPending();
 
-  const currentKey = `${pathname}?${searchParams.toString()}`;
-  const lastKeyRef = useRef(currentKey);
-
-  // Yeni rota geldiğinde katmanı kapat.
-  useEffect(() => {
-    if (lastKeyRef.current !== currentKey) {
-      lastKeyRef.current = currentKey;
-      setPending(false);
-    }
-  }, [currentKey]);
-
-  useEffect(() => {
-    function onAnchorClick(e: MouseEvent) {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const anchor = (e.target as HTMLElement | null)?.closest?.("a");
-      if (!anchor) return;
-      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
-
-      const href = anchor.getAttribute("href");
-      if (!href || href.startsWith("#")) return;
-
-      let url: URL;
-      try {
-        url = new URL(href, window.location.href);
-      } catch {
-        return;
-      }
-      if (url.origin !== window.location.origin) return;
-      // Aynı sayfaya tıklandıysa gösterme.
-      if (`${url.pathname}?${url.searchParams.toString()}` === currentKey) return;
-
-      setPending(true);
-    }
-
-    function onManualStart() {
-      setPending(true);
-    }
-
-    document.addEventListener("click", onAnchorClick);
-    window.addEventListener(ROUTE_LOADING_EVENT, onManualStart);
-    return () => {
-      document.removeEventListener("click", onAnchorClick);
-      window.removeEventListener(ROUTE_LOADING_EVENT, onManualStart);
-    };
-  }, [currentKey]);
-
-  // Güvenlik ağı: beklenmeyen bir durumda katman sonsuza kadar açık kalmasın.
-  useEffect(() => {
-    if (!pending) return;
-    const timer = setTimeout(() => setPending(false), 15_000);
-    return () => clearTimeout(timer);
-  }, [pending]);
-
-  if (!pending) return null;
+  if (!isPending) return null;
 
   return (
     <div

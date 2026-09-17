@@ -53,7 +53,7 @@ export default async function TekliflerPage({ searchParams }: { searchParams: Re
         )}
       </div>
 
-      <QuoteFilterBar showOwnerFilter={scope === "all"} users={users.map((m) => ({ id: m.user.id, name: m.user.name }))} />
+      <QuoteFilterBar showOwnerFilter={scope === "all"} users={users.map((m) => ({ id: m.user.id, name: m.user.name }))} rowCount={items.length} />
 
       {canDelete && (
         <BulkActionBar
@@ -103,7 +103,11 @@ export default async function TekliflerPage({ searchParams }: { searchParams: Re
               const rowCanEdit = isDraft && !!editScope && (editScope === "all" || q.ownerUserId === session.userId);
               const rowCanDelete = isDraft && !!deleteScope && (deleteScope === "all" || q.ownerUserId === session.userId);
               return (
-                <tr key={q.id} className="hover:bg-gray-50">
+                <tr
+                  key={q.id}
+                  className="searchable-row-quotes hover:bg-gray-50"
+                  data-search={[q.number, q.customer.title, tr.quote.status[q.status]].join(" ")}
+                >
                   {canDelete && (
                     <td className="px-4 py-3">
                       <input

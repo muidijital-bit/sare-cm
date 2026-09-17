@@ -72,7 +72,7 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
         </div>
       )}
 
-      <PaymentFilterBar />
+      <PaymentFilterBar rowCount={items.length} />
 
       {canCancel && (
         <BulkActionBar
@@ -118,7 +118,11 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
               </tr>
             )}
             {items.map((p) => (
-              <tr key={p.id} className="hover:bg-gray-50">
+              <tr
+                key={p.id}
+                className="searchable-row-payments hover:bg-gray-50"
+                data-search={[p.customer.title, tr.payment.method[p.method], p.account.name].join(" ")}
+              >
                 {canCancel && (
                   <td className="px-4 py-3">
                     <input type="checkbox" className="row-select-payments" data-id={p.id} disabled={p.isCancelled} />

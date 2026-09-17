@@ -49,7 +49,7 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
         )}
       </div>
 
-      <OrderFilterBar showOwnerFilter={scope === "all"} users={users.map((m) => ({ id: m.user.id, name: m.user.name }))} />
+      <OrderFilterBar showOwnerFilter={scope === "all"} users={users.map((m) => ({ id: m.user.id, name: m.user.name }))} rowCount={items.length} />
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -75,7 +75,11 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
               const rowCanEdit = !!editScope && (editScope === "all" || o.ownerUserId === session.userId);
               const canAdvanceOrCancel = rowCanEdit && o.status !== "COMPLETED" && o.status !== "CANCELLED";
               return (
-                <tr key={o.id} className="hover:bg-gray-50">
+                <tr
+                  key={o.id}
+                  className="searchable-row-orders hover:bg-gray-50"
+                  data-search={[o.number, o.customer.title, tr.order.status[o.status]].join(" ")}
+                >
                   <td className="px-4 py-3">
                     <Link href={`/app/siparisler/${o.id}`} className="font-medium text-gray-900 hover:underline">
                       {o.number}
