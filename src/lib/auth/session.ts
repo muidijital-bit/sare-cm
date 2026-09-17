@@ -1,8 +1,20 @@
 import { cache } from "react";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth/options";
-import { withTenantRead, InvalidCompanyIdError } from "@/lib/db/tenant-context";
+import { prisma } from "@/lib/db/prisma";
+import { InvalidCompanyIdError } from "@/lib/db/tenant-context";
 import type { MembershipRole } from "@/lib/auth/rbac";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+interface MembershipRow {
+  id: string;
+  role: MembershipRole;
+  company_id: string;
+  company_name: string;
+  company_status: "TRIAL" | "ACTIVE" | "SUSPENDED";
+}
 
 export interface TenantSession {
   userId: string;
@@ -38,34 +50,47 @@ export const getTenantSession = cache(async function getTenantSession(): Promise
   // RLS'e tabi bir tabloyu (`memberships`) sorguladığımız için `withTenant` ile bağlam
   // set edilir — hedef companyId zaten `session.activeCompanyId` olduğundan, bu hem
   // RLS'i doğru şekilde tatmin eder hem de erişimi tam olarak o şirketle sınırlar.
-  let membership;
+  if (!UUID_RE.test(session.activeCompanyId)) return null; // bozuk/uydurma companyId
+
+  // PERFORMANS — KÖK NEDEN DÜZELTMESİ: Prisma'nın interactive/array $transaction'ı
+  // BEGIN/COMMIT için AYRI wire round-trip'leri gerektiriyor (Neon'un pooled endpoint'inde
+  // ölçüldü: ~1,4-2sn — bkz. git geçmişi). Postgres'te HER TEK statement kendi implicit
+  // transaction'ında çalışır; `set_config(..., true)` bu yüzden AYRI bir BEGIN olmadan da
+  // "local" (yalnızca bu statement) olarak doğru çalışır. set_config + gerçek sorgu TEK
+  // CTE'li raw SQL statement'ında birleştirilince RLS güvenliği bozulmadan (bağlam
+  // transaction bitince otomatik temizlenir, havuza sızmaz) TEK round-trip'e iner —
+  // ölçülen: ~1,4sn → ~200ms (bkz. scripts/measure-latency.ts).
+  let rows: MembershipRow[];
   try {
-    // Tek sorgu + tek round-trip (withTenantRead): bu fonksiyon HER istekte çalıştığı için
-    // interactive transaction'ın 4 round-trip'i doğrudan sayfa açılış süresine biniyordu.
-    [membership] = await withTenantRead(session.activeCompanyId, (db) => [
-      db.membership.findFirst({
-        where: {
-          userId: session.user.id,
-          companyId: session.activeCompanyId!,
-          isActive: true,
-          company: { deletedAt: null },
-        },
-        include: { company: { select: { status: true, name: true } } },
-      }),
-    ]);
+    rows = await prisma.$queryRaw<MembershipRow[]>(Prisma.sql`
+      WITH _ctx AS (
+        SELECT set_config('app.current_company_id', ${session.activeCompanyId}, true) AS a,
+               set_config('app.bypass_rls', 'off', true) AS b
+      )
+      SELECT m.id, m.role::text AS role, m.company_id, c.name AS company_name, c.status::text AS company_status
+      FROM memberships m
+      JOIN companies c ON c.id = m.company_id
+      CROSS JOIN _ctx
+      WHERE m.user_id = ${session.user.id}::uuid
+        AND m.company_id = ${session.activeCompanyId}::uuid
+        AND m.is_active = true
+        AND c.deleted_at IS NULL
+      LIMIT 1
+    `);
   } catch (e) {
-    if (e instanceof InvalidCompanyIdError) return null; // bozuk/uydurma companyId — 401/403'e düşer
+    if (e instanceof InvalidCompanyIdError) return null;
     throw e;
   }
+  const membership = rows[0];
   if (!membership) return null;
 
   return {
     userId: session.user.id,
     userName: session.user.name ?? "",
     userEmail: session.user.email ?? "",
-    companyId: membership.companyId,
-    companyName: membership.company.name,
-    companyStatus: membership.company.status,
+    companyId: membership.company_id,
+    companyName: membership.company_name,
+    companyStatus: membership.company_status,
     role: membership.role,
     membershipCount: session.memberships?.length ?? 1,
   };
