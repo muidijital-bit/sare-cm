@@ -77,6 +77,7 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
         <nav className="space-y-1 px-2 py-3">
           {visibleItems.map((item) => {
             const active = pathname === item.href;
+            const Icon = item.icon;
 
             if (!item.built) {
               return (
@@ -85,7 +86,10 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
                   title="Yakında"
                   className="flex cursor-not-allowed items-center justify-between rounded-md px-3 py-2 text-sm text-brand-400"
                 >
-                  {item.label}
+                  <span className="flex items-center gap-3">
+                    <Icon size={16} className="opacity-50" />
+                    {item.label}
+                  </span>
                   <span className="text-xs">Yakında</span>
                 </span>
               );
@@ -96,10 +100,11 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
                 key={item.key}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className={`block rounded-md px-3 py-2 text-sm font-medium ${
+                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                   active ? "bg-brand-600 text-white" : "text-brand-100 hover:bg-brand-900"
                 }`}
               >
+                <Icon size={16} className={active ? "text-white" : item.accentClass} />
                 {item.label}
               </Link>
             );
