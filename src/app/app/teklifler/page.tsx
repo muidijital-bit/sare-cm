@@ -9,6 +9,7 @@ import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, QUOTE_STATUS_COLORS } from "@/components/ui/badge";
 import { QuoteFilterBar } from "./_components/quote-filter-bar";
 import { BulkActionBar } from "@/components/ui/bulk-action-bar";
+import { RowDeleteButton } from "@/components/ui/row-delete-button";
 
 export default async function TekliflerPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -36,7 +37,10 @@ export default async function TekliflerPage({ searchParams }: { searchParams: Re
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canCreate = !!getRequiredScope(session.role, "quote", "create");
-  const canDelete = !!getRequiredScope(session.role, "quote", "delete");
+  const editScope = getRequiredScope(session.role, "quote", "edit");
+  const deleteScope = getRequiredScope(session.role, "quote", "delete");
+  const canDelete = !!deleteScope;
+  const canShowActions = !!editScope || !!deleteScope;
 
   return (
     <div>
@@ -83,42 +87,61 @@ export default async function TekliflerPage({ searchParams }: { searchParams: Re
               <th className="px-4 py-3">Durum</th>
               <th className="px-4 py-3">{tr.document.validUntil}</th>
               <th className="px-4 py-3 text-right">{tr.document.grandTotal}</th>
+              {canShowActions && <th className="px-4 py-3">İşlemler</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                   {tr.quote.empty}
                 </td>
               </tr>
             )}
-            {items.map((q) => (
-              <tr key={q.id} className="hover:bg-gray-50">
-                {canDelete && (
+            {items.map((q) => {
+              const isDraft = q.status === "DRAFT";
+              const rowCanEdit = isDraft && !!editScope && (editScope === "all" || q.ownerUserId === session.userId);
+              const rowCanDelete = isDraft && !!deleteScope && (deleteScope === "all" || q.ownerUserId === session.userId);
+              return (
+                <tr key={q.id} className="hover:bg-gray-50">
+                  {canDelete && (
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        className="row-select-quotes"
+                        data-id={q.id}
+                        disabled={!isDraft}
+                        title={!isDraft ? tr.quote.bulkDeleteHint : undefined}
+                      />
+                    </td>
+                  )}
                   <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      className="row-select-quotes"
-                      data-id={q.id}
-                      disabled={q.status !== "DRAFT"}
-                      title={q.status !== "DRAFT" ? tr.quote.bulkDeleteHint : undefined}
-                    />
+                    <Link href={`/app/teklifler/${q.id}`} className="font-medium text-gray-900 hover:underline">
+                      {q.number}
+                    </Link>
                   </td>
-                )}
-                <td className="px-4 py-3">
-                  <Link href={`/app/teklifler/${q.id}`} className="font-medium text-gray-900 hover:underline">
-                    {q.number}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{q.customer.title}</td>
-                <td className="px-4 py-3">
-                  <Badge color={QUOTE_STATUS_COLORS[q.status]}>{tr.quote.status[q.status]}</Badge>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{formatDateTR(new Date(q.validUntil))}</td>
-                <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(q.grandTotal))}</td>
-              </tr>
-            ))}
+                  <td className="px-4 py-3 text-gray-600">{q.customer.title}</td>
+                  <td className="px-4 py-3">
+                    <Badge color={QUOTE_STATUS_COLORS[q.status]}>{tr.quote.status[q.status]}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{formatDateTR(new Date(q.validUntil))}</td>
+                  <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(q.grandTotal))}</td>
+                  {canShowActions && (
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        {rowCanEdit && (
+                          <Link href={`/app/teklifler/${q.id}/duzenle`} className="text-xs text-gray-600 hover:underline">
+                            {tr.quote.edit}
+                          </Link>
+                        )}
+                        {rowCanDelete && <RowDeleteButton endpoint={`/api/quotes/${q.id}`} confirmMessage={tr.quote.deleteConfirm} label={tr.quote.delete} />}
+                        {!isDraft && <span className="text-xs text-gray-300">—</span>}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

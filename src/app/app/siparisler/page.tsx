@@ -8,6 +8,7 @@ import { getRequiredScope } from "@/lib/auth/rbac";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, ORDER_STATUS_COLORS } from "@/components/ui/badge";
 import { OrderFilterBar } from "./_components/order-filter-bar";
+import { RowCancelButton } from "@/components/ui/row-cancel-button";
 
 export default async function SiparislerPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -35,6 +36,7 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canCreate = !!getRequiredScope(session.role, "order", "create");
+  const editScope = getRequiredScope(session.role, "order", "edit");
 
   return (
     <div>
@@ -58,31 +60,50 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
               <th className="px-4 py-3">Durum</th>
               <th className="px-4 py-3">{tr.document.dueDate}</th>
               <th className="px-4 py-3 text-right">{tr.document.grandTotal}</th>
+              {!!editScope && <th className="px-4 py-3">İşlemler</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {items.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                   {tr.order.empty}
                 </td>
               </tr>
             )}
-            {items.map((o) => (
-              <tr key={o.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <Link href={`/app/siparisler/${o.id}`} className="font-medium text-gray-900 hover:underline">
-                    {o.number}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{o.customer.title}</td>
-                <td className="px-4 py-3">
-                  <Badge color={ORDER_STATUS_COLORS[o.status]}>{tr.order.status[o.status]}</Badge>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{o.dueDate ? formatDateTR(new Date(o.dueDate)) : "—"}</td>
-                <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(o.grandTotal))}</td>
-              </tr>
-            ))}
+            {items.map((o) => {
+              const rowCanEdit = !!editScope && (editScope === "all" || o.ownerUserId === session.userId);
+              const canAdvanceOrCancel = rowCanEdit && o.status !== "COMPLETED" && o.status !== "CANCELLED";
+              return (
+                <tr key={o.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <Link href={`/app/siparisler/${o.id}`} className="font-medium text-gray-900 hover:underline">
+                      {o.number}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{o.customer.title}</td>
+                  <td className="px-4 py-3">
+                    <Badge color={ORDER_STATUS_COLORS[o.status]}>{tr.order.status[o.status]}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{o.dueDate ? formatDateTR(new Date(o.dueDate)) : "—"}</td>
+                  <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(o.grandTotal))}</td>
+                  {!!editScope && (
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        {rowCanEdit && o.status !== "CANCELLED" && (
+                          <Link href={`/app/siparisler/${o.id}/duzenle`} className="text-xs text-gray-600 hover:underline">
+                            {tr.order.edit}
+                          </Link>
+                        )}
+                        {canAdvanceOrCancel && (
+                          <RowCancelButton endpoint={`/api/orders/${o.id}/cancel`} reasonPrompt={tr.order.cancelReasonPrompt} label={tr.order.actions.cancel} />
+                        )}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

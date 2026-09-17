@@ -9,6 +9,7 @@ import { tr } from "@/lib/i18n/tr";
 import { Badge, CUSTOMER_STATUS_COLORS } from "@/components/ui/badge";
 import { CustomerFilterBar } from "./_components/customer-filter-bar";
 import { BulkActionBar } from "@/components/ui/bulk-action-bar";
+import { RowDeleteButton } from "@/components/ui/row-delete-button";
 
 export default async function MusterilerPage({
   searchParams,
@@ -48,7 +49,10 @@ export default async function MusterilerPage({
 
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const canDelete = !!getRequiredScope(session.role, "customer", "delete");
+  const editScope = getRequiredScope(session.role, "customer", "edit");
+  const deleteScope = getRequiredScope(session.role, "customer", "delete");
+  const canDelete = !!deleteScope;
+  const canShowActions = !!editScope || !!deleteScope;
 
   return (
     <div>
@@ -99,45 +103,62 @@ export default async function MusterilerPage({
               <th className="px-4 py-3">{tr.customer.fields.status}</th>
               <th className="px-4 py-3">{tr.customer.fields.source}</th>
               <th className="px-4 py-3">{tr.customer.fields.tags}</th>
+              {canShowActions && <th className="px-4 py-3">İşlemler</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                   {tr.customer.empty}
                 </td>
               </tr>
             )}
-            {items.map((c) => (
-              <tr key={c.id} className="hover:bg-gray-50">
-                {canDelete && (
+            {items.map((c) => {
+              const rowCanEdit = !!editScope && (editScope === "all" || c.ownerUserId === session.userId);
+              const rowCanDelete = !!deleteScope && (deleteScope === "all" || c.ownerUserId === session.userId);
+              return (
+                <tr key={c.id} className="hover:bg-gray-50">
+                  {canDelete && (
+                    <td className="px-4 py-3">
+                      <input type="checkbox" className="row-select-customers" data-id={c.id} />
+                    </td>
+                  )}
                   <td className="px-4 py-3">
-                    <input type="checkbox" className="row-select-customers" data-id={c.id} />
+                    <Link href={`/app/musteriler/${c.id}`} className="font-medium text-gray-900 hover:underline">
+                      {c.title}
+                    </Link>
+                    {c.taxNumber && <p className="text-xs text-gray-400">{c.taxNumber}</p>}
                   </td>
-                )}
-                <td className="px-4 py-3">
-                  <Link href={`/app/musteriler/${c.id}`} className="font-medium text-gray-900 hover:underline">
-                    {c.title}
-                  </Link>
-                  {c.taxNumber && <p className="text-xs text-gray-400">{c.taxNumber}</p>}
-                </td>
-                <td className="px-4 py-3 text-gray-600">{tr.customer.type[c.type]}</td>
-                <td className="px-4 py-3">
-                  <Badge color={CUSTOMER_STATUS_COLORS[c.status]}>{tr.customer.status[c.status]}</Badge>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{c.source?.name ?? "—"}</td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {c.tags.map((t) => (
-                      <Badge key={t.tag.name} color="gray">
-                        {t.tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  <td className="px-4 py-3 text-gray-600">{tr.customer.type[c.type]}</td>
+                  <td className="px-4 py-3">
+                    <Badge color={CUSTOMER_STATUS_COLORS[c.status]}>{tr.customer.status[c.status]}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{c.source?.name ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {c.tags.map((t) => (
+                        <Badge key={t.tag.name} color="gray">
+                          {t.tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </td>
+                  {canShowActions && (
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        {rowCanEdit && (
+                          <Link href={`/app/musteriler/${c.id}/duzenle`} className="text-xs text-gray-600 hover:underline">
+                            {tr.customer.edit}
+                          </Link>
+                        )}
+                        {rowCanDelete && <RowDeleteButton endpoint={`/api/customers/${c.id}`} confirmMessage={tr.customer.deleteConfirm} label={tr.customer.delete} />}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

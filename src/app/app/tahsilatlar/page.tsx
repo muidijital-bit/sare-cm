@@ -8,6 +8,7 @@ import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge } from "@/components/ui/badge";
 import { PaymentFilterBar } from "./_components/payment-filter-bar";
 import { BulkActionBar } from "@/components/ui/bulk-action-bar";
+import { RowCancelButton } from "@/components/ui/row-cancel-button";
 
 export default async function TahsilatlarPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -106,12 +107,13 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
               <th className="px-4 py-3">{tr.payment.fields.method}</th>
               <th className="px-4 py-3">{tr.payment.fields.account}</th>
               <th className="px-4 py-3 text-right">{tr.payment.fields.amount}</th>
+              {canCancel && <th className="px-4 py-3">İşlemler</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                   {tr.payment.empty}
                 </td>
               </tr>
@@ -134,6 +136,13 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
                 <td className={`px-4 py-3 text-right ${Number(p.amount) < 0 ? "text-red-600" : "text-gray-900"}`}>
                   {p.isCancelled && <Badge color="gray">{tr.payment.cancelled}</Badge>} {formatCurrencyTRY(Number(p.amount))}
                 </td>
+                {canCancel && (
+                  <td className="px-4 py-3">
+                    {!p.isCancelled && (
+                      <RowCancelButton endpoint={`/api/payments/${p.id}/cancel`} reasonPrompt={tr.payment.cancelReasonPrompt} label={tr.payment.cancelAction} />
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
