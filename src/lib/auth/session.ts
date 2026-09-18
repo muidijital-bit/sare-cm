@@ -1,20 +1,8 @@
 import { cache } from "react";
 import { getServerSession } from "next-auth";
-import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth/options";
-import { prisma } from "@/lib/db/prisma";
-import { InvalidCompanyIdError } from "@/lib/db/tenant-context";
+import { withTenantRead, InvalidCompanyIdError } from "@/lib/db/tenant-context";
 import type { MembershipRole } from "@/lib/auth/rbac";
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-interface MembershipRow {
-  id: string;
-  role: MembershipRole;
-  company_id: string;
-  company_name: string;
-  company_status: "TRIAL" | "ACTIVE" | "SUSPENDED";
-}
 
 export interface TenantSession {
   userId: string;
@@ -50,47 +38,44 @@ export const getTenantSession = cache(async function getTenantSession(): Promise
   // RLS'e tabi bir tabloyu (`memberships`) sorguladığımız için `withTenant` ile bağlam
   // set edilir — hedef companyId zaten `session.activeCompanyId` olduğundan, bu hem
   // RLS'i doğru şekilde tatmin eder hem de erişimi tam olarak o şirketle sınırlar.
-  if (!UUID_RE.test(session.activeCompanyId)) return null; // bozuk/uydurma companyId
-
-  // PERFORMANS — KÖK NEDEN DÜZELTMESİ: Prisma'nın interactive/array $transaction'ı
-  // BEGIN/COMMIT için AYRI wire round-trip'leri gerektiriyor (Neon'un pooled endpoint'inde
-  // ölçüldü: ~1,4-2sn — bkz. git geçmişi). Postgres'te HER TEK statement kendi implicit
-  // transaction'ında çalışır; `set_config(..., true)` bu yüzden AYRI bir BEGIN olmadan da
-  // "local" (yalnızca bu statement) olarak doğru çalışır. set_config + gerçek sorgu TEK
-  // CTE'li raw SQL statement'ında birleştirilince RLS güvenliği bozulmadan (bağlam
-  // transaction bitince otomatik temizlenir, havuza sızmaz) TEK round-trip'e iner —
-  // ölçülen: ~1,4sn → ~200ms (bkz. scripts/measure-latency.ts).
-  let rows: MembershipRow[];
+  //
+  // GERİ ALINDI (bkz. git geçmişi): burada set_config + sorguyu TEK CTE'li raw SQL
+  // statement'ında birleştirip 4 round-trip'i 1'e indiren bir "hız" denemesi vardı.
+  // CANLI ORTAMDA GERÇEK BİR HATAYA yol açtı — şirket değiştirme akışında bu sorgu
+  // GERÇEKTEN VAR OLAN bir üyelik satırı için boş sonuç döndürdü (JOIN + CROSS JOIN
+  // sırası CTE'nin yan etkisinin satır taramasından ÖNCE görünür olmasını garantilemiyor
+  // — Postgres bunu SQL standardında garanti etmiyor). Sonuç yanlış VERİ SIZINTISI değildi
+  // (RLS "reddet" yönünde başarısız oldu, "izin ver" yönünde değil) ama güvenilmezdi ve bu
+  // tür bir hatanın farklı bir sorgu şeklinde ileride TERSİNE (izin ver yönünde) de
+  // çalışabileceğinin garantisi yok. Bu satırın güvenliği hız kazancından daha önemli —
+  // `withTenantRead` (Prisma'nın gerçek array-transaction'ı, BEGIN/COMMIT ile doğru
+  // sınırlanmış) daha yavaş (~1,3-2sn) ama KANITLANMIŞ doğru.
+  let membership;
   try {
-    rows = await prisma.$queryRaw<MembershipRow[]>(Prisma.sql`
-      WITH _ctx AS (
-        SELECT set_config('app.current_company_id', ${session.activeCompanyId}, true) AS a,
-               set_config('app.bypass_rls', 'off', true) AS b
-      )
-      SELECT m.id, m.role::text AS role, m.company_id, c.name AS company_name, c.status::text AS company_status
-      FROM memberships m
-      JOIN companies c ON c.id = m.company_id
-      CROSS JOIN _ctx
-      WHERE m.user_id = ${session.user.id}::uuid
-        AND m.company_id = ${session.activeCompanyId}::uuid
-        AND m.is_active = true
-        AND c.deleted_at IS NULL
-      LIMIT 1
-    `);
+    [membership] = await withTenantRead(session.activeCompanyId, (db) => [
+      db.membership.findFirst({
+        where: {
+          userId: session.user.id,
+          companyId: session.activeCompanyId!,
+          isActive: true,
+          company: { deletedAt: null },
+        },
+        include: { company: { select: { status: true, name: true } } },
+      }),
+    ]);
   } catch (e) {
-    if (e instanceof InvalidCompanyIdError) return null;
+    if (e instanceof InvalidCompanyIdError) return null; // bozuk/uydurma companyId — 401/403'e düşer
     throw e;
   }
-  const membership = rows[0];
   if (!membership) return null;
 
   return {
     userId: session.user.id,
     userName: session.user.name ?? "",
     userEmail: session.user.email ?? "",
-    companyId: membership.company_id,
-    companyName: membership.company_name,
-    companyStatus: membership.company_status,
+    companyId: membership.companyId,
+    companyName: membership.company.name,
+    companyStatus: membership.company.status,
     role: membership.role,
     membershipCount: session.memberships?.length ?? 1,
   };
