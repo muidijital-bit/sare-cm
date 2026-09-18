@@ -1,60 +1,70 @@
 "use client";
 
 /**
- * Sayfa geçişleri için TEK, paylaşılan yükleniyor sinyali. İki kaynağı birleştirir:
+ * Sayfa geçişleri için TEK, paylaşılan yükleniyor sinyali.
  *
- * 1. `isPending` (React `useTransition`) — sidebar linkleri gibi `navigate()` ile
- *    sarılmış gezinmeler için GÜVENİLİR sinyal: yeni sayfa TAM commit olana kadar `true`
- *    kalır. Önceki yaklaşım (tıklamayı dinleyip pathname değişimini varsaymak) App
- *    Router'da pathname'in tam ne zaman güncellendiğine dair yanlış bir varsayıma
- *    dayanıyordu ve pratikte tetiklenmiyordu (kullanıcı raporu: sidebar'da gezerken gri
- *    ekranda 10sn kalınıyor, hiç loading çıkmıyor).
- * 2. `manualPending` — iki alt kaynağı var: (a) `startRouteLoading()` ile tetiklenen,
- *    `navigate()` kullanmayan yerler (filtre çubukları, tarih seçici gibi düz
- *    `router.push()` çağıran yerler), (b) BU SAĞLAYICININ KENDİSİ dinlediği genel bir
- *    `<a>` tıklama yakalayıcısı — sidebar dışındaki her Link (grid'lerdeki "Düzenle",
- *    sayfalama, "+ Yeni" gibi düzinelerce yer) her birini tek tek `navigate()`'e
- *    sarmaya gerek kalmadan otomatik kapsanır. Bu bayrak, URL (pathname+query) gerçekten
- *    değişip yeni sayfa render olduğunda kapanır.
+ * AÇMA (pending=true): iki kaynak —
+ * 1. Genel `<a>` tıklama yakalayıcısı (sidebar, grid "Düzenle", sayfalama, "+ Yeni" —
+ *    HER Link, tek tek sarmaya gerek kalmadan).
+ * 2. `startRouteLoading()` — Link olmayan, düz `router.push()` çağıran yerler (filtre
+ *    çubukları, tarih seçici).
+ *
+ * KAPATMA (pending=false): SADECE `markLoaded()` — bkz. src/lib/ui/route-loaded-signal.tsx.
+ * Bu, `template.tsx` içinde render edilen bir bileşenin mount effect'inden gelir; Next.js
+ * App Router'da `template.tsx` her navigasyonda YENİDEN mount edilir ve bu mount ancak
+ * yeni sayfanın verisi/render'ı TAMAMLANIP React ağaca commit olduğunda gerçekleşir.
+ *
+ * ÖNCEKİ YAKLAŞIM (pathname/searchParams değişimini izleyip kapatmak, ya da React
+ * useTransition'ın isPending'i) GÜVENİLİR DEĞİLDİ — kullanıcı raporu: "loading veriler
+ * gelmeden kapanıyor, sayfa gri kalıyor". Next 13.5'te `router.push()` bu durumları RSC veri
+ * çekiminin TAM süresiyle senkron tutmuyor. `markLoaded()` buna bağlı değil.
  */
-import { usePathname, useSearchParams } from "next/navigation";
-import { createContext, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, createContext, useContext, type ReactNode } from "react";
 import { ROUTE_LOADING_EVENT } from "./route-loading";
 
 interface NavigationPendingContextValue {
   isPending: boolean;
-  navigate: (fn: () => void) => void;
+  /** Yeni sayfa gerçekten render olup commit olduğunda RouteLoadedSignal tarafından çağrılır. */
+  markLoaded: () => void;
 }
 
 const NavigationPendingContext = createContext<NavigationPendingContextValue | null>(null);
 
+/** Sonsuza kadar açık kalmasın diye güvenlik ağı — gerçek kapatma her zaman markLoaded(). */
+const SAFETY_TIMEOUT_MS = 20_000;
+
 export function NavigationPendingProvider({ children }: { children: ReactNode }) {
-  const [isPending, startTransition] = useTransition();
-  const [manualPending, setManualPending] = useState(false);
+  const [pending, setPending] = useState(false);
+  const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentKey = `${pathname}?${searchParams.toString()}`;
-  const lastKeyRef = useRef(currentKey);
-
-  useEffect(() => {
-    if (lastKeyRef.current !== currentKey) {
-      lastKeyRef.current = currentKey;
-      setManualPending(false);
+  const clearSafetyTimer = useCallback(() => {
+    if (safetyTimerRef.current) {
+      clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
     }
-  }, [currentKey]);
+  }, []);
 
+  const startPending = useCallback(() => {
+    setPending(true);
+    clearSafetyTimer();
+    safetyTimerRef.current = setTimeout(() => setPending(false), SAFETY_TIMEOUT_MS);
+  }, [clearSafetyTimer]);
+
+  const markLoaded = useCallback(() => {
+    clearSafetyTimer();
+    setPending(false);
+  }, [clearSafetyTimer]);
+
+  // Kaynak 2: startRouteLoading() ile tetiklenen manuel sinyal.
   useEffect(() => {
     function onStart() {
-      setManualPending(true);
+      startPending();
     }
     window.addEventListener(ROUTE_LOADING_EVENT, onStart);
     return () => window.removeEventListener(ROUTE_LOADING_EVENT, onStart);
-  }, []);
+  }, [startPending]);
 
-  // Genel yakalayıcı: sidebar dışındaki her <Link> (grid'lerdeki "Düzenle", sayfalama,
-  // "+ Yeni", detay sayfası geri bağlantıları vb.) için otomatik kapsama. Sidebar zaten
-  // kendi navigate()'ini çağırıyor (daha kesin), bu yalnızca DİĞER her şeyi yakalar.
+  // Kaynak 1: genel <a> tıklama yakalayıcısı — sidebar, grid "Düzenle", sayfalama, "+ Yeni".
   useEffect(() => {
     function onAnchorClick(e: MouseEvent) {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -72,31 +82,15 @@ export function NavigationPendingProvider({ children }: { children: ReactNode })
         return;
       }
       if (url.origin !== window.location.origin) return;
-      if (`${url.pathname}?${url.searchParams.toString()}` === currentKey) return;
+      if (`${url.pathname}${url.search}` === `${window.location.pathname}${window.location.search}`) return;
 
-      setManualPending(true);
+      startPending();
     }
     document.addEventListener("click", onAnchorClick);
     return () => document.removeEventListener("click", onAnchorClick);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentKey]);
+  }, [startPending]);
 
-  // Güvenlik ağı: beklenmedik bir durumda katman sonsuza kadar açık kalmasın.
-  useEffect(() => {
-    if (!manualPending) return;
-    const timer = setTimeout(() => setManualPending(false), 15_000);
-    return () => clearTimeout(timer);
-  }, [manualPending]);
-
-  function navigate(fn: () => void) {
-    startTransition(fn);
-  }
-
-  return (
-    <NavigationPendingContext.Provider value={{ isPending: isPending || manualPending, navigate }}>
-      {children}
-    </NavigationPendingContext.Provider>
-  );
+  return <NavigationPendingContext.Provider value={{ isPending: pending, markLoaded }}>{children}</NavigationPendingContext.Provider>;
 }
 
 export function useNavigationPending(): NavigationPendingContextValue {

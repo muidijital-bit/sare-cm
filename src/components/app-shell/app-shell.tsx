@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { MembershipRole } from "@/lib/auth/rbac";
 import { NAV_ITEMS, isNavItemVisible } from "@/lib/nav-items";
-import { useNavigationPending } from "@/lib/ui/navigation-pending";
 import { tr } from "@/lib/i18n/tr";
 
 interface AppShellProps {
@@ -47,21 +46,9 @@ function LogoMark() {
 
 export function AppShell({ companyName, role, userName, userEmail, hasMultipleCompanies, children }: AppShellProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { navigate } = useNavigationPending();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const visibleItems = NAV_ITEMS.filter((item) => isNavItemVisible(role, item));
-
-  function handleNavClick(e: MouseEvent<HTMLAnchorElement>, href: string) {
-    setMobileOpen(false);
-    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    if (href === pathname) return;
-    e.preventDefault();
-    // useTransition ile sarılır: isPending, yeni sayfa TAM commit olana kadar true kalır —
-    // sidebar tıklamasında loading göstergesi artık varsayıma değil buna dayanıyor.
-    navigate(() => router.push(href));
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 lg:flex">
@@ -112,7 +99,7 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
               <Link
                 key={item.key}
                 href={item.href}
-                onClick={(e) => handleNavClick(e, item.href)}
+                onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                   active ? "bg-brand-600 text-white" : "text-brand-100 hover:bg-brand-900"
                 }`}
