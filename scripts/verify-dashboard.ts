@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Dashboard metriklerini (§7) CANLI veritabanına karşı, bilinen test verisiyle doğrular.
  * Çalıştırma: npx tsx scripts/verify-dashboard.ts

@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Platform (süper admin) modülünü — yeni şirket oluşturma, paket, askıya alma —
  * CANLI veritabanına karşı doğrular. Çalıştırma: npx tsx scripts/verify-platform.ts

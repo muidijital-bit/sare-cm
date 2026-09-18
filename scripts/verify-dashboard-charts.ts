@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * §5.9 Dashboard grafik verilerini (getDashboardCharts) CANLI veritabanına karşı,
  * bilinen test verisiyle doğrular. Çalıştırma: npx tsx scripts/verify-dashboard-charts.ts

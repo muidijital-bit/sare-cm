@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Tablo iyileştirmeleri (sil/toplu seçme/dışa aktar) CANLI veritabanına karşı doğrulanır.
  * Çalıştırma: npx tsx scripts/verify-table-actions.ts

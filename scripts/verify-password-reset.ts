@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Şifre sıfırlama akışını (KY-03) CANLI veritabanına karşı doğrular.
  * Çalıştırma: npx tsx scripts/verify-password-reset.ts

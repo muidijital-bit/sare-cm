@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /** Neon'a giden gerçek withTenant() çağrısının süresini ölçer (ısınmış bağlantı). */
 import { prisma } from "../src/lib/db/prisma";
 import { withTenant } from "../src/lib/db/tenant-context";

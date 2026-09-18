@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Gider modülünü CANLI veritabanına karşı doğrular: oluşturma, kategori raporu,
  * tekrarlayan gider şablonundan otomatik üretim (GD-03), yumuşak silme.

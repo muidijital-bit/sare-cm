@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * SUNUM İÇİN GÖSTERİM VERİSİ — kalıcı seed değildir, `prisma/seed.ts`'in bir parçası değildir.
  * Demo şirketi ("Sare Havuz & Spa" olarak yeniden adlandırır) gerçekçi görünen müşteri,

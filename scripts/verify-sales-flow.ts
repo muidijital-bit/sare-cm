@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Teklif → Sipariş → Tahsilat akışını CANLI veritabanına karşı uçtan uca doğrular:
  * teklif oluşturma/hesaplama, durum makinesi (gönder/kabul/red), revizyon, tekliften

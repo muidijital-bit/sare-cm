@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * İşlem geçmişi (audit log) ve MC-10 müşteri bakiye özetini CANLI veritabanına karşı
  * doğrular. Çalıştırma: npx tsx scripts/verify-audit-and-balance.ts

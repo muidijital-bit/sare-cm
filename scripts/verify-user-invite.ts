@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Kullanıcı davet akışını (KY-04..KY-08) CANLI veritabanına karşı doğrular:
  * davet oluşturma, paket limiti, kabul (yeni kullanıcı), rol değiştirme,

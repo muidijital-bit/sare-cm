@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * TEK SEFERLİK kurulum betiği — Neon'un varsayılan sahip rolü (`neondb_owner`)
  * `BYPASSRLS` özniteliğine sahip olduğundan (Neon projelerinde standart davranış),

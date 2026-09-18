@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Müşteri modülünü CANLI veritabanına karşı uçtan uca doğrular: oluşturma (kişiler +
  * etiketlerle), listeleme/arama/filtre, görüntüleme, güncelleme (kişi/etiket farkı),

@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * `scripts/seed-demo-showcase.ts` ile eklenen TÜM sunum verisini geri alır.
  * Yalnızca "DEMO-SUNUM" işaretli kayıtları siler (customer.address / not alanları) —

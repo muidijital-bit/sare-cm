@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Geliştirme ortamı için başlangıç verisi. Çalıştırma: `npm run db:seed`
  * (package.json "prisma.seed" alanı `npx prisma db seed` tarafından da kullanılır).

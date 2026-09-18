@@ -1,3 +1,6 @@
+// .env dosyasını manuel yükler — tsx ile doğrudan çalıştırılan betikler (next dev/build'in aksine) .env'i otomatik okumaz.
+import "dotenv/config";
+
 /**
  * Tek seferlik doğrulama betiği — CANLI Neon veritabanına karşı temel altyapının
  * gerçekten çalıştığını kanıtlar. Kalıcı bir proje betiği değildir; RLS izolasyonunu,
