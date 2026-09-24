@@ -5,6 +5,7 @@ import { withTenant } from "@/lib/db/tenant-context";
 import { listExpenses, getCategoryReport } from "@/lib/modules/expenses/service";
 import { listExpensesQuerySchema } from "@/lib/validation/expense";
 import { getScope } from "@/lib/auth/access";
+import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { DeleteExpenseButton } from "./_components/delete-expense-button";
 import { ExpenseFilterBar } from "./_components/expense-filter-bar";
@@ -15,7 +16,7 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
   if (!session) redirect("/app/sirket-sec");
 
   const scope = getScope(session, "expense", "view");
-  if (!scope) return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
+  if (!scope) return <AccessDenied session={session} module="expense" />;
 
   const parsed = listExpensesQuerySchema.safeParse(searchParams);
   const query = parsed.success ? parsed.data : { page: 1, pageSize: 20 };

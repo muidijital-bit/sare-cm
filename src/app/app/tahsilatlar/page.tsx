@@ -4,6 +4,7 @@ import { getTenantSession } from "@/lib/auth/session";
 import { listPayments, listOverdueReceivables } from "@/lib/modules/payments/service";
 import { listPaymentsQuerySchema } from "@/lib/validation/payment";
 import { getScope } from "@/lib/auth/access";
+import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge } from "@/components/ui/badge";
 import { PaymentFilterBar } from "./_components/payment-filter-bar";
@@ -15,7 +16,7 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
   if (!session) redirect("/app/sirket-sec");
 
   const scope = getScope(session, "payment", "view");
-  if (!scope) return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
+  if (!scope) return <AccessDenied session={session} module="payment" />;
 
   const parsed = listPaymentsQuerySchema.safeParse(searchParams);
   const query = parsed.success ? parsed.data : { page: 1, pageSize: 20 };

@@ -5,6 +5,7 @@ import { withTenant } from "@/lib/db/tenant-context";
 import { listOrders } from "@/lib/modules/orders/service";
 import { listOrdersQuerySchema } from "@/lib/validation/order";
 import { getScope } from "@/lib/auth/access";
+import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, ORDER_STATUS_COLORS } from "@/components/ui/badge";
 import { OrderFilterBar } from "./_components/order-filter-bar";
@@ -15,7 +16,7 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
   if (!session) redirect("/app/sirket-sec");
 
   const scope = getScope(session, "order", "view");
-  if (!scope) return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
+  if (!scope) return <AccessDenied session={session} module="order" />;
 
   const parsed = listOrdersQuerySchema.safeParse(searchParams);
   const query = parsed.success ? parsed.data : { page: 1, pageSize: 20 };

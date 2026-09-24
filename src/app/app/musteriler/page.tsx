@@ -5,6 +5,7 @@ import { withTenant } from "@/lib/db/tenant-context";
 import { listCustomers } from "@/lib/modules/customers/service";
 import { listCustomersQuerySchema } from "@/lib/validation/customer";
 import { getScope } from "@/lib/auth/access";
+import { AccessDenied } from "@/components/ui/access-denied";
 import { tr } from "@/lib/i18n/tr";
 import { Badge, CUSTOMER_STATUS_COLORS } from "@/components/ui/badge";
 import { CustomerFilterBar } from "./_components/customer-filter-bar";
@@ -21,7 +22,7 @@ export default async function MusterilerPage({
 
   const scope = getScope(session, "customer", "view");
   if (!scope) {
-    return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
+    return <AccessDenied session={session} module="customer" />;
   }
 
   const parsedQuery = listCustomersQuerySchema.safeParse(searchParams);

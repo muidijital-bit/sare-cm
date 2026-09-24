@@ -4,6 +4,7 @@ import { withTenant } from "@/lib/db/tenant-context";
 import { listAuditLogs } from "@/lib/modules/audit/service";
 import { listAuditLogsQuerySchema } from "@/lib/validation/audit";
 import { getScope } from "@/lib/auth/access";
+import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatDateTR } from "@/lib/i18n/tr";
 import { AuditFilterBar } from "./_components/audit-filter-bar";
 
@@ -12,7 +13,7 @@ export default async function IslemGecmisiPage({ searchParams }: { searchParams:
   if (!session) redirect("/app/sirket-sec");
 
   const scope = getScope(session, "auditLog", "view");
-  if (!scope) return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
+  if (!scope) return <AccessDenied session={session} module="auditLog" />;
 
   const parsed = listAuditLogsQuerySchema.safeParse(searchParams);
   const query = parsed.success ? parsed.data : { page: 1, pageSize: 30 };

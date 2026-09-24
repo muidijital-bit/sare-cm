@@ -147,6 +147,13 @@ export async function createCustomer(session: TenantSession, input: CustomerInpu
   const ownerUserId = scope === "own" ? session.userId : input.ownerUserId ?? session.userId;
 
   return withTenant(session.companyId, async (tx) => {
+    // Paket limiti (ürün lisansı): silinmemiş müşteri sayısı plan.maxCustomers'a ulaştıysa yeni kayıt açılmaz.
+    const company = await tx.company.findUniqueOrThrow({ where: { id: session.companyId }, select: { plan: { select: { maxCustomers: true, name: true } } } });
+    const customerCount = await tx.customer.count({ where: { companyId: session.companyId, deletedAt: null } });
+    if (customerCount >= company.plan.maxCustomers) {
+      return conflict(`"${company.plan.name}" paketinin müşteri limitine (${company.plan.maxCustomers}) ulaşıldı. Yeni müşteri eklemek için paketinizi yükseltin.`);
+    }
+
     const customer = await tx.customer.create({
       data: {
         companyId: session.companyId,

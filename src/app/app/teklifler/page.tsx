@@ -5,6 +5,7 @@ import { withTenant } from "@/lib/db/tenant-context";
 import { listQuotes } from "@/lib/modules/quotes/service";
 import { listQuotesQuerySchema } from "@/lib/validation/quote";
 import { getScope } from "@/lib/auth/access";
+import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, QUOTE_STATUS_COLORS } from "@/components/ui/badge";
 import { QuoteFilterBar } from "./_components/quote-filter-bar";
@@ -16,7 +17,7 @@ export default async function TekliflerPage({ searchParams }: { searchParams: Re
   if (!session) redirect("/app/sirket-sec");
 
   const scope = getScope(session, "quote", "view");
-  if (!scope) return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
+  if (!scope) return <AccessDenied session={session} module="quote" />;
 
   const parsed = listQuotesQuerySchema.safeParse(searchParams);
   const query = parsed.success ? parsed.data : { page: 1, pageSize: 20 };

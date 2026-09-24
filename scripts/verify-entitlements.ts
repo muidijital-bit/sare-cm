@@ -10,6 +10,7 @@ import { computeEnabledModules } from "../src/lib/modules/entitlements/resolve";
 import { getScope } from "../src/lib/auth/access";
 import { createOrder } from "../src/lib/modules/orders/service";
 import type { TenantSession } from "../src/lib/auth/session";
+import { createCustomer } from "../src/lib/modules/customers/service";
 import { getCompanyModules, setCompanyModule } from "../src/lib/modules/platform/service";
 
 let failures = 0;
@@ -75,6 +76,24 @@ async function main() {
   check("Platform: çekirdek modül kapatılamaz (409)", !core.ok && core.status === 409);
   const bad = await setCompanyModule(admin, company.id, { moduleKey: "olmayan", enabled: true });
   check("Platform: olmayan modül 404", !bad.ok && bad.status === 404);
+
+  // 5) Müşteri limiti: geçici paket (maxCustomers=1) + geçici şirket; sonunda tamamen silinir
+  const tmpPlan = await prisma.plan.create({ data: { name: `__limit_test_${Date.now()}`, maxUsers: 1, maxCustomers: 1, maxStorageMb: 1, price: 0 } });
+  const tmpCompany = await withPlatformBypass((tx) => tx.company.create({ data: { name: "__limit_test__", planId: tmpPlan.id, status: "ACTIVE" } }));
+  try {
+    const limited: TenantSession = { ...base, companyId: tmpCompany.id, companyName: tmpCompany.name, enabledModules: ["*"] };
+    const c1 = await createCustomer(limited, { type: "CORPORATE", title: "Limit Test 1", contacts: [], tags: [] } as never);
+    check("Limit: paket sınırı içinde ilk müşteri oluşur", c1.ok);
+    const c2 = await createCustomer(limited, { type: "CORPORATE", title: "Limit Test 2", contacts: [], tags: [] } as never);
+    check("Limit: sınır aşılınca 409 + yükseltme mesajı", !c2.ok && c2.status === 409 && /limit/i.test(c2.message));
+  } finally {
+    await withPlatformBypass(async (tx) => {
+      await tx.customer.deleteMany({ where: { companyId: tmpCompany.id } });
+      await tx.auditLog.deleteMany({ where: { companyId: tmpCompany.id } });
+      await tx.company.delete({ where: { id: tmpCompany.id } });
+    });
+    await prisma.plan.delete({ where: { id: tmpPlan.id } });
+  }
 
   console.log(failures === 0 ? "\nTÜM LİSANS KONTROLLERİ GEÇTİ" : `\n${failures} KONTROL BAŞARISIZ`);
   process.exit(failures === 0 ? 0 : 1);
