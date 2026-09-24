@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { getQuote } from "@/lib/modules/quotes/service";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { QuoteForm } from "../../_components/quote-form";
 
@@ -10,7 +10,7 @@ export default async function TeklifDuzenlePage({ params }: { params: { id: stri
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "quote", "edit");
+  const scope = getScope(session, "quote", "edit");
   if (!scope) return <p className="text-sm text-gray-500">Bu kaydı düzenleme yetkiniz yok.</p>;
 
   const result = await getQuote(session, params.id);

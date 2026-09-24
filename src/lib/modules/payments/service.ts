@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { withTenant } from "@/lib/db/tenant-context";
 import { writeAuditLog } from "@/lib/audit/log";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import type { PaymentInput } from "@/lib/validation/payment";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
@@ -15,7 +15,7 @@ interface ListParams {
 }
 
 export async function listPayments(session: TenantSession, params: ListParams) {
-  if (!getRequiredScope(session.role, "payment", "view")) return forbidden();
+  if (!getScope(session, "payment", "view")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const where: Prisma.PaymentWhereInput = {
@@ -48,7 +48,7 @@ const PAYMENT_DETAIL_INCLUDE = {
 export type PaymentDetail = Prisma.PaymentGetPayload<{ include: typeof PAYMENT_DETAIL_INCLUDE }>;
 
 export async function getPayment(session: TenantSession, id: string): Promise<ServiceResult<PaymentDetail>> {
-  if (!getRequiredScope(session.role, "payment", "view")) return forbidden();
+  if (!getScope(session, "payment", "view")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const payment = await tx.payment.findFirst({ where: { id }, include: PAYMENT_DETAIL_INCLUDE });
@@ -67,7 +67,7 @@ async function getOrderRemaining(tx: Prisma.TransactionClient, orderId: string):
 }
 
 export async function createPayment(session: TenantSession, input: PaymentInput): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "payment", "create")) return forbidden();
+  if (!getScope(session, "payment", "create")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const customer = await tx.customer.findFirst({ where: { id: input.customerId, deletedAt: null } });
@@ -120,7 +120,7 @@ export async function createPayment(session: TenantSession, input: PaymentInput)
 
 /** TH-08: Tahsilat silme yerine iptal; iptal gerekçesi ve işlem geçmişi kaydı zorunlu. */
 export async function cancelPayment(session: TenantSession, id: string, reason: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "payment", "delete")) return forbidden();
+  if (!getScope(session, "payment", "delete")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.payment.findFirst({ where: { id } });
@@ -174,7 +174,7 @@ export interface PaymentExportRow {
 
 /** Dışa aktarma (Excel/CSV) — listedekiyle AYNI filtreleri kullanır, sayfalama olmadan (üst sınır: 5000 satır). */
 export async function exportPayments(session: TenantSession, params: Omit<ListParams, "page" | "pageSize">): Promise<ServiceResult<PaymentExportRow[]>> {
-  if (!getRequiredScope(session.role, "payment", "export")) return forbidden();
+  if (!getScope(session, "payment", "export")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const where: Prisma.PaymentWhereInput = {
@@ -218,7 +218,7 @@ export interface OverdueReceivable {
 
 /** TH-07: Vadesi geçmiş alacaklar listesi — gecikme günü, tutar, sorumlu, müşteri. */
 export async function listOverdueReceivables(session: TenantSession): Promise<ServiceResult<OverdueReceivable[]>> {
-  const scope = getRequiredScope(session.role, "payment", "view");
+  const scope = getScope(session, "payment", "view");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {

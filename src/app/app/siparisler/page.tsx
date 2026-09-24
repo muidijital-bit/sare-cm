@@ -4,7 +4,7 @@ import { getTenantSession } from "@/lib/auth/session";
 import { withTenant } from "@/lib/db/tenant-context";
 import { listOrders } from "@/lib/modules/orders/service";
 import { listOrdersQuerySchema } from "@/lib/validation/order";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, ORDER_STATUS_COLORS } from "@/components/ui/badge";
 import { OrderFilterBar } from "./_components/order-filter-bar";
@@ -14,7 +14,7 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "order", "view");
+  const scope = getScope(session, "order", "view");
   if (!scope) return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
 
   const parsed = listOrdersQuerySchema.safeParse(searchParams);
@@ -35,8 +35,8 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
 
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const canCreate = !!getRequiredScope(session.role, "order", "create");
-  const editScope = getRequiredScope(session.role, "order", "edit");
+  const canCreate = !!getScope(session, "order", "create");
+  const editScope = getScope(session, "order", "edit");
 
   return (
     <div>

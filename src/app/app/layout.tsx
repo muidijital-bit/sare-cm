@@ -17,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       userName={session.userName}
       userEmail={session.userEmail}
       hasMultipleCompanies={session.membershipCount > 1}
+      enabledModules={session.enabledModules}
     >
       {children}
     </AppShell>

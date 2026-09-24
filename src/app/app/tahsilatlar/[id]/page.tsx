@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { getPayment } from "@/lib/modules/payments/service";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge } from "@/components/ui/badge";
 import { CancelPaymentButton } from "../_components/cancel-payment-button";
@@ -15,7 +15,7 @@ export default async function TahsilatDetayPage({ params }: { params: { id: stri
   if (!result.ok) return <p className="text-sm text-red-600">{result.message}</p>;
   const payment = result.data;
 
-  const canCancel = !!getRequiredScope(session.role, "payment", "delete") && !payment.isCancelled;
+  const canCancel = !!getScope(session, "payment", "delete") && !payment.isCancelled;
 
   return (
     <div className="mx-auto max-w-2xl">

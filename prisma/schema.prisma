@@ -133,23 +133,78 @@ model Plan {
   maxCustomers Int      @map("max_customers")
   maxStorageMb Int      @map("max_storage_mb")
   price        Decimal  @db.Decimal(18, 4)
+  /// Yıllık ödemede toplam fiyat (null = yıllık seçenek yok). `price` aylık fiyattır.
+  yearlyPrice  Decimal? @map("yearly_price") @db.Decimal(18, 4)
+  description  String?
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   companies Company[]
+  modules   PlanModule[]
 
   @@map("plans")
 }
 
+/// Ürün modül kataloğu — global (şirket bazlı değil). `key`, kod tarafındaki rbac `Module`
+/// anahtarıyla eşleşir. `isCore` modüller (panel, kullanıcılar, ayarlar) kapatılamaz.
+model AppModule {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique
+  name        String
+  description String?
+  isCore      Boolean  @default(false) @map("is_core")
+  /// Ücretsiz modül: her pakette ve paketsiz (free) şirkette açık gelir.
+  isFree      Boolean  @default(false) @map("is_free")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  plans     PlanModule[]
+  companies CompanyModule[]
+
+  @@map("app_modules")
+}
+
+model PlanModule {
+  planId   String    @map("plan_id") @db.Uuid
+  moduleId String    @map("module_id") @db.Uuid
+  plan     Plan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  module   AppModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@id([planId, moduleId])
+  @@map("plan_modules")
+}
+
+/// Şirkete özel modül ayarı: paketin ÜSTÜNE eklemek (enabled=true) veya paketten
+/// çıkarmak (enabled=false) için. `expiresAt` dolunca kayıt yok sayılır (deneme/kampanya).
+/// Yalnızca platform (süper admin) yazar; şirket kendi kaydını okuyabilir.
+model CompanyModule {
+  id        String    @id @default(uuid()) @db.Uuid
+  companyId String    @map("company_id") @db.Uuid
+  moduleId  String    @map("module_id") @db.Uuid
+  enabled   Boolean   @default(true)
+  expiresAt DateTime? @map("expires_at")
+  note      String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  company Company   @relation(fields: [companyId], references: [id])
+  module  AppModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, moduleId])
+  @@map("company_modules")
+}
+
 model Company {
-  id                 String        @id @default(uuid()) @db.Uuid
+  id                 String          @id @default(uuid()) @db.Uuid
   name               String
-  status             CompanyStatus @default(TRIAL)
-  planId             String        @map("plan_id") @db.Uuid
-  plan               Plan          @relation(fields: [planId], references: [id])
-  trialEndsAt        DateTime?     @map("trial_ends_at")
-  subscriptionEndsAt DateTime?     @map("subscription_ends_at")
+  status             CompanyStatus   @default(TRIAL)
+  planId             String          @map("plan_id") @db.Uuid
+  plan               Plan            @relation(fields: [planId], references: [id])
+  modules            CompanyModule[]
+  trialEndsAt        DateTime?       @map("trial_ends_at")
+  subscriptionEndsAt DateTime?       @map("subscription_ends_at")
 
   // §SA-01 Şirket bilgileri
   taxOffice String? @map("tax_office")
@@ -172,23 +227,23 @@ model Company {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  memberships        Membership[]
-  invitationTokens   InvitationToken[]
-  customers          Customer[]
-  customerSources    CustomerSource[]
-  activities         Activity[]
-  tags               Tag[]
-  products           Product[]
-  quotes             Quote[]
-  orders             Order[]
-  payments           Payment[]
-  accounts           Account[]
-  expenses           Expense[]
-  expenseCategories  ExpenseCategory[]
-  attachments        Attachment[]
-  auditLogs          AuditLog[]
-  notifications      Notification[]
-  documentSequences  DocumentSequence[]
+  memberships       Membership[]
+  invitationTokens  InvitationToken[]
+  customers         Customer[]
+  customerSources   CustomerSource[]
+  activities        Activity[]
+  tags              Tag[]
+  products          Product[]
+  quotes            Quote[]
+  orders            Order[]
+  payments          Payment[]
+  accounts          Account[]
+  expenses          Expense[]
+  expenseCategories ExpenseCategory[]
+  attachments       Attachment[]
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+  documentSequences DocumentSequence[]
 
   @@map("companies")
 }
@@ -281,8 +336,8 @@ model PasswordResetToken {
 // =========================================================
 
 model CustomerSource {
-  id        String  @id @default(uuid()) @db.Uuid
-  companyId String  @map("company_id") @db.Uuid
+  id        String @id @default(uuid()) @db.Uuid
+  companyId String @map("company_id") @db.Uuid
   name      String
 
   createdAt DateTime  @default(now()) @map("created_at")
@@ -319,14 +374,14 @@ model Customer {
   deletedAt DateTime? @map("deleted_at")
   deletedBy String?   @map("deleted_by") @db.Uuid
 
-  company     Company          @relation(fields: [companyId], references: [id])
-  source      CustomerSource?  @relation(fields: [sourceId], references: [id])
-  contacts    Contact[]
-  activities  Activity[]
-  tags        CustomerTag[]
-  quotes      Quote[]
-  orders      Order[]
-  payments    Payment[]
+  company    Company         @relation(fields: [companyId], references: [id])
+  source     CustomerSource? @relation(fields: [sourceId], references: [id])
+  contacts   Contact[]
+  activities Activity[]
+  tags       CustomerTag[]
+  quotes     Quote[]
+  orders     Order[]
+  payments   Payment[]
 
   @@index([companyId, status])
   @@index([companyId, ownerUserId])
@@ -348,7 +403,7 @@ model Contact {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  customer   Customer    @relation(fields: [customerId], references: [id])
+  customer   Customer   @relation(fields: [customerId], references: [id])
   activities Activity[]
   quotes     Quote[]
 
@@ -413,15 +468,15 @@ model Activity {
 // =========================================================
 
 model Product {
-  id          String  @id @default(uuid()) @db.Uuid
-  companyId   String  @map("company_id") @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
   code        String?
   name        String
-  unit        String  @default("adet")
-  listPrice   Decimal @map("list_price") @db.Decimal(18, 4)
+  unit        String   @default("adet")
+  listPrice   Decimal  @map("list_price") @db.Decimal(18, 4)
   defaultCost Decimal? @map("default_cost") @db.Decimal(18, 4)
-  vatRate     Decimal @map("vat_rate") @db.Decimal(5, 2)
-  isActive    Boolean @default(true) @map("is_active")
+  vatRate     Decimal  @map("vat_rate") @db.Decimal(5, 2)
+  isActive    Boolean  @default(true) @map("is_active")
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
@@ -436,11 +491,11 @@ model Product {
 }
 
 model Quote {
-  id        String      @id @default(uuid()) @db.Uuid
-  companyId String      @map("company_id") @db.Uuid
-  number    String
-  customerId String     @map("customer_id") @db.Uuid
-  contactId  String?    @map("contact_id") @db.Uuid
+  id         String      @id @default(uuid()) @db.Uuid
+  companyId  String      @map("company_id") @db.Uuid
+  number     String
+  customerId String      @map("customer_id") @db.Uuid
+  contactId  String?     @map("contact_id") @db.Uuid
   status     QuoteStatus @default(DRAFT)
 
   issueDate  DateTime @map("issue_date")
@@ -460,8 +515,8 @@ model Quote {
   grandTotal    Decimal @map("grand_total") @db.Decimal(18, 4)
 
   // TK-09 Revizyon zinciri: kopya oluşturulduğunda üst teklife referans
-  parentQuoteId   String? @map("parent_quote_id") @db.Uuid
-  revisionNumber  Int     @default(1) @map("revision_number")
+  parentQuoteId  String? @map("parent_quote_id") @db.Uuid
+  revisionNumber Int     @default(1) @map("revision_number")
 
   ownerUserId String  @map("owner_user_id") @db.Uuid
   note        String?
@@ -472,13 +527,13 @@ model Quote {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  company      Company     @relation(fields: [companyId], references: [id])
-  customer     Customer    @relation(fields: [customerId], references: [id])
-  contact      Contact?    @relation(fields: [contactId], references: [id])
-  parentQuote  Quote?      @relation("QuoteRevisions", fields: [parentQuoteId], references: [id])
-  revisions    Quote[]     @relation("QuoteRevisions")
-  items        QuoteItem[]
-  orders       Order[]
+  company     Company     @relation(fields: [companyId], references: [id])
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  contact     Contact?    @relation(fields: [contactId], references: [id])
+  parentQuote Quote?      @relation("QuoteRevisions", fields: [parentQuoteId], references: [id])
+  revisions   Quote[]     @relation("QuoteRevisions")
+  items       QuoteItem[]
+  orders      Order[]
 
   @@unique([companyId, number])
   @@index([companyId, status])
@@ -520,9 +575,9 @@ model Order {
   quoteId    String?     @map("quote_id") @db.Uuid
   status     OrderStatus @default(CONFIRMED)
 
-  orderDate         DateTime  @map("order_date")
-  dueDate           DateTime? @map("due_date")
-  deliveryAddress   String?   @map("delivery_address")
+  orderDate       DateTime  @map("order_date")
+  dueDate         DateTime? @map("due_date")
+  deliveryAddress String?   @map("delivery_address")
 
   currency     String  @default("TRY")
   exchangeRate Decimal @default(1) @map("exchange_rate") @db.Decimal(18, 6)
@@ -539,9 +594,9 @@ model Order {
   note        String?
 
   // SP-05 iptal — tutarlar ciro/açık alacaktan bu alan üzerinden düşülür
-  cancelledAt     DateTime? @map("cancelled_at")
-  cancelledBy     String?   @map("cancelled_by") @db.Uuid
-  cancelReason    String?   @map("cancel_reason")
+  cancelledAt  DateTime? @map("cancelled_at")
+  cancelledBy  String?   @map("cancelled_by") @db.Uuid
+  cancelReason String?   @map("cancel_reason")
 
   createdBy String    @map("created_by") @db.Uuid
   updatedBy String?   @map("updated_by") @db.Uuid
@@ -549,11 +604,11 @@ model Order {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  company           Company            @relation(fields: [companyId], references: [id])
-  customer          Customer           @relation(fields: [customerId], references: [id])
-  quote             Quote?             @relation(fields: [quoteId], references: [id])
-  items             OrderItem[]
-  paymentSchedules  PaymentSchedule[]
+  company            Company             @relation(fields: [companyId], references: [id])
+  customer           Customer            @relation(fields: [customerId], references: [id])
+  quote              Quote?              @relation(fields: [quoteId], references: [id])
+  items              OrderItem[]
+  paymentSchedules   PaymentSchedule[]
   paymentAllocations PaymentAllocation[]
 
   @@unique([companyId, number])
@@ -590,8 +645,8 @@ model OrderItem {
 
 /// SP-06 Ödeme planı (peşinat + taksitler)
 model PaymentSchedule {
-  id          String  @id @default(uuid()) @db.Uuid
-  orderId     String  @map("order_id") @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
+  orderId     String   @map("order_id") @db.Uuid
   dueDate     DateTime @map("due_date")
   amount      Decimal  @db.Decimal(18, 4)
   description String?
@@ -688,21 +743,21 @@ model ExpenseCategory {
 }
 
 model Expense {
-  id         String   @id @default(uuid()) @db.Uuid
-  companyId  String   @map("company_id") @db.Uuid
-  categoryId String   @map("category_id") @db.Uuid
-  spentAt    DateTime @map("spent_at")
-  amount     Decimal  @db.Decimal(18, 4)
-  vatAmount  Decimal  @default(0) @map("vat_amount") @db.Decimal(18, 4)
+  id         String         @id @default(uuid()) @db.Uuid
+  companyId  String         @map("company_id") @db.Uuid
+  categoryId String         @map("category_id") @db.Uuid
+  spentAt    DateTime       @map("spent_at")
+  amount     Decimal        @db.Decimal(18, 4)
+  vatAmount  Decimal        @default(0) @map("vat_amount") @db.Decimal(18, 4)
   vendor     String?
   method     PaymentMethod?
-  accountId  String?  @map("account_id") @db.Uuid
+  accountId  String?        @map("account_id") @db.Uuid
   note       String?
 
   // GD-03 Tekrarlayan gider
-  recurringRule       String?  @map("recurring_rule") // örn. "MONTHLY"
-  isRecurringTemplate Boolean  @default(false) @map("is_recurring_template")
-  parentExpenseId     String?  @map("parent_expense_id") @db.Uuid
+  recurringRule       String? @map("recurring_rule") // örn. "MONTHLY"
+  isRecurringTemplate Boolean @default(false) @map("is_recurring_template")
+  parentExpenseId     String? @map("parent_expense_id") @db.Uuid
 
   createdBy String    @map("created_by") @db.Uuid
   updatedBy String?   @map("updated_by") @db.Uuid
@@ -711,11 +766,11 @@ model Expense {
   deletedAt DateTime? @map("deleted_at")
   deletedBy String?   @map("deleted_by") @db.Uuid
 
-  company        Company          @relation(fields: [companyId], references: [id])
-  category       ExpenseCategory  @relation(fields: [categoryId], references: [id])
-  account        Account?         @relation(fields: [accountId], references: [id])
-  parentExpense  Expense?         @relation("RecurringExpenses", fields: [parentExpenseId], references: [id])
-  generatedFrom  Expense[]        @relation("RecurringExpenses")
+  company       Company         @relation(fields: [companyId], references: [id])
+  category      ExpenseCategory @relation(fields: [categoryId], references: [id])
+  account       Account?        @relation(fields: [accountId], references: [id])
+  parentExpense Expense?        @relation("RecurringExpenses", fields: [parentExpenseId], references: [id])
+  generatedFrom Expense[]       @relation("RecurringExpenses")
 
   @@index([companyId, spentAt])
   @@index([companyId, categoryId])
@@ -752,18 +807,18 @@ model Attachment {
 
 /// IG-01..IG-08 — değiştirilemez/silinemez işlem geçmişi
 model AuditLog {
-  id         String      @id @default(uuid()) @db.Uuid
-  companyId  String?     @map("company_id") @db.Uuid // süper admin olayları için null olabilir
-  userId     String?     @map("user_id") @db.Uuid
-  action     AuditAction
-  entityType String?     @map("entity_type")
-  entityId   String?     @map("entity_id") @db.Uuid
+  id                 String      @id @default(uuid()) @db.Uuid
+  companyId          String?     @map("company_id") @db.Uuid // süper admin olayları için null olabilir
+  userId             String?     @map("user_id") @db.Uuid
+  action             AuditAction
+  entityType         String?     @map("entity_type")
+  entityId           String?     @map("entity_id") @db.Uuid
   // IG-02 alan bazında eski değer -> yeni değer farkı
-  changes    Json?
-  ip         String?
-  userAgent  String?     @map("user_agent")
+  changes            Json?
+  ip                 String?
+  userAgent          String?     @map("user_agent")
   // PF-07 destek amaçlı süper admin erişimi ayrıca işaretlenir
-  isSuperAdminAccess Boolean @default(false) @map("is_super_admin_access")
+  isSuperAdminAccess Boolean     @default(false) @map("is_super_admin_access")
 
   createdAt DateTime @default(now()) @map("created_at")
 

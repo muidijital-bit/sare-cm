@@ -4,7 +4,7 @@ import { getTenantSession } from "@/lib/auth/session";
 import { withTenant } from "@/lib/db/tenant-context";
 import { listQuotes } from "@/lib/modules/quotes/service";
 import { listQuotesQuerySchema } from "@/lib/validation/quote";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, QUOTE_STATUS_COLORS } from "@/components/ui/badge";
 import { QuoteFilterBar } from "./_components/quote-filter-bar";
@@ -15,7 +15,7 @@ export default async function TekliflerPage({ searchParams }: { searchParams: Re
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "quote", "view");
+  const scope = getScope(session, "quote", "view");
   if (!scope) return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
 
   const parsed = listQuotesQuerySchema.safeParse(searchParams);
@@ -36,9 +36,9 @@ export default async function TekliflerPage({ searchParams }: { searchParams: Re
 
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const canCreate = !!getRequiredScope(session.role, "quote", "create");
-  const editScope = getRequiredScope(session.role, "quote", "edit");
-  const deleteScope = getRequiredScope(session.role, "quote", "delete");
+  const canCreate = !!getScope(session, "quote", "create");
+  const editScope = getScope(session, "quote", "edit");
+  const deleteScope = getScope(session, "quote", "delete");
   const canDelete = !!deleteScope;
   const canShowActions = !!editScope || !!deleteScope;
 

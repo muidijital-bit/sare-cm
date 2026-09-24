@@ -56,6 +56,7 @@ async function main() {
     companyName: "Demo Şirket A.Ş.",
     companyStatus: "ACTIVE",
     role: "OWNER",
+    enabledModules: ["*"],
     membershipCount: 1,
   };
   const salesSession: TenantSession = { ...ownerSession, userId: salesUser.id, role: "SALES" };

@@ -2,7 +2,8 @@ import { withPlatformBypass } from "@/lib/db/tenant-context";
 import { writeAuditLog } from "@/lib/audit/log";
 import { generateSecureToken, INVITATION_TOKEN_TTL_MS } from "@/lib/security/tokens";
 import type { SuperAdminSession } from "@/lib/auth/session";
-import type { CreateCompanyInput, CreatePlanInput } from "@/lib/validation/platform";
+import type { CreateCompanyInput, CreatePlanInput, CompanyModuleInput } from "@/lib/validation/platform";
+import { computeEnabledModules } from "@/lib/modules/entitlements/resolve";
 import { type ServiceResult, notFound, conflict } from "@/lib/modules/result";
 
 /**
@@ -107,5 +108,99 @@ export async function setCompanyStatus(session: SuperAdminSession, companyId: st
     });
 
     return { ok: true as const, data: { id: companyId } };
+  });
+}
+
+/** Paket değişimi (yükseltme/düşürme). Şirket verisi silinmez; yalnızca etkin modüller değişir. */
+export async function setCompanyPlan(session: SuperAdminSession, companyId: string, planId: string): Promise<ServiceResult<{ id: string }>> {
+  return withPlatformBypass(async (tx) => {
+    const [company, plan] = await Promise.all([
+      tx.company.findFirst({ where: { id: companyId, deletedAt: null } }),
+      tx.plan.findFirst({ where: { id: planId, isActive: true } }),
+    ]);
+    if (!company) return notFound();
+    if (!plan) return notFound("Paket bulunamadı.");
+    if (company.planId === planId) return conflict("Şirket zaten bu pakette.");
+    await tx.company.update({ where: { id: companyId }, data: { planId } });
+    await writeAuditLog(tx, {
+      companyId, userId: session.userId, action: "UPDATE", entityType: "company", entityId: companyId,
+      changes: { planId: { eski: company.planId, yeni: planId } }, isSuperAdminAccess: true,
+    });
+    return { ok: true as const, data: { id: companyId } };
+  });
+}
+
+export interface CompanyModuleRow {
+  key: string;
+  name: string;
+  isCore: boolean;
+  isFree: boolean;
+  inPlan: boolean;
+  /** Şirkete özel ayar (yoksa null). */
+  override: { enabled: boolean; expiresAt: string | null; note: string | null } | null;
+  /** Bugün fiilen açık mı (paket + override sonucu). */
+  effective: boolean;
+}
+
+/** Platform paneli için: şirketin her modülü — pakette mi, override var mı, fiilen açık mı. */
+export async function getCompanyModules(companyId: string): Promise<ServiceResult<CompanyModuleRow[]>> {
+  return withPlatformBypass(async (tx) => {
+    const company = await tx.company.findFirst({ where: { id: companyId, deletedAt: null }, select: { planId: true } });
+    if (!company) return notFound();
+    const [catalog, planModules, overrides] = await Promise.all([
+      tx.appModule.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+      tx.planModule.findMany({ where: { planId: company.planId }, select: { module: { select: { key: true } } } }),
+      tx.companyModule.findMany({ where: { companyId }, select: { enabled: true, expiresAt: true, note: true, module: { select: { key: true } } } }),
+    ]);
+    const planKeys = planModules.map((pm) => pm.module.key);
+    const effective = new Set(
+      computeEnabledModules({
+        catalog,
+        planModuleKeys: planKeys,
+        overrides: overrides.map((o) => ({ moduleKey: o.module.key, enabled: o.enabled, expiresAt: o.expiresAt })),
+      }),
+    );
+    const byKey = new Map(overrides.map((o) => [o.module.key, o]));
+    return {
+      ok: true as const,
+      data: catalog.map((m) => {
+        const o = byKey.get(m.key);
+        return {
+          key: m.key, name: m.name, isCore: m.isCore, isFree: m.isFree,
+          inPlan: planKeys.includes(m.key),
+          override: o ? { enabled: o.enabled, expiresAt: o.expiresAt?.toISOString() ?? null, note: o.note } : null,
+          effective: effective.has("*") || effective.has(m.key),
+        };
+      }),
+    };
+  });
+}
+
+/** Şirkete özel modül ekle/çıkar (veya `enabled: null` ile override'ı sil). Çekirdek modüller değiştirilemez. */
+export async function setCompanyModule(session: SuperAdminSession, companyId: string, input: CompanyModuleInput): Promise<ServiceResult<{ id: string }>> {
+  return withPlatformBypass(async (tx) => {
+    const [company, mod] = await Promise.all([
+      tx.company.findFirst({ where: { id: companyId, deletedAt: null }, select: { id: true } }),
+      tx.appModule.findFirst({ where: { key: input.moduleKey, isActive: true } }),
+    ]);
+    if (!company) return notFound();
+    if (!mod) return notFound("Modül bulunamadı.");
+    if (mod.isCore) return conflict("Çekirdek modüller kapatılamaz.");
+
+    if (input.enabled === null) {
+      await tx.companyModule.deleteMany({ where: { companyId, moduleId: mod.id } });
+    } else {
+      await tx.companyModule.upsert({
+        where: { companyId_moduleId: { companyId, moduleId: mod.id } },
+        update: { enabled: input.enabled, expiresAt: input.expiresAt ?? null, note: input.note ?? null },
+        create: { companyId, moduleId: mod.id, enabled: input.enabled, expiresAt: input.expiresAt ?? null, note: input.note ?? null },
+      });
+    }
+    await writeAuditLog(tx, {
+      companyId, userId: session.userId, action: "UPDATE", entityType: "company_module", entityId: mod.id,
+      changes: { [`modül:${mod.key}`]: { eski: null, yeni: input.enabled === null ? "pakete döndü" : input.enabled ? "eklendi" : "çıkarıldı" } },
+      isSuperAdminAccess: true,
+    });
+    return { ok: true as const, data: { id: mod.id } };
   });
 }

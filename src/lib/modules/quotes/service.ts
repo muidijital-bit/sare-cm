@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { withTenant } from "@/lib/db/tenant-context";
 import { writeAuditLog, diffFields } from "@/lib/audit/log";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import type { QuoteInput } from "@/lib/validation/quote";
 import { calculateDocument, type LineInput } from "@/lib/modules/documents/calculations";
@@ -42,7 +42,7 @@ function toLineInputs(items: QuoteInput["items"]): LineInput[] {
 }
 
 export async function listQuotes(session: TenantSession, params: ListParams) {
-  const scope = getRequiredScope(session.role, "quote", "view");
+  const scope = getScope(session, "quote", "view");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -85,7 +85,7 @@ const QUOTE_DETAIL_INCLUDE = {
 export type QuoteDetail = Prisma.QuoteGetPayload<{ include: typeof QUOTE_DETAIL_INCLUDE }>;
 
 export async function getQuote(session: TenantSession, id: string): Promise<ServiceResult<QuoteDetail>> {
-  const scope = getRequiredScope(session.role, "quote", "view");
+  const scope = getScope(session, "quote", "view");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -100,7 +100,7 @@ export async function getQuote(session: TenantSession, id: string): Promise<Serv
 }
 
 export async function createQuote(session: TenantSession, input: QuoteInput): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "quote", "create");
+  const scope = getScope(session, "quote", "create");
   if (!scope) return forbidden();
 
   const ownerUserId = scope === "own" ? session.userId : input.ownerUserId ?? session.userId;
@@ -158,7 +158,7 @@ export async function createQuote(session: TenantSession, input: QuoteInput): Pr
 }
 
 export async function updateQuote(session: TenantSession, id: string, input: QuoteInput): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "quote", "edit");
+  const scope = getScope(session, "quote", "edit");
   if (!scope) return forbidden();
 
   const { lines, totals } = calculateDocument(toLineInputs(input.items), input.documentDiscount ?? undefined);
@@ -230,7 +230,7 @@ async function transitionStatus(
   allowedFrom: Array<"DRAFT" | "SENT" | "ACCEPTED" | "REJECTED" | "EXPIRED">,
   to: "DRAFT" | "SENT" | "ACCEPTED" | "REJECTED" | "EXPIRED",
 ): Promise<ServiceResult<{ id: string; status: string }>> {
-  const scope = getRequiredScope(session.role, "quote", "edit");
+  const scope = getScope(session, "quote", "edit");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -261,7 +261,7 @@ async function transitionStatus(
  * makinesi). Diğer durumlar için "sil" yerine ilgili geçiş (red/süre doldu) kullanılır.
  */
 export async function deleteQuote(session: TenantSession, id: string): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "quote", "delete");
+  const scope = getScope(session, "quote", "delete");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -301,7 +301,7 @@ export const rejectQuote = (session: TenantSession, id: string) => transitionSta
 
 /** TK-09: mevcut teklifin kopyası (yeni bir taslak) — ilişki `parentQuoteId` ile korunur. */
 export async function createRevision(session: TenantSession, id: string): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "quote", "edit");
+  const scope = getScope(session, "quote", "edit");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {

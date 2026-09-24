@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { QuoteForm } from "../_components/quote-form";
 
@@ -9,7 +9,7 @@ export default async function YeniTeklifPage() {
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "quote", "create");
+  const scope = getScope(session, "quote", "create");
   if (!scope) return <p className="text-sm text-gray-500">Teklif oluşturma yetkiniz yok.</p>;
 
   const [customers, products, users] = await Promise.all([

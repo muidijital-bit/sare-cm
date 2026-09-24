@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { OrderForm } from "../_components/order-form";
 
@@ -9,7 +9,7 @@ export default async function YeniSiparisPage() {
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "order", "create");
+  const scope = getScope(session, "order", "create");
   if (!scope) return <p className="text-sm text-gray-500">Sipariş oluşturma yetkiniz yok.</p>;
 
   const [customers, products, users] = await Promise.all([

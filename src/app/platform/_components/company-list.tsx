@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { Fragment } from "react";
 import { tr, formatDateTR } from "@/lib/i18n/tr";
+import { CompanyModulesPanel } from "./company-modules-panel";
 
 interface Company {
   id: string;
@@ -30,6 +32,7 @@ export function CompanyList({ companies, plans }: { companies: Company[]; plans:
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [openModulesId, setOpenModulesId] = useState<string | null>(null);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -150,19 +153,31 @@ export function CompanyList({ companies, plans }: { companies: Company[]; plans:
           </thead>
           <tbody className="divide-y divide-brand-900">
             {companies.map((c) => (
-              <tr key={c.id}>
+              <Fragment key={c.id}>
+              <tr>
                 <td className="px-4 py-3 font-medium text-white">{c.name}</td>
                 <td className="px-4 py-3 text-brand-200">{c.planName}</td>
                 <td className="px-4 py-3 text-brand-200">{tr.platform.status[c.status as keyof typeof tr.platform.status] ?? c.status}</td>
                 <td className="px-4 py-3 text-brand-200">{c.memberCount}</td>
                 <td className="px-4 py-3 text-brand-200">{c.customerCount}</td>
                 <td className="px-4 py-3 text-brand-200">{c.subscriptionEndsAt ? formatDateTR(new Date(c.subscriptionEndsAt)) : "—"}</td>
-                <td className="px-4 py-3 text-right">
+                <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <button onClick={() => setOpenModulesId(openModulesId === c.id ? null : c.id)} className="mr-3 text-xs text-brand-200 hover:text-white">
+                    {openModulesId === c.id ? "Modülleri gizle" : "Modüller / Paket"}
+                  </button>
                   <button onClick={() => toggleStatus(c.id, c.status)} disabled={busyId === c.id} className="text-xs text-brand-200 hover:text-white disabled:opacity-50">
                     {c.status === "SUSPENDED" ? tr.platform.activate : tr.platform.suspend}
                   </button>
                 </td>
               </tr>
+              {openModulesId === c.id && (
+                <tr>
+                  <td colSpan={7} className="p-0">
+                    <CompanyModulesPanel companyId={c.id} planName={c.planName} plans={plans} />
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             ))}
             {companies.length === 0 && (
               <tr>

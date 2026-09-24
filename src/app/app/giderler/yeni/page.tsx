@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { ExpenseForm } from "../_components/expense-form";
 
@@ -9,7 +9,7 @@ export default async function YeniGiderPage() {
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "expense", "create");
+  const scope = getScope(session, "expense", "create");
   if (!scope) return <p className="text-sm text-gray-500">Gider ekleme yetkiniz yok.</p>;
 
   const [categories, accounts] = await Promise.all([

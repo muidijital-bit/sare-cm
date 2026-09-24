@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/options";
 import { withTenantRead, InvalidCompanyIdError } from "@/lib/db/tenant-context";
 import type { MembershipRole } from "@/lib/auth/rbac";
+import { computeEnabledModules } from "@/lib/modules/entitlements/resolve";
 
 export interface TenantSession {
   userId: string;
@@ -12,6 +13,8 @@ export interface TenantSession {
   companyName: string;
   companyStatus: "TRIAL" | "ACTIVE" | "SUSPENDED";
   role: MembershipRole;
+  /** Şirketin etkin (lisanslı) modül anahtarları; ["*"] = katalog boş, kısıtlama yok. Bkz. access.ts. */
+  enabledModules: string[];
   /** Kullanıcının üye olduğu toplam şirket sayısı — şirket değiştir bağlantısını göstermek için. */
   membershipCount: number;
 }
@@ -50,21 +53,27 @@ export const getTenantSession = cache(async function getTenantSession(): Promise
   // çalışabileceğinin garantisi yok. Bu satırın güvenliği hız kazancından daha önemli —
   // `withTenantRead` (Prisma'nın gerçek array-transaction'ı, BEGIN/COMMIT ile doğru
   // sınırlanmış) daha yavaş (~1,3-2sn) ama KANITLANMIŞ doğru.
-  let membership;
+  let membership, catalog, planModules, overrides;
   try {
-    [membership] = await withTenantRead(session.activeCompanyId, (db) => [
+    // Aynı array-transaction içinde: ek round-trip yok. Lisans tabloları (app_modules/plan_modules)
+    // global, company_modules RLS'li (şirket kendi satırlarını okur).
+    [membership, catalog, planModules, overrides] = await withTenantRead(session.activeCompanyId, (db) => [
       db.membership.findFirst({
-        where: {
-          userId: session.user.id,
-          companyId: session.activeCompanyId!,
-          isActive: true,
-          company: { deletedAt: null },
-        },
+        where: { userId: session.user.id, companyId: session.activeCompanyId!, isActive: true, company: { deletedAt: null } },
         include: { company: { select: { status: true, name: true } } },
+      }),
+      db.appModule.findMany({ where: { isActive: true }, select: { key: true, isCore: true, isFree: true } }),
+      db.planModule.findMany({
+        where: { plan: { companies: { some: { id: session.activeCompanyId! } } } },
+        select: { module: { select: { key: true } } },
+      }),
+      db.companyModule.findMany({
+        where: { companyId: session.activeCompanyId! },
+        select: { enabled: true, expiresAt: true, module: { select: { key: true } } },
       }),
     ]);
   } catch (e) {
-    if (e instanceof InvalidCompanyIdError) return null; // bozuk/uydurma companyId — 401/403'e düşer
+    if (e instanceof InvalidCompanyIdError) return null;
     throw e;
   }
   if (!membership) return null;
@@ -77,6 +86,11 @@ export const getTenantSession = cache(async function getTenantSession(): Promise
     companyName: membership.company.name,
     companyStatus: membership.company.status,
     role: membership.role,
+    enabledModules: computeEnabledModules({
+      catalog,
+      planModuleKeys: planModules.map((pm) => pm.module.key),
+      overrides: overrides.map((o) => ({ moduleKey: o.module.key, enabled: o.enabled, expiresAt: o.expiresAt })),
+    }),
     membershipCount: session.memberships?.length ?? 1,
   };
 });

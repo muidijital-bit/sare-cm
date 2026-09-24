@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { ComponentType } from "react";
 import { TrendingUp, DollarSign, CreditCard, AlertTriangle, TrendingDown, BarChart2, PieChart, FileText, ShoppingBag } from "react-feather";
 import { getTenantSession } from "@/lib/auth/session";
+import { getScope } from "@/lib/auth/access";
 import { getDashboardCharts, getDashboardMetrics } from "@/lib/modules/dashboard/service";
 import { tr, formatCurrencyTRY } from "@/lib/i18n/tr";
 import { DashboardPeriodPicker } from "./_components/dashboard-period-picker";
@@ -118,15 +119,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       </div>
 
       <div className="mt-6 flex flex-wrap gap-4 text-sm">
-        <Link href="/app/teklifler?status=SENT" className="text-gray-600 hover:underline">
-          Bekleyen teklifleri gör →
-        </Link>
-        <Link href="/app/siparisler" className="text-gray-600 hover:underline">
-          Siparişleri gör →
-        </Link>
-        <Link href="/app/tahsilatlar" className="text-gray-600 hover:underline">
-          Vadesi geçmiş alacakları gör →
-        </Link>
+        {getScope(session, "quote", "view") && (
+          <Link href="/app/teklifler?status=SENT" className="text-gray-600 hover:underline">
+            Bekleyen teklifleri gör →
+          </Link>
+        )}
+        {getScope(session, "order", "view") && (
+          <Link href="/app/siparisler" className="text-gray-600 hover:underline">
+            Siparişleri gör →
+          </Link>
+        )}
+        {getScope(session, "payment", "view") && (
+          <Link href="/app/tahsilatlar" className="text-gray-600 hover:underline">
+            Vadesi geçmiş alacakları gör →
+          </Link>
+        )}
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">

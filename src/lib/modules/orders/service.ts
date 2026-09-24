@@ -1,7 +1,7 @@
 import type { Prisma, OrderStatus } from "@prisma/client";
 import { withTenant } from "@/lib/db/tenant-context";
 import { writeAuditLog, diffFields } from "@/lib/audit/log";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import type { OrderInput } from "@/lib/validation/order";
 import { calculateDocument, type LineInput } from "@/lib/modules/documents/calculations";
@@ -28,7 +28,7 @@ function toLineInputs(items: OrderInput["items"]): LineInput[] {
 }
 
 export async function listOrders(session: TenantSession, params: ListParams) {
-  const scope = getRequiredScope(session.role, "order", "view");
+  const scope = getScope(session, "order", "view");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -92,7 +92,7 @@ export function computePaymentStatus(order: OrderDetail): PaymentStatus {
 }
 
 export async function getOrder(session: TenantSession, id: string): Promise<ServiceResult<OrderDetail>> {
-  const scope = getRequiredScope(session.role, "order", "view");
+  const scope = getScope(session, "order", "view");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -118,7 +118,7 @@ export interface OpenOrderSummary {
 
 /** TH-03 Mahsuplaşma formundaki sipariş seçici için: bir müşterinin açık (kalan bakiyeli) siparişleri. */
 export async function listOpenOrdersForCustomer(session: TenantSession, customerId: string): Promise<ServiceResult<OpenOrderSummary[]>> {
-  if (!getRequiredScope(session.role, "payment", "create")) return forbidden();
+  if (!getScope(session, "payment", "create")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const orders = await tx.order.findMany({
@@ -139,7 +139,7 @@ export async function listOpenOrdersForCustomer(session: TenantSession, customer
 }
 
 export async function createOrder(session: TenantSession, input: OrderInput): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "order", "create");
+  const scope = getScope(session, "order", "create");
   if (!scope) return forbidden();
 
   const ownerUserId = scope === "own" ? session.userId : input.ownerUserId ?? session.userId;
@@ -210,8 +210,8 @@ export async function createOrder(session: TenantSession, input: OrderInput): Pr
 
 /** TK-08: kabul edilen tekliften tek tıkla sipariş — satırlar kopyalanır, bağlantı korunur. */
 export async function createOrderFromQuote(session: TenantSession, quoteId: string): Promise<ServiceResult<{ id: string }>> {
-  const createScope = getRequiredScope(session.role, "order", "create");
-  const quoteScope = getRequiredScope(session.role, "quote", "view");
+  const createScope = getScope(session, "order", "create");
+  const quoteScope = getScope(session, "quote", "view");
   if (!createScope || !quoteScope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -277,7 +277,7 @@ export async function createOrderFromQuote(session: TenantSession, quoteId: stri
 }
 
 export async function updateOrder(session: TenantSession, id: string, input: OrderInput): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "order", "edit");
+  const scope = getScope(session, "order", "edit");
   if (!scope) return forbidden();
 
   const { lines, totals } = calculateDocument(toLineInputs(input.items), input.documentDiscount ?? undefined);
@@ -369,7 +369,7 @@ const ORDER_FORWARD_STATUS: Record<OrderStatus, OrderStatus | null> = {
 
 /** SP-04: onaylandı → hazırlanıyor → teslim edildi → tamamlandı (yalnızca ileri yönde, sıralı). */
 export async function advanceOrderStatus(session: TenantSession, id: string): Promise<ServiceResult<{ id: string; status: string }>> {
-  const scope = getRequiredScope(session.role, "order", "edit");
+  const scope = getScope(session, "order", "edit");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -396,7 +396,7 @@ export async function advanceOrderStatus(session: TenantSession, id: string): Pr
 
 /** SP-04/SP-05: her aşamadan iptal mümkün — tutarlar ciro/açık alacaktan düşer (metrik sorgularında). */
 export async function cancelOrder(session: TenantSession, id: string, reason: string): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "order", "edit");
+  const scope = getScope(session, "order", "edit");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {

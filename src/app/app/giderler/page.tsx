@@ -4,7 +4,7 @@ import { getTenantSession } from "@/lib/auth/session";
 import { withTenant } from "@/lib/db/tenant-context";
 import { listExpenses, getCategoryReport } from "@/lib/modules/expenses/service";
 import { listExpensesQuerySchema } from "@/lib/validation/expense";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { DeleteExpenseButton } from "./_components/delete-expense-button";
 import { ExpenseFilterBar } from "./_components/expense-filter-bar";
@@ -14,7 +14,7 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "expense", "view");
+  const scope = getScope(session, "expense", "view");
   if (!scope) return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
 
   const parsed = listExpensesQuerySchema.safeParse(searchParams);
@@ -30,9 +30,9 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
 
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const canCreate = !!getRequiredScope(session.role, "expense", "create");
-  const canDelete = !!getRequiredScope(session.role, "expense", "delete");
-  const canExport = !!getRequiredScope(session.role, "expense", "export");
+  const canCreate = !!getScope(session, "expense", "create");
+  const canDelete = !!getScope(session, "expense", "delete");
+  const canExport = !!getScope(session, "expense", "export");
   const report = reportResult.ok ? reportResult.data : [];
   const exportQuery = new URLSearchParams(searchParams as Record<string, string>).toString();
 

@@ -3,14 +3,14 @@ import { requireSession, requireWritable, isSession, serviceResultToResponse, zo
 import { createActivity } from "@/lib/modules/customers/service";
 import { activityInputSchema } from "@/lib/validation/customer";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 
 /** MC-07/MC-08: bir müşterinin görüşme geçmişi. */
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const session = await requireSession();
   if (!isSession(session)) return session;
 
-  const scope = getRequiredScope(session.role, "customer", "view");
+  const scope = getScope(session, "customer", "view");
   if (!scope) return NextResponse.json({ error: "Bu işlem için yetkiniz yok." }, { status: 403 });
 
   const activities = await withTenant(session.companyId, (tx) =>

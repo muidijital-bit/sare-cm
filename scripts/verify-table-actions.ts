@@ -37,6 +37,7 @@ async function main() {
     companyName: "Sare Havuz & Spa",
     companyStatus: "ACTIVE",
     role: "OWNER",
+    enabledModules: ["*"],
     membershipCount: 1,
   };
 

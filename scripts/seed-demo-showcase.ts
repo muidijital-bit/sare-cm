@@ -71,6 +71,7 @@ async function main() {
     companyName: company.name,
     companyStatus: "ACTIVE",
     role: "OWNER",
+    enabledModules: ["*"],
     membershipCount: 1,
   };
 

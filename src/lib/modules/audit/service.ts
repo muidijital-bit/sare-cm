@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import { forbidden } from "@/lib/modules/result";
 
@@ -33,7 +33,7 @@ export interface AuditLogRow {
  * adları burada ayrı bir sorguyla eşlenir.
  */
 export async function listAuditLogs(session: TenantSession, params: ListParams) {
-  if (!getRequiredScope(session.role, "auditLog", "view")) return forbidden();
+  if (!getScope(session, "auditLog", "view")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const where: Prisma.AuditLogWhereInput = {

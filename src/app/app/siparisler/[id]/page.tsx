@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { getOrder, computePaymentStatus } from "@/lib/modules/orders/service";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, ORDER_STATUS_COLORS } from "@/components/ui/badge";
 import { OrderActions } from "../_components/order-actions";
@@ -16,7 +16,7 @@ export default async function SiparisDetayPage({ params }: { params: { id: strin
   const order = result.data;
   const paymentStatus = computePaymentStatus(order);
 
-  const editScope = getRequiredScope(session.role, "order", "edit");
+  const editScope = getScope(session, "order", "edit");
   const canEdit = !!editScope && (editScope === "all" || order.ownerUserId === session.userId);
 
   return (

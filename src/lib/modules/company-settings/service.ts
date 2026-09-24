@@ -1,14 +1,14 @@
 import type { Prisma } from "@prisma/client";
 import { withTenant } from "@/lib/db/tenant-context";
 import { writeAuditLog, diffFields } from "@/lib/audit/log";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import type { CompanySettingsInput } from "@/lib/validation/company-settings";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
 
 /** SA-01/02/03/07: Şirket ayarlarını getirir/güncelleri. */
 export async function getCompanySettings(session: TenantSession) {
-  if (!getRequiredScope(session.role, "companySettings", "view")) return forbidden();
+  if (!getScope(session, "companySettings", "view")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const company = await tx.company.findUniqueOrThrow({ where: { id: session.companyId } });
@@ -17,7 +17,7 @@ export async function getCompanySettings(session: TenantSession) {
 }
 
 export async function updateCompanySettings(session: TenantSession, input: CompanySettingsInput): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.company.findUniqueOrThrow({ where: { id: session.companyId } });
@@ -72,7 +72,7 @@ async function assertRefUnused(tx: Prisma.TransactionClient, model: RefModel, id
 }
 
 export async function createCustomerSource(session: TenantSession, name: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
     const row = await tx.customerSource.create({ data: { companyId: session.companyId, name } });
     await writeAuditLog(tx, { companyId: session.companyId, userId: session.userId, action: "CREATE", entityType: "customerSource", entityId: row.id });
@@ -81,7 +81,7 @@ export async function createCustomerSource(session: TenantSession, name: string)
 }
 
 export async function updateCustomerSource(session: TenantSession, id: string, name: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.customerSource.findFirst({ where: { id, deletedAt: null } });
     if (!existing) return notFound();
@@ -91,7 +91,7 @@ export async function updateCustomerSource(session: TenantSession, id: string, n
 }
 
 export async function deleteCustomerSource(session: TenantSession, id: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.customerSource.findFirst({ where: { id, deletedAt: null } });
     if (!existing) return notFound();
@@ -102,7 +102,7 @@ export async function deleteCustomerSource(session: TenantSession, id: string): 
 }
 
 export async function createExpenseCategory(session: TenantSession, name: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
     const row = await tx.expenseCategory.create({ data: { companyId: session.companyId, name } });
     await writeAuditLog(tx, { companyId: session.companyId, userId: session.userId, action: "CREATE", entityType: "expenseCategory", entityId: row.id });
@@ -111,7 +111,7 @@ export async function createExpenseCategory(session: TenantSession, name: string
 }
 
 export async function updateExpenseCategory(session: TenantSession, id: string, name: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.expenseCategory.findFirst({ where: { id, deletedAt: null } });
     if (!existing) return notFound();
@@ -121,7 +121,7 @@ export async function updateExpenseCategory(session: TenantSession, id: string, 
 }
 
 export async function deleteExpenseCategory(session: TenantSession, id: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.expenseCategory.findFirst({ where: { id, deletedAt: null } });
     if (!existing) return notFound();
@@ -132,7 +132,7 @@ export async function deleteExpenseCategory(session: TenantSession, id: string):
 }
 
 export async function createAccount(session: TenantSession, name: string, type: "CASH" | "BANK"): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
     const row = await tx.account.create({ data: { companyId: session.companyId, name, type } });
     await writeAuditLog(tx, { companyId: session.companyId, userId: session.userId, action: "CREATE", entityType: "account", entityId: row.id });
@@ -141,7 +141,7 @@ export async function createAccount(session: TenantSession, name: string, type: 
 }
 
 export async function updateAccount(session: TenantSession, id: string, name: string, type: "CASH" | "BANK"): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.account.findFirst({ where: { id, isActive: true } });
     if (!existing) return notFound();
@@ -151,7 +151,7 @@ export async function updateAccount(session: TenantSession, id: string, name: st
 }
 
 export async function deleteAccount(session: TenantSession, id: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "companySettings", "edit")) return forbidden();
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.account.findFirst({ where: { id, isActive: true } });
     if (!existing) return notFound();

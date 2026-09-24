@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { withTenant } from "@/lib/db/tenant-context";
 import { writeAuditLog, diffFields } from "@/lib/audit/log";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import type { CustomerInput, ActivityInput } from "@/lib/validation/customer";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
@@ -26,7 +26,7 @@ interface ListParams {
  * transaction'da birleştirmek sayfa başına ölçülebilir gecikme kazandırır.
  */
 export async function listCustomers(session: TenantSession, params: ListParams, tx?: Prisma.TransactionClient) {
-  const scope = getRequiredScope(session.role, "customer", "view");
+  const scope = getScope(session, "customer", "view");
   if (!scope) return forbidden();
   const ownScope = scope === "own";
 
@@ -78,7 +78,7 @@ const CUSTOMER_DETAIL_INCLUDE = {
 export type CustomerDetail = Prisma.CustomerGetPayload<{ include: typeof CUSTOMER_DETAIL_INCLUDE }>;
 
 export async function getCustomer(session: TenantSession, id: string): Promise<ServiceResult<CustomerDetail>> {
-  const scope = getRequiredScope(session.role, "customer", "view");
+  const scope = getScope(session, "customer", "view");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -102,7 +102,7 @@ export interface CustomerBalance {
 
 /** MC-10: Müşteri özetinde güncel bakiye — toplam sipariş, toplam tahsilat, açık alacak, vadesi geçmiş. */
 export async function getCustomerBalance(session: TenantSession, customerId: string): Promise<ServiceResult<CustomerBalance>> {
-  if (!getRequiredScope(session.role, "customer", "view")) return forbidden();
+  if (!getScope(session, "customer", "view")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const [ordersAgg, paymentsAgg, schedules] = await Promise.all([
@@ -139,7 +139,7 @@ async function hasLinkedDocuments(tx: Prisma.TransactionClient, customerId: stri
 }
 
 export async function createCustomer(session: TenantSession, input: CustomerInput): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "customer", "create");
+  const scope = getScope(session, "customer", "create");
   if (!scope) return forbidden();
 
   // "own" kapsamındaki roller yalnızca kendi adlarına kayıt açabilir — client'tan gelen
@@ -202,7 +202,7 @@ export async function updateCustomer(
   id: string,
   input: CustomerInput,
 ): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "customer", "edit");
+  const scope = getScope(session, "customer", "edit");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -295,7 +295,7 @@ export async function updateCustomer(
 
 /** MC-14: yumuşak silme; bağlı teklif/sipariş varsa engellenir (pasife alma önerilir). */
 export async function deleteCustomer(session: TenantSession, id: string): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "customer", "delete");
+  const scope = getScope(session, "customer", "delete");
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
@@ -342,7 +342,7 @@ export async function createActivity(
   customerId: string,
   input: ActivityInput,
 ): Promise<ServiceResult<{ id: string }>> {
-  const scope = getRequiredScope(session.role, "customer", "edit"); // görüşme eklemek düzenleme yetkisi gerektirir
+  const scope = getScope(session, "customer", "edit"); // görüşme eklemek düzenleme yetkisi gerektirir
   if (!scope) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {

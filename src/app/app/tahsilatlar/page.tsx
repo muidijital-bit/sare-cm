@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { listPayments, listOverdueReceivables } from "@/lib/modules/payments/service";
 import { listPaymentsQuerySchema } from "@/lib/validation/payment";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge } from "@/components/ui/badge";
 import { PaymentFilterBar } from "./_components/payment-filter-bar";
@@ -14,7 +14,7 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "payment", "view");
+  const scope = getScope(session, "payment", "view");
   if (!scope) return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
 
   const parsed = listPaymentsQuerySchema.safeParse(searchParams);
@@ -24,9 +24,9 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
 
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const canCreate = !!getRequiredScope(session.role, "payment", "create");
-  const canCancel = !!getRequiredScope(session.role, "payment", "delete");
-  const canExport = !!getRequiredScope(session.role, "payment", "export");
+  const canCreate = !!getScope(session, "payment", "create");
+  const canCancel = !!getScope(session, "payment", "delete");
+  const canExport = !!getScope(session, "payment", "export");
   const overdue = overdueResult.ok ? overdueResult.data : [];
   const exportQuery = new URLSearchParams(searchParams as Record<string, string>).toString();
 

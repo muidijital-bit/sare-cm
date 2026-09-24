@@ -4,7 +4,7 @@ import { getTenantSession } from "@/lib/auth/session";
 import { withTenant } from "@/lib/db/tenant-context";
 import { listCustomers } from "@/lib/modules/customers/service";
 import { listCustomersQuerySchema } from "@/lib/validation/customer";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { Badge, CUSTOMER_STATUS_COLORS } from "@/components/ui/badge";
 import { CustomerFilterBar } from "./_components/customer-filter-bar";
@@ -19,7 +19,7 @@ export default async function MusterilerPage({
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "customer", "view");
+  const scope = getScope(session, "customer", "view");
   if (!scope) {
     return <p className="text-sm text-gray-500">Bu modülü görüntüleme yetkiniz yok.</p>;
   }
@@ -50,8 +50,8 @@ export default async function MusterilerPage({
 
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const editScope = getRequiredScope(session.role, "customer", "edit");
-  const deleteScope = getRequiredScope(session.role, "customer", "delete");
+  const editScope = getScope(session, "customer", "edit");
+  const deleteScope = getScope(session, "customer", "delete");
   const canDelete = !!deleteScope;
   const canShowActions = !!editScope || !!deleteScope;
 

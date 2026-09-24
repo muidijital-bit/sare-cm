@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { getQuote } from "@/lib/modules/quotes/service";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, QUOTE_STATUS_COLORS } from "@/components/ui/badge";
 import { QuoteActions } from "../_components/quote-actions";
@@ -15,8 +15,8 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
   if (!result.ok) return <p className="text-sm text-red-600">{result.message}</p>;
   const quote = result.data;
 
-  const canEdit = !!getRequiredScope(session.role, "quote", "edit") && (getRequiredScope(session.role, "quote", "edit") === "all" || quote.ownerUserId === session.userId);
-  const canConvert = !!getRequiredScope(session.role, "order", "create");
+  const canEdit = !!getScope(session, "quote", "edit") && (getScope(session, "quote", "edit") === "all" || quote.ownerUserId === session.userId);
+  const canConvert = !!getScope(session, "order", "create");
 
   return (
     <div>

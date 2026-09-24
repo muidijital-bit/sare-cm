@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { getOrder } from "@/lib/modules/orders/service";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { OrderForm } from "../../_components/order-form";
 
@@ -10,7 +10,7 @@ export default async function SiparisDuzenlePage({ params }: { params: { id: str
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "order", "edit");
+  const scope = getScope(session, "order", "edit");
   if (!scope) return <p className="text-sm text-gray-500">Bu kaydı düzenleme yetkiniz yok.</p>;
 
   const result = await getOrder(session, params.id);

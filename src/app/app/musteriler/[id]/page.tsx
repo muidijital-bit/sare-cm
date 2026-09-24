@@ -5,7 +5,7 @@ import { getCustomer, getCustomerBalance } from "@/lib/modules/customers/service
 import { listQuotes } from "@/lib/modules/quotes/service";
 import { listOrders } from "@/lib/modules/orders/service";
 import { listPayments } from "@/lib/modules/payments/service";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr, formatDateTR, formatCurrencyTRY } from "@/lib/i18n/tr";
 import { Badge, CUSTOMER_STATUS_COLORS, QUOTE_STATUS_COLORS, ORDER_STATUS_COLORS } from "@/components/ui/badge";
 import { AuditTrail } from "@/components/audit/audit-trail";
@@ -37,9 +37,9 @@ export default async function MusteriDetayPage({
   }
   const customer = result.data;
 
-  const canEdit = !!getRequiredScope(session.role, "customer", "edit");
-  const canDelete = !!getRequiredScope(session.role, "customer", "delete");
-  const canViewAudit = !!getRequiredScope(session.role, "auditLog", "view");
+  const canEdit = !!getScope(session, "customer", "edit");
+  const canDelete = !!getScope(session, "customer", "delete");
+  const canViewAudit = !!getScope(session, "auditLog", "view");
   const activeTab = TABS.some((t) => t.key === searchParams.tab) ? searchParams.tab! : "ozet";
 
   const balanceResult = activeTab === "ozet" ? await getCustomerBalance(session, customer.id) : null;

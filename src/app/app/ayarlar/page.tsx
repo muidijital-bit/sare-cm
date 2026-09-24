@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { getCompanySettings } from "@/lib/modules/company-settings/service";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { CompanyInfoForm } from "./_components/company-info-form";
 import { NamedRefList } from "./_components/named-ref-list";
@@ -12,7 +12,7 @@ export default async function AyarlarPage() {
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  if (!getRequiredScope(session.role, "companySettings", "view")) {
+  if (!getScope(session, "companySettings", "view")) {
     return <p className="text-sm text-gray-500">Bu sayfayı görüntüleme yetkiniz yok.</p>;
   }
 

@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import { listOverdueReceivables } from "@/lib/modules/payments/service";
 import { getCategoryReport } from "@/lib/modules/expenses/service";
@@ -27,9 +27,9 @@ export interface DashboardMetrics {
  * aynı rakamı göstermek isterse bu fonksiyonu çağırır, formülü yeniden yazmaz.
  */
 export async function getDashboardMetrics(session: TenantSession, from: Date, to: Date): Promise<DashboardMetrics> {
-  const orderScope = getRequiredScope(session.role, "order", "view");
-  const quoteScope = getRequiredScope(session.role, "quote", "view");
-  const expenseScope = getRequiredScope(session.role, "expense", "view");
+  const orderScope = getScope(session, "order", "view");
+  const quoteScope = getScope(session, "quote", "view");
+  const expenseScope = getScope(session, "expense", "view");
   const scopedToOwn = orderScope === "own" || quoteScope === "own";
 
   return withTenant(session.companyId, async (tx) => {
@@ -141,9 +141,9 @@ export interface DashboardCharts {
  * withTenant'ı olan getCategoryReport()'u (GD-02 ile aynı tek kaynak) ayrıca çağırır.
  */
 export async function getDashboardCharts(session: TenantSession): Promise<DashboardCharts> {
-  const orderScope = getRequiredScope(session.role, "order", "view");
-  const quoteScope = getRequiredScope(session.role, "quote", "view");
-  const expenseScope = getRequiredScope(session.role, "expense", "view");
+  const orderScope = getScope(session, "order", "view");
+  const quoteScope = getScope(session, "quote", "view");
+  const expenseScope = getScope(session, "expense", "view");
 
   const twelveMonthsAgo = dayjs().subtract(11, "month").startOf("month").toDate();
 

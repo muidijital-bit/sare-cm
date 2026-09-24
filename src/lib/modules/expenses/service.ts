@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import type { Prisma } from "@prisma/client";
 import { withTenant } from "@/lib/db/tenant-context";
 import { writeAuditLog, diffFields } from "@/lib/audit/log";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import type { ExpenseInput } from "@/lib/validation/expense";
 import { type ServiceResult, forbidden, notFound } from "@/lib/modules/result";
@@ -59,7 +59,7 @@ async function generateDueRecurringExpenses(tx: Prisma.TransactionClient, compan
 }
 
 export async function listExpenses(session: TenantSession, params: ListParams) {
-  if (!getRequiredScope(session.role, "expense", "view")) return forbidden();
+  if (!getScope(session, "expense", "view")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     await generateDueRecurringExpenses(tx, session.companyId);
@@ -97,7 +97,7 @@ const EXPENSE_DETAIL_INCLUDE = {
 export type ExpenseDetail = Prisma.ExpenseGetPayload<{ include: typeof EXPENSE_DETAIL_INCLUDE }>;
 
 export async function getExpense(session: TenantSession, id: string): Promise<ServiceResult<ExpenseDetail>> {
-  if (!getRequiredScope(session.role, "expense", "view")) return forbidden();
+  if (!getScope(session, "expense", "view")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const expense = await tx.expense.findFirst({ where: { id, deletedAt: null }, include: EXPENSE_DETAIL_INCLUDE });
@@ -107,7 +107,7 @@ export async function getExpense(session: TenantSession, id: string): Promise<Se
 }
 
 export async function createExpense(session: TenantSession, input: ExpenseInput): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "expense", "create")) return forbidden();
+  if (!getScope(session, "expense", "create")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const category = await tx.expenseCategory.findFirst({ where: { id: input.categoryId, deletedAt: null } });
@@ -137,7 +137,7 @@ export async function createExpense(session: TenantSession, input: ExpenseInput)
 }
 
 export async function updateExpense(session: TenantSession, id: string, input: ExpenseInput): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "expense", "edit")) return forbidden();
+  if (!getScope(session, "expense", "edit")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.expense.findFirst({ where: { id, deletedAt: null } });
@@ -172,7 +172,7 @@ export async function updateExpense(session: TenantSession, id: string, input: E
 }
 
 export async function deleteExpense(session: TenantSession, id: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "expense", "delete")) return forbidden();
+  if (!getScope(session, "expense", "delete")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.expense.findFirst({ where: { id, deletedAt: null } });
@@ -212,7 +212,7 @@ export interface ExpenseExportRow {
 
 /** Dışa aktarma (Excel/CSV) — listedekiyle AYNI filtreleri kullanır, sayfalama olmadan (üst sınır: 5000 satır). */
 export async function exportExpenses(session: TenantSession, params: Omit<ListParams, "page" | "pageSize">): Promise<ServiceResult<ExpenseExportRow[]>> {
-  if (!getRequiredScope(session.role, "expense", "export")) return forbidden();
+  if (!getScope(session, "expense", "export")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     await generateDueRecurringExpenses(tx, session.companyId);
@@ -257,7 +257,7 @@ export interface CategoryReportRow {
 
 /** GD-02: kategori bazlı raporlama. */
 export async function getCategoryReport(session: TenantSession, dateFrom?: Date, dateTo?: Date): Promise<ServiceResult<CategoryReportRow[]>> {
-  if (!getRequiredScope(session.role, "expense", "view")) return forbidden();
+  if (!getScope(session, "expense", "view")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     await generateDueRecurringExpenses(tx, session.companyId);

@@ -9,9 +9,22 @@ export const createCompanyInputSchema = z.object({
 });
 export type CreateCompanyInput = z.infer<typeof createCompanyInputSchema>;
 
-export const companyStatusInputSchema = z.object({
-  status: z.enum(["TRIAL", "ACTIVE", "SUSPENDED"]),
+/** Şirket güncelleme: durum ve/veya paket (en az biri). */
+export const companyStatusInputSchema = z
+  .object({
+    status: z.enum(["TRIAL", "ACTIVE", "SUSPENDED"]).optional(),
+    planId: z.string().uuid().optional(),
+  })
+  .refine((v) => v.status !== undefined || v.planId !== undefined, { message: "Durum veya paket gerekli" });
+
+/** Şirkete özel modül ayarı: enabled=null → override'ı sil (pakete dön). */
+export const companyModuleInputSchema = z.object({
+  moduleKey: z.string().trim().min(1),
+  enabled: z.boolean().nullable(),
+  expiresAt: z.coerce.date().optional().nullable(),
+  note: z.string().trim().max(500).optional().nullable(),
 });
+export type CompanyModuleInput = z.infer<typeof companyModuleInputSchema>;
 
 /** PF-03: paket tanımları. */
 export const createPlanInputSchema = z.object({

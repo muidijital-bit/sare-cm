@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireSuperAdmin, isSuperAdminSession } from "@/lib/api/platform-handlers";
 import { zodErrorResponse, serviceResultToResponse } from "@/lib/api/handlers";
-import { setCompanyStatus } from "@/lib/modules/platform/service";
+import { setCompanyStatus, setCompanyPlan } from "@/lib/modules/platform/service";
 import { companyStatusInputSchema } from "@/lib/validation/platform";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -12,6 +12,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const parsed = companyStatusInputSchema.safeParse(body);
   if (!parsed.success) return zodErrorResponse(parsed.error);
 
-  const result = await setCompanyStatus(session, params.id, parsed.data.status);
+  if (parsed.data.planId) {
+    const planResult = await setCompanyPlan(session, params.id, parsed.data.planId);
+    if (!planResult.ok || !parsed.data.status) return serviceResultToResponse(planResult);
+  }
+  const result = await setCompanyStatus(session, params.id, parsed.data.status!);
   return serviceResultToResponse(result);
 }

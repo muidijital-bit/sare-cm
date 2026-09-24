@@ -1,7 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { withTenant, withPlatformBypass } from "@/lib/db/tenant-context";
 import { writeAuditLog } from "@/lib/audit/log";
-import { getRequiredScope, type MembershipRole } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
+import type { MembershipRole } from "@/lib/auth/rbac";
 import { hashPassword, validatePassword } from "@/lib/auth/password";
 import { generateSecureToken, INVITATION_TOKEN_TTL_MS } from "@/lib/security/tokens";
 import type { TenantSession } from "@/lib/auth/session";
@@ -21,7 +22,7 @@ export interface CompanyUserRow {
 
 /** KY-04..KY-08: şirketin aktif üyeleri + bekleyen davetleri birleşik liste. */
 export async function listCompanyUsers(session: TenantSession): Promise<ServiceResult<CompanyUserRow[]>> {
-  if (!getRequiredScope(session.role, "userManagement", "view")) return forbidden();
+  if (!getScope(session, "userManagement", "view")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const memberships = await tx.membership.findMany({
@@ -62,7 +63,7 @@ export async function listCompanyUsers(session: TenantSession): Promise<ServiceR
 
 /** KY-04/KY-08: davet oluşturur — paket kullanıcı limiti doluysa engellenir. */
 export async function inviteUser(session: TenantSession, input: InviteUserInput): Promise<ServiceResult<{ token: string; expiresAt: Date }>> {
-  if (!getRequiredScope(session.role, "userManagement", "create")) return forbidden();
+  if (!getScope(session, "userManagement", "create")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const company = await tx.company.findUniqueOrThrow({ where: { id: session.companyId }, include: { plan: true } });
@@ -100,7 +101,7 @@ export async function inviteUser(session: TenantSession, input: InviteUserInput)
 
 /** Davet iptali (henüz kabul edilmemiş). */
 export async function cancelInvitation(session: TenantSession, invitationId: string): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "userManagement", "create")) return forbidden();
+  if (!getScope(session, "userManagement", "create")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const invite = await tx.invitationToken.findFirst({ where: { id: invitationId, companyId: session.companyId, acceptedAt: null } });
@@ -118,7 +119,7 @@ async function countActiveOwners(tx: Prisma.TransactionClient, companyId: string
 
 /** Rol değiştirme / pasifleştirme-aktifleştirme — son Sahip korumalıdır (§4). */
 export async function updateMembership(session: TenantSession, membershipId: string, input: UpdateMembershipInput): Promise<ServiceResult<{ id: string }>> {
-  if (!getRequiredScope(session.role, "userManagement", "edit")) return forbidden();
+  if (!getScope(session, "userManagement", "edit")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
     const membership = await tx.membership.findFirst({ where: { id: membershipId, companyId: session.companyId }, include: { user: true } });

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { getExpense } from "@/lib/modules/expenses/service";
 import { withTenant } from "@/lib/db/tenant-context";
-import { getRequiredScope } from "@/lib/auth/rbac";
+import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { ExpenseForm } from "../../_components/expense-form";
 
@@ -10,7 +10,7 @@ export default async function GiderDuzenlePage({ params }: { params: { id: strin
   const session = await getTenantSession();
   if (!session) redirect("/app/sirket-sec");
 
-  const scope = getRequiredScope(session.role, "expense", "edit");
+  const scope = getScope(session, "expense", "edit");
   if (!scope) return <p className="text-sm text-gray-500">Bu kaydı düzenleme yetkiniz yok.</p>;
 
   const result = await getExpense(session, params.id);
