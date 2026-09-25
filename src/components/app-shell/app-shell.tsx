@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, X, MoreHorizontal, LogOut, Repeat } from "re
 import type { MembershipRole } from "@/lib/auth/rbac";
 import { NAV_ITEMS, MOBILE_PRIMARY_COUNT, isNavItemVisible } from "@/lib/nav-items";
 import { tr } from "@/lib/i18n/tr";
+import { BRAND } from "@/lib/brand";
 
 interface AppShellProps {
   companyName: string;
@@ -33,26 +34,19 @@ function HamburgerIcon() {
 }
 
 /**
- * Logo beyaz (şeffaf kenarlı) olduğu için koyu lacivert (brand-950) zemin üzerine oturur.
- * `next/image` yerine düz `<img>` kullanılır — küçük, sabit bir logo için optimizasyon
- * kazancı önemsizdir ve `next/image` + tam statik sayfa kombinasyonu (bkz. /giris) bilinen
- * bir Next.js 13.5 build hatasına (`Cannot find module for page: /_document`) yol açıyordu.
+ * Uygulama içinde HERKES muiflow logosunu görür (müşteri firma logosu menüde kullanılmaz).
+ * Logo beyaz/şeffaf, koyu lacivert (brand-950) zemin üzerine oturur. `next/image` yerine düz
+ * `<img>`: küçük sabit logo için optimizasyon kazancı önemsizdir ve `next/image` + tam statik
+ * sayfa kombinasyonu bilinen bir Next.js 13.5 build hatasına yol açıyordu.
  */
 function LogoMark({ compact = false }: { compact?: boolean }) {
   if (compact) {
-    // Daraltılmış menüde tam (yatay) logoyu sıkıştırmak yerine amblemin kendisi kullanılır.
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src="/logo-icon.png" alt={tr.common.appName} className="h-9 w-9 shrink-0 object-contain" />
-    );
+    // Daraltılmış menüde tam logoyu sıkıştırmak yerine "mu" amblemi kullanılır.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={BRAND.mark} alt={BRAND.name} className="h-5 w-auto shrink-0" />;
   }
-  return (
-    <span className="flex items-center gap-2">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo.png" alt={tr.common.appName} className="h-9 w-auto shrink-0" />
-      <span className="text-2xl font-bold tracking-wide text-white/80">CM</span>
-    </span>
-  );
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={BRAND.logoWhite} alt={BRAND.name} className="h-7 w-auto shrink-0" />;
 }
 
 export function AppShell({ companyName, role, userName, userEmail, hasMultipleCompanies, enabledModules, children }: AppShellProps) {
@@ -252,13 +246,13 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
         <main className="flex-1 px-4 py-6 pb-24 sm:px-6 lg:pb-6">{children}</main>
 
         <footer className="hidden border-t border-gray-200 px-4 py-3 text-center text-xs text-gray-400 sm:px-6 lg:block">
-          {tr.common.appName} · V1
+          {BRAND.name} · V1
         </footer>
       </div>
 
       {/* Mobil alt sekme çubuğu — en önemli modüllere tek dokunuşla erişim */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 flex border-t border-brand-900 bg-brand-950/98 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 flex border-t border-brand-900 bg-brand-950 pb-[env(safe-area-inset-bottom)] lg:hidden"
         aria-label="Ana menü"
       >
         {primaryItems.map((item) => {

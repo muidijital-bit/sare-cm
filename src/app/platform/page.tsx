@@ -3,6 +3,7 @@ import { getSuperAdminSession } from "@/lib/auth/session";
 import { listCompanies, listPlans } from "@/lib/modules/platform/service";
 import { LogoutButton } from "@/components/logout-button";
 import { tr } from "@/lib/i18n/tr";
+import { BRAND } from "@/lib/brand";
 import { CompanyList } from "./_components/company-list";
 import { PlanList } from "./_components/plan-list";
 
@@ -17,7 +18,11 @@ export default async function PlatformPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-white">{tr.platform.title}</h1>
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={BRAND.logoWhite} alt={BRAND.name} className="h-7 w-auto" />
+          <h1 className="border-l border-brand-700 pl-3 text-sm font-medium text-brand-200">{tr.platform.title}</h1>
+        </div>
         <LogoutButton />
       </header>
 

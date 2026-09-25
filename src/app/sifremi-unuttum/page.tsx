@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { tr } from "@/lib/i18n/tr";
+import { BRAND } from "@/lib/brand";
 
 export default function SifremiUnuttumPage() {
   const [email, setEmail] = useState("");
@@ -33,7 +34,7 @@ export default function SifremiUnuttumPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-brand-950 px-4 py-10">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo.png" alt={tr.common.appName} className="h-16 w-auto" />
+      <img src={BRAND.logoWhite} alt={BRAND.name} className="h-12 w-auto" />
       <p className="mb-6 mt-2 text-sm text-white/70">{tr.common.tagline}</p>
 
       <div className="w-full max-w-sm space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-lg sm:p-8">

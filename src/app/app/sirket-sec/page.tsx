@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { tr } from "@/lib/i18n/tr";
+import { BRAND } from "@/lib/brand";
 
 export default function SirketSecPage() {
   const { data: session, status, update } = useSession();
@@ -23,7 +24,7 @@ export default function SirketSecPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-brand-950 px-4 py-10">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo.png" alt={tr.common.appName} className="h-16 w-auto" />
+      <img src={BRAND.logoWhite} alt={BRAND.name} className="h-12 w-auto" />
       <p className="mb-6 mt-2 text-sm text-white/70">{tr.common.tagline}</p>
       <div className="w-full max-w-sm space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
         <h2 className="text-lg font-semibold text-gray-900">{tr.company.select}</h2>

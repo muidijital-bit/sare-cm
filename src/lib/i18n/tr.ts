@@ -5,8 +5,8 @@
  */
 export const tr = {
   common: {
-    appName: "Sare CM",
-    tagline: "Şirket Yönetim Uygulaması",
+    appName: "muiflow",
+    tagline: "Tekliften tahsilata tek panel",
     save: "Kaydet",
     cancel: "Vazgeç",
     loading: "Yükleniyor…",

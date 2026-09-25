@@ -1,5 +1,6 @@
 import { tr } from "@/lib/i18n/tr";
 import { LoginForm } from "./_components/login-form";
+import { BRAND } from "@/lib/brand";
 
 /**
  * Giriş ekranı fonu — WeTransfer tarzı tam-ekran fotoğraf + koyu degrade katmanı.
@@ -30,7 +31,7 @@ export default function GirisPage() {
 
       <div className="relative z-10 flex flex-col items-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt={tr.common.appName} className="h-16 w-auto drop-shadow-lg" />
+        <img src={BRAND.logoWhite} alt={BRAND.name} className="h-12 w-auto drop-shadow-lg" />
         <p className="mb-6 mt-2 text-sm text-white/80">{tr.common.tagline}</p>
 
         <LoginForm />
