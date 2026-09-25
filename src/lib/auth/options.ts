@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/db/prisma";
 import { withPlatformBypass } from "@/lib/db/tenant-context";
 import { verifyPassword } from "@/lib/auth/password";
+import { decryptTotpSecret, verifyTotp } from "@/lib/security/totp";
 import type { SessionMembership } from "@/types/next-auth";
 
 /** §KY-06 Ardışık 5 başarısız girişte geçici kilitleme */
@@ -10,6 +11,18 @@ const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000; // 15 dakika
 
 const GENERIC_ERROR = "E-posta veya şifre hatalı.";
+/** Giriş formu bu iki özel mesajı yakalayıp doğrulama kodu alanını gösterir / kurulum uyarısı verir. */
+export const TWO_FACTOR_REQUIRED = "2FA_REQUIRED";
+export const TWO_FACTOR_NOT_SETUP = "2FA_NOT_SETUP";
+
+async function recordFailedLogin(userId: string, previousFailedCount: number): Promise<void> {
+  const failedLoginCount = previousFailedCount + 1;
+  const lockedUntil = failedLoginCount >= MAX_FAILED_ATTEMPTS ? new Date(Date.now() + LOCKOUT_MS) : null;
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id: userId }, data: { failedLoginCount: lockedUntil ? 0 : failedLoginCount, lockedUntil } });
+    await tx.auditLog.create({ data: { companyId: null, userId, action: "LOGIN_FAILED" } });
+  });
+}
 
 /**
  * Bir kullanıcının üye olduğu TÜM şirketleri bulmak, doğası gereği tek bir şirket
@@ -44,6 +57,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "E-posta", type: "email" },
         password: { label: "Şifre", type: "password" },
+        totp: { label: "Doğrulama kodu", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) {
@@ -64,24 +78,23 @@ export const authOptions: NextAuthOptions = {
         const valid = await verifyPassword(credentials.password, user.passwordHash);
 
         if (!valid) {
-          const failedLoginCount = user.failedLoginCount + 1;
-          const lockedUntil =
-            failedLoginCount >= MAX_FAILED_ATTEMPTS ? new Date(Date.now() + LOCKOUT_MS) : null;
-
-          await prisma.$transaction(async (tx) => {
-            await tx.user.update({
-              where: { id: user.id },
-              data: {
-                failedLoginCount: lockedUntil ? 0 : failedLoginCount,
-                lockedUntil,
-              },
-            });
-            await tx.auditLog.create({
-              data: { companyId: null, userId: user.id, action: "LOGIN_FAILED" },
-            });
-          });
-
+          await recordFailedLogin(user.id, user.failedLoginCount);
           throw new Error(GENERIC_ERROR);
+        }
+
+        // Süper admin: ikinci faktör (TOTP) ZORUNLU. Şifre doğrulandıktan SONRA istenir; yanlış
+        // kod da başarısız deneme sayılır (aynı kilitleme). 2FA kurulu değilse giriş engellenir —
+        // kurulum: `npx tsx scripts/setup-superadmin.ts` (bkz. scripts/setup-superadmin.ts).
+        if (user.isSuperAdmin) {
+          if (!user.twoFactorSecret) throw new Error(TWO_FACTOR_NOT_SETUP);
+          const secret = decryptTotpSecret(user.twoFactorSecret);
+          if (!secret) throw new Error(TWO_FACTOR_NOT_SETUP);
+          const code = credentials.totp?.trim();
+          if (!code) throw new Error(TWO_FACTOR_REQUIRED);
+          if (!verifyTotp(secret, code)) {
+            await recordFailedLogin(user.id, user.failedLoginCount);
+            throw new Error(GENERIC_ERROR);
+          }
         }
 
         await prisma.$transaction(async (tx) => {
@@ -102,6 +115,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.userId = user.id;
+        token.loginAt = Date.now();
         token.isSuperAdmin = user.isSuperAdmin;
         const memberships = await loadMemberships(user.id);
         token.memberships = memberships;
@@ -125,6 +139,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       session.user.id = token.userId;
+      session.loginAt = token.loginAt ?? 0;
       session.user.isSuperAdmin = token.isSuperAdmin;
       session.memberships = token.memberships ?? [];
       session.activeCompanyId = token.activeCompanyId ?? null;

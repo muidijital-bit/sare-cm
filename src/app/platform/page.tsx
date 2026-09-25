@@ -27,10 +27,9 @@ export default async function PlatformPage() {
       </header>
 
       <p className="mb-4 text-xs text-brand-300">
-        Zorunlu 2FA doğrulaması henüz tamamlanmadı (bkz. src/lib/auth/session.ts TODO notu). PF-05
-        (abonelik bitişi yaklaşanlar) ve PF-07 (destek amaçlı geçici erişim) bu sürümde yok.
+        Yönetici girişi şifre + doğrulama kodu (2FA) ister; oturum en fazla 12 saat açık kalır. PF-05 (abonelik
+        bitişi yaklaşanlar) ve PF-07 (destek amaçlı geçici erişim) bu sürümde yok.
       </p>
-
       <section className="mb-8">
         <h2 className="mb-3 text-base font-semibold text-white">{tr.platform.companies}</h2>
         <CompanyList companies={companies.map((c) => ({ ...c, subscriptionEndsAt: c.subscriptionEndsAt?.toISOString() ?? null }))} plans={plans} />

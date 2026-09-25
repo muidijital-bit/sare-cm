@@ -11,6 +11,8 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
+  const [totp, setTotp] = useState("");
+  const [needsTotp, setNeedsTotp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,12 +24,23 @@ export function LoginForm() {
     const result = await signIn("credentials", {
       email,
       password,
+      totp,
       redirect: false,
     });
 
     setLoading(false);
 
     if (result?.error) {
+      // Yönetici hesapları: şifre doğruysa sunucu doğrulama kodu ister (bkz. auth/options.ts).
+      if (result.error === "2FA_REQUIRED") {
+        setNeedsTotp(true);
+        setError(null);
+        return;
+      }
+      if (result.error === "2FA_NOT_SETUP") {
+        setError("Bu yönetici hesabında iki adımlı doğrulama kurulu değil. Kurulum için sistem yöneticisine başvurun.");
+        return;
+      }
       setError(tr.auth.loginError);
       return;
     }
@@ -68,6 +81,28 @@ export function LoginForm() {
             className="mt-1.5 block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           />
         </div>
+
+        {needsTotp && (
+          <div>
+            <label htmlFor="totp" className="block text-sm font-medium text-gray-700">
+              Doğrulama kodu
+            </label>
+            <input
+              id="totp"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9 ]{6,7}"
+              maxLength={7}
+              required
+              autoFocus
+              value={totp}
+              onChange={(e) => setTotp(e.target.value)}
+              placeholder="6 haneli kod"
+              className="mt-1.5 block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base tracking-widest text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+            />
+            <p className="mt-1 text-xs text-gray-500">Doğrulama uygulamanızdaki (Google Authenticator vb.) güncel kod.</p>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <input

@@ -109,11 +109,14 @@ export interface SuperAdminSession {
   userId: string;
 }
 
-/** PF-08: Süper admin paneli — ayrı yol, `isSuperAdmin` + (TODO) zorunlu 2FA doğrulaması. */
+/** PF-08: Süper admin paneli — ayrı yol, `isSuperAdmin` + giriş sırasında zorunlu 2FA (TOTP). */
+/** Süper admin oturumu, "beni hatırla" olsa bile bu süreden sonra yeniden giriş (şifre + 2FA) ister. */
+const SUPER_ADMIN_SESSION_MAX_MS = 12 * 60 * 60 * 1000;
+
 export async function getSuperAdminSession(): Promise<SuperAdminSession | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id || !session.user.isSuperAdmin) return null;
-  // TODO(auth-tenant-security): 2FA doğrulama adımı tamamlanmadan bu fonksiyon
-  // tam güvenli sayılmamalıdır — bkz. User.twoFactorSecret ve PF-08.
+  if (!session.loginAt || Date.now() - session.loginAt > SUPER_ADMIN_SESSION_MAX_MS) return null;
+  // 2FA (TOTP) giriş sırasında zorunlu tutulur — bkz. src/lib/auth/options.ts authorize().
   return { userId: session.user.id };
 }

@@ -15,6 +15,8 @@ declare module "next-auth" {
     } & DefaultSession["user"];
     memberships: SessionMembership[];
     activeCompanyId: string | null;
+    /** Oturumun açıldığı an (ms) — süper admin oturumunun kısa ömrü için. */
+    loginAt: number;
   }
 
   interface User {
@@ -29,5 +31,6 @@ declare module "next-auth/jwt" {
     isSuperAdmin: boolean;
     memberships: SessionMembership[];
     activeCompanyId: string | null;
+    loginAt: number;
   }
 }

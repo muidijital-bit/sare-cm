@@ -6,6 +6,25 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export class InvalidCompanyIdError extends Error {}
 
 /**
+ * Neon (serverless Postgres) boşta kalan bağlantıları kapatır; Prisma bunu ilk kullanımda
+ * P1017 ("Server has closed the connection") / P1001 ("Can't reach database server") olarak görür.
+ * Bu, kullanıcıya hata göstermeden TEK KEZ yeniden denenecek geçici bir durumdur.
+ */
+function isConnectionLost(e: unknown): boolean {
+  const code = (e as { code?: string } | null)?.code;
+  return code === "P1017" || code === "P1001";
+}
+
+async function retryReadOnConnectionLoss<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (e) {
+    if (!isConnectionLost(e)) throw e;
+    return run();
+  }
+}
+
+/**
  * TÜM kiracı-kapsamlı (tenant-scoped) veritabanı işlemleri bu fonksiyon üzerinden yapılır.
  *
  * Bir transaction açar, Postgres oturum değişkenini (`app.current_company_id`) YALNIZCA bu
@@ -29,21 +48,33 @@ export async function withTenant<T>(
   if (!UUID_RE.test(companyId)) {
     throw new InvalidCompanyIdError(`Geçersiz company_id: ${companyId}`);
   }
-  return prisma.$transaction(
-    async (tx) => {
-      // İki set_config çağrısı TEK sorguda birleştirilir — her ayrı $executeRaw çağrısı
-      // Neon'a (bu ortamdan ~150-250ms) bir tam network round-trip demek; bunu iki yerine
-      // bir round-trip'e indirmek her tenant-kapsamlı sorguda ölçülebilir gecikme kazandırır
-      // (bkz. scripts/measure-latency.ts ile ölçülen gerçek rakamlar).
-      await tx.$executeRaw`SELECT set_config('app.current_company_id', ${companyId}, true), set_config('app.bypass_rls', 'off', true)`;
-      return fn(tx);
-    },
-    // Neon gibi serverless sağlayıcılarda uyanma (cold start) gecikmesi olabilir;
-    // Prisma'nın 5sn'lik `timeout` ve 2sn'lik `maxWait` varsayılanları bunun için dar —
-    // bkz. prisma/seed.ts'te yaşanan P2028 ve tarayıcıda yaşanan "Unable to start a
-    // transaction in the given time" (maxWait) hatası.
-    { timeout: options?.timeoutMs ?? 15_000, maxWait: 15_000 },
-  );
+  // Yeniden deneme YALNIZCA callback henüz başlamadıysa (BEGIN/set_config aşamasında bağlantı kaybı)
+  // yapılır: callback çalışmaya başladıktan sonra yazma tekrarlanırsa mükerrer kayıt riski olur.
+  let started = false;
+  const run = () =>
+    prisma.$transaction(
+      async (tx) => {
+        // İki set_config çağrısı TEK sorguda birleştirilir — her ayrı $executeRaw çağrısı
+        // Neon'a (bu ortamdan ~150-250ms) bir tam network round-trip demek; bunu iki yerine
+        // bir round-trip'e indirmek her tenant-kapsamlı sorguda ölçülebilir gecikme kazandırır
+        // (bkz. scripts/measure-latency.ts ile ölçülen gerçek rakamlar).
+        await tx.$executeRaw`SELECT set_config('app.current_company_id', ${companyId}, true), set_config('app.bypass_rls', 'off', true)`;
+        started = true;
+        return fn(tx);
+      },
+      // Neon gibi serverless sağlayıcılarda uyanma (cold start) gecikmesi olabilir;
+      // Prisma'nın 5sn'lik `timeout` ve 2sn'lik `maxWait` varsayılanları bunun için dar —
+      // bkz. prisma/seed.ts'te yaşanan P2028 ve tarayıcıda yaşanan "Unable to start a
+      // transaction in the given time" (maxWait) hatası.
+      { timeout: options?.timeoutMs ?? 15_000, maxWait: 15_000 },
+    );
+  try {
+    return await run();
+  } catch (e) {
+    if (started || !isConnectionLost(e)) throw e;
+    started = false;
+    return run();
+  }
 }
 
 /**
@@ -71,10 +102,13 @@ export async function withTenantRead<T extends readonly unknown[]>(
     throw new InvalidCompanyIdError(`Geçersiz company_id: ${companyId}`);
   }
 
-  const setContext = prisma.$executeRaw`SELECT set_config('app.current_company_id', ${companyId}, true), set_config('app.bypass_rls', 'off', true)`;
-  const results = await prisma.$transaction([setContext, ...build(prisma)]);
-  // İlk eleman set_config sonucudur, atılır.
-  return results.slice(1) as unknown as T;
+  // Salt-okunur olduğundan bağlantı kaybında tümüyle yeniden denemek güvenlidir (sorgular yeniden kurulur).
+  return retryReadOnConnectionLoss(async () => {
+    const setContext = prisma.$executeRaw`SELECT set_config('app.current_company_id', ${companyId}, true), set_config('app.bypass_rls', 'off', true)`;
+    const results = await prisma.$transaction([setContext, ...build(prisma)]);
+    // İlk eleman set_config sonucudur, atılır.
+    return results.slice(1) as unknown as T;
+  });
 }
 
 /**
@@ -87,11 +121,21 @@ export async function withPlatformBypass<T>(
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
   options?: { timeoutMs?: number },
 ): Promise<T> {
-  return prisma.$transaction(
-    async (tx) => {
-      await tx.$executeRaw`SELECT set_config('app.bypass_rls', 'on', true)`;
-      return fn(tx);
-    },
-    { timeout: options?.timeoutMs ?? 15_000, maxWait: 15_000 },
-  );
+  let started = false; // bkz. withTenant: yeniden deneme yalnızca callback başlamadan önce
+  const run = () =>
+    prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.bypass_rls', 'on', true)`;
+        started = true;
+        return fn(tx);
+      },
+      { timeout: options?.timeoutMs ?? 15_000, maxWait: 15_000 },
+    );
+  try {
+    return await run();
+  } catch (e) {
+    if (started || !isConnectionLost(e)) throw e;
+    started = false;
+    return run();
+  }
 }
