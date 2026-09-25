@@ -1,26 +1,31 @@
 "use client";
 
 /**
- * Yükleniyor katmanını KAPATMANIN tek güvenilir yolu: `template.tsx` Next.js App Router'da
- * her navigasyonda YENİDEN mount edilir (layout.tsx'ten farkı budur) VE bu mount, sunucu
- * verisi/render'ı GERÇEKTEN tamamlanıp React ağaca commit edildiğinde gerçekleşir — yani
- * bu bileşenin `useEffect`'i "yeni sayfa artık ekranda" anını doğru şekilde yakalar.
+ * Yükleniyor katmanını KAPATAN tek yer. Bu bileşen `template.tsx` içinde render edilir:
+ * - mount: yeni bir route segmenti (ör. /app/musteriler → /app/teklifler) commit olduğunda,
+ * - pathname/searchParams değişimi: aynı sayfada filtre/sayfalama (?page=2) gibi sorgu
+ *   değişimlerinde (template bunlarda yeniden mount olmaz).
  *
- * Önceki denemeler (tıklamayı dinleyip pathname değişimini varsaymak, useTransition'ın
- * isPending'i) GÜVENİLİR DEĞİLDİ — kullanıcı raporu: "loading veriler gelmeden kapanıyor,
- * sayfa gri kalıyor". Sebep: Next 13.5'te `router.push()`, React'ın transition/pathname
- * durumuyla RSC veri çekiminin TAM süresini senkron takip etmiyor. `template.tsx`'in mount
- * zamanlaması buna bağlı değil — doğrudan "yeni ağaç commit oldu" anına bağlı.
+ * ÖNEMLİ: Bu sinyallerin "veri geldi" anını doğru yakalaması, route'ta `loading.tsx` OLMAMASINA
+ * bağlıdır. `loading.tsx` bir Suspense sınırı yaratır; Next yeni route'u veri gelmeden boş
+ * fallback ile commit eder → adres/mount hemen değişir, katman erken kapanır ve sayfa gri
+ * kalır (tarayıcıda ölçülerek doğrulandı). `loading.tsx` yokken Next eski sayfayı yerinde tutar
+ * ve yeni ağacı veriyle birlikte tek seferde commit eder — o commit'te bu efekt çalışır.
  */
 import { useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useNavigationPending } from "./navigation-pending";
 
 export function RouteLoadedSignal() {
   const { markLoaded } = useNavigationPending();
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+
   useEffect(() => {
     markLoaded();
-    // Yalnızca mount'ta — her template.tsx örneği bir navigasyona karşılık gelir.
+    // markLoaded kararlı bir referans; yalnızca konum değişince çalışması istenir.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pathname, search]);
+
   return null;
 }

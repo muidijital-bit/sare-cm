@@ -9,10 +9,9 @@
  * 2. `startRouteLoading()` — Link olmayan, düz `router.push()` çağıran yerler (filtre
  *    çubukları, tarih seçici).
  *
- * KAPATMA (pending=false): SADECE `markLoaded()` — bkz. src/lib/ui/route-loaded-signal.tsx.
- * Bu, `template.tsx` içinde render edilen bir bileşenin mount effect'inden gelir; Next.js
- * App Router'da `template.tsx` her navigasyonda YENİDEN mount edilir ve bu mount ancak
- * yeni sayfanın verisi/render'ı TAMAMLANIP React ağaca commit olduğunda gerçekleşir.
+ * KAPATMA (pending=false): SADECE `markLoaded()` — bkz. src/lib/ui/route-loaded-signal.tsx
+ * (template.tsx içinde: segment mount'u veya pathname/searchParams değişimi). Bu, yalnızca
+ * route'larda `loading.tsx` YOKSA "veri geldi" anını doğru yakalar (bkz. template.tsx kuralı).
  *
  * ÖNCEKİ YAKLAŞIM (pathname/searchParams değişimini izleyip kapatmak, ya da React
  * useTransition'ın isPending'i) GÜVENİLİR DEĞİLDİ — kullanıcı raporu: "loading veriler
@@ -67,7 +66,9 @@ export function NavigationPendingProvider({ children }: { children: ReactNode })
   // Kaynak 1: genel <a> tıklama yakalayıcısı — sidebar, grid "Düzenle", sayfalama, "+ Yeni".
   useEffect(() => {
     function onAnchorClick(e: MouseEvent) {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      // Capture aşamasında çalıştığımız için Next `Link`'in preventDefault()'ı henüz çağrılmamıştır;
+      // bubble aşamasında dinlersek her Link tıklaması `defaultPrevented` görünüp yok sayılırdı.
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const anchor = (e.target as HTMLElement | null)?.closest?.("a");
       if (!anchor) return;
       if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
@@ -86,8 +87,8 @@ export function NavigationPendingProvider({ children }: { children: ReactNode })
 
       startPending();
     }
-    document.addEventListener("click", onAnchorClick);
-    return () => document.removeEventListener("click", onAnchorClick);
+    document.addEventListener("click", onAnchorClick, true);
+    return () => document.removeEventListener("click", onAnchorClick, true);
   }, [startPending]);
 
   return <NavigationPendingContext.Provider value={{ isPending: pending, markLoaded }}>{children}</NavigationPendingContext.Provider>;

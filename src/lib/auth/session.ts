@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth/options";
 import { withTenantRead, InvalidCompanyIdError } from "@/lib/db/tenant-context";
 import type { MembershipRole } from "@/lib/auth/rbac";
 import { computeEnabledModules } from "@/lib/modules/entitlements/resolve";
+import { getLicenseSnapshot } from "@/lib/modules/entitlements/catalog-cache";
 
 export interface TenantSession {
   userId: string;
@@ -53,19 +54,14 @@ export const getTenantSession = cache(async function getTenantSession(): Promise
   // çalışabileceğinin garantisi yok. Bu satırın güvenliği hız kazancından daha önemli —
   // `withTenantRead` (Prisma'nın gerçek array-transaction'ı, BEGIN/COMMIT ile doğru
   // sınırlanmış) daha yavaş (~1,3-2sn) ama KANITLANMIŞ doğru.
-  let membership, catalog, planModules, overrides;
+  let membership, overrides;
   try {
-    // Aynı array-transaction içinde: ek round-trip yok. Lisans tabloları (app_modules/plan_modules)
-    // global, company_modules RLS'li (şirket kendi satırlarını okur).
-    [membership, catalog, planModules, overrides] = await withTenantRead(session.activeCompanyId, (db) => [
+    // Aynı array-transaction içinde yalnızca RLS'li veriler (üyelik + şirkete özel modül ayarı).
+    // Global lisans verisi (katalog, paket→modül) önbellekten gelir — bkz. catalog-cache.ts.
+    [membership, overrides] = await withTenantRead(session.activeCompanyId, (db) => [
       db.membership.findFirst({
         where: { userId: session.user.id, companyId: session.activeCompanyId!, isActive: true, company: { deletedAt: null } },
-        include: { company: { select: { status: true, name: true } } },
-      }),
-      db.appModule.findMany({ where: { isActive: true }, select: { key: true, isCore: true, isFree: true } }),
-      db.planModule.findMany({
-        where: { plan: { companies: { some: { id: session.activeCompanyId! } } } },
-        select: { module: { select: { key: true } } },
+        include: { company: { select: { status: true, name: true, planId: true } } },
       }),
       db.companyModule.findMany({
         where: { companyId: session.activeCompanyId! },
@@ -78,6 +74,8 @@ export const getTenantSession = cache(async function getTenantSession(): Promise
   }
   if (!membership) return null;
 
+  const license = await getLicenseSnapshot();
+
   return {
     userId: session.user.id,
     userName: session.user.name ?? "",
@@ -87,8 +85,8 @@ export const getTenantSession = cache(async function getTenantSession(): Promise
     companyStatus: membership.company.status,
     role: membership.role,
     enabledModules: computeEnabledModules({
-      catalog,
-      planModuleKeys: planModules.map((pm) => pm.module.key),
+      catalog: license.catalog,
+      planModuleKeys: license.planModuleKeys.get(membership.company.planId) ?? [],
       overrides: overrides.map((o) => ({ moduleKey: o.module.key, enabled: o.enabled, expiresAt: o.expiresAt })),
     }),
     membershipCount: session.memberships?.length ?? 1,
