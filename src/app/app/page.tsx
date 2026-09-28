@@ -5,7 +5,8 @@ import { TrendingUp, DollarSign, CreditCard, AlertTriangle, TrendingDown, BarCha
 import { getTenantSession } from "@/lib/auth/session";
 import { getScope } from "@/lib/auth/access";
 import { getDashboardCharts, getDashboardMetrics } from "@/lib/modules/dashboard/service";
-import { tr, formatCurrencyTRY } from "@/lib/i18n/tr";
+import { getUpcomingObligations } from "@/lib/modules/tax-obligations/service";
+import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { DashboardPeriodPicker } from "./_components/dashboard-period-picker";
 import {
   ExpenseCategoryChart,
@@ -54,9 +55,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   const from = (searchParams.from && parseDateInput(searchParams.from, false)) || defaultFrom;
   const to = (searchParams.to && parseDateInput(searchParams.to, true)) || defaultTo;
 
-  const [metrics, charts] = await Promise.all([
+  const canViewTax = !!getScope(session, "taxObligation", "view");
+  const [metrics, charts, upcomingObligations] = await Promise.all([
     getDashboardMetrics(session, from, to),
     getDashboardCharts(session),
+    canViewTax ? getUpcomingObligations(session, 5) : Promise.resolve(null),
   ]);
 
   return (
@@ -135,6 +138,36 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
           </Link>
         )}
       </div>
+
+      {canViewTax && upcomingObligations?.ok && (
+        <div className="mt-8 rounded-lg border border-gray-200 bg-white p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-900">{tr.taxObligation.upcomingTitle}</h2>
+            <Link href="/app/vergi-sgk" className="text-xs text-brand-700 hover:underline">
+              {tr.taxObligation.title} →
+            </Link>
+          </div>
+          {upcomingObligations.data.length === 0 ? (
+            <p className="text-sm text-gray-400">{tr.taxObligation.upcomingEmpty}</p>
+          ) : (
+            <ul className="divide-y divide-gray-100 text-sm">
+              {upcomingObligations.data.map((o) => {
+                const overdue = new Date(o.dueDate) < now;
+                return (
+                  <li key={o.id} className="flex items-center justify-between py-2">
+                    <span className="text-gray-700">
+                      {tr.taxObligation.type[o.type as keyof typeof tr.taxObligation.type]} · {o.period}
+                    </span>
+                    <span className={overdue ? "font-medium text-red-600" : "text-gray-600"}>
+                      {formatDateTR(new Date(o.dueDate))} · {formatCurrencyTRY(Number(o.amount))}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="lg:col-span-2">

@@ -22,7 +22,10 @@ export type Module =
   | "payment"
   | "expense"
   | "auditLog"
-  | "supplier";
+  | "supplier"
+  | "employee"
+  | "payroll"
+  | "taxObligation";
 
 /** Bir modül için: her eylemin hangi kapsamda (`all`/`own`) izinli olduğu. Eylem yoksa yasak. */
 type ModuleRule = Partial<Record<Action, Scope>>;
@@ -96,6 +99,30 @@ export const PERMISSION_MATRIX: Matrix = {
   },
   // Tedarikçi/satın alma/stok: mali nitelikli — expense ile aynı desen (satış rolü göremez).
   supplier: {
+    OWNER: FULL,
+    ADMIN: FULL,
+    SALES: NONE,
+    ACCOUNTING: FULL,
+    VIEWER: NONE,
+  },
+  // Personel: kişisel veri (TC kimlik no vb.) içerir — muhasebe yalnızca GÖRÜNTÜLER (bordro için),
+  // düzenleyemez; satış ve salt izleyici hiç göremez.
+  employee: {
+    OWNER: FULL,
+    ADMIN: FULL,
+    SALES: NONE,
+    ACCOUNTING: VIEW_ONLY,
+    VIEWER: NONE,
+  },
+  // Bordro/Vergi & SGK: mali nitelikli — expense/supplier ile aynı desen.
+  payroll: {
+    OWNER: FULL,
+    ADMIN: FULL,
+    SALES: NONE,
+    ACCOUNTING: FULL,
+    VIEWER: NONE,
+  },
+  taxObligation: {
     OWNER: FULL,
     ADMIN: FULL,
     SALES: NONE,

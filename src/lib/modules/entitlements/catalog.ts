@@ -31,6 +31,9 @@ export const MODULE_CATALOG: CatalogModule[] = [
   { key: "userManagement", name: "Kullanıcılar", description: "Kullanıcı ve rol yönetimi", isCore: true, isFree: true, sortOrder: 70 },
   { key: "companySettings", name: "Şirket Ayarları", description: "Firma bilgileri, numaralandırma, KDV", isCore: true, isFree: true, sortOrder: 80 },
   { key: "supplier", name: "Tedarikçiler & Satın Alma", description: "Tedarikçi kaydı, alım, ürün maliyeti ve stok takibi", isCore: false, isFree: false, sortOrder: 90 },
+  { key: "employee", name: "Personel Yönetimi", description: "Çalışan kaydı ve izin takibi", isCore: false, isFree: false, sortOrder: 100 },
+  { key: "payroll", name: "Bordro", description: "Aylık bordro dönemi ve maaş ödemesi", isCore: false, isFree: false, sortOrder: 110 },
+  { key: "taxObligation", name: "Vergi & SGK Takibi", description: "Vergi/SGK yükümlülük takvimi ve ödeme takibi", isCore: false, isFree: false, sortOrder: 120 },
 ];
 
 export interface CatalogPlan {
@@ -49,5 +52,5 @@ export interface CatalogPlan {
 export const DEFAULT_PLANS: CatalogPlan[] = [
   { name: "Free", description: "Müşteri ve teklif ile başlayın", maxUsers: 2, maxCustomers: 100, maxStorageMb: 200, price: 0, yearlyPrice: null, moduleKeys: [] },
   { name: "Starter", description: "Sipariş ve tahsilat takibi", maxUsers: 5, maxCustomers: 1000, maxStorageMb: 2000, price: 499, yearlyPrice: 4990, moduleKeys: ["order", "payment"] },
-  { name: "Pro", description: "Tüm modüller", maxUsers: 25, maxCustomers: 20000, maxStorageMb: 20000, price: 999, yearlyPrice: 9990, moduleKeys: ["order", "payment", "expense", "auditLog", "supplier"] },
+  { name: "Pro", description: "Tüm modüller", maxUsers: 25, maxCustomers: 20000, maxStorageMb: 20000, price: 999, yearlyPrice: 9990, moduleKeys: ["order", "payment", "expense", "auditLog", "supplier", "employee", "payroll", "taxObligation"] },
 ];

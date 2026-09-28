@@ -49,3 +49,19 @@ export const PURCHASE_ORDER_STATUS_COLORS: Record<string, BadgeColor> = {
   RECEIVED: "green",
   CANCELLED: "red",
 };
+
+export const EMPLOYEE_STATUS_COLORS: Record<string, BadgeColor> = {
+  ACTIVE: "green",
+  ON_LEAVE: "amber",
+  TERMINATED: "red",
+};
+
+export const PAYROLL_RUN_STATUS_COLORS: Record<string, BadgeColor> = {
+  DRAFT: "gray",
+  COMPLETED: "green",
+};
+
+export const TAX_OBLIGATION_STATUS_COLORS: Record<string, BadgeColor> = {
+  PENDING: "amber",
+  PAID: "green",
+};

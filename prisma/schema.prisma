@@ -249,6 +249,10 @@ model Company {
   auditLogs         AuditLog[]
   notifications     Notification[]
   documentSequences DocumentSequence[]
+  employees         Employee[]
+  leaveRequests     LeaveRequest[]
+  payrollRuns       PayrollRun[]
+  taxObligations    TaxObligation[]
 
   @@map("companies")
 }
@@ -682,9 +686,11 @@ model Account {
   createdAt DateTime  @default(now()) @map("created_at")
   deletedAt DateTime? @map("deleted_at")
 
-  company  Company   @relation(fields: [companyId], references: [id])
-  payments Payment[]
-  expenses Expense[]
+  company     Company       @relation(fields: [companyId], references: [id])
+  payments    Payment[]
+  expenses    Expense[]
+  payrollRuns PayrollRun[]
+  taxObligations TaxObligation[]
 
   @@map("accounts")
 }
@@ -991,4 +997,182 @@ model DocumentSequence {
 
   @@unique([companyId, docType, year])
   @@map("document_sequences")
+}
+
+// =========================================================
+// KOBİ genişlemesi: Personel Yönetimi / Bordro / Vergi & SGK Takibi
+// Sadece admin/yetkili rol veri girer — personel için ayrı giriş yoktur (kullanıcı kararı).
+// =========================================================
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+model Employee {
+  id              String         @id @default(uuid()) @db.Uuid
+  companyId       String         @map("company_id") @db.Uuid
+  fullName        String         @map("full_name")
+  // TC Kimlik No — 11 hane, opsiyonel (yabancı uyruklu çalışan için boş kalabilir).
+  nationalId      String?        @map("national_id")
+  position        String?
+  department      String?
+  phone           String?
+  email           String?
+  hireDate        DateTime       @map("hire_date")
+  terminationDate DateTime?      @map("termination_date")
+  sgkSicilNo      String?        @map("sgk_sicil_no")
+  iban            String?
+  grossSalary     Decimal        @map("gross_salary") @db.Decimal(18, 4)
+  status          EmployeeStatus @default(ACTIVE)
+  note            String?
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  company       Company          @relation(fields: [companyId], references: [id])
+  leaveRequests LeaveRequest[]
+  payrollItems  PayrollRunItem[]
+
+  @@index([companyId, status])
+  @@map("employees")
+}
+
+enum LeaveType {
+  YILLIK
+  UCRETSIZ
+  HASTALIK
+  DIGER
+}
+
+/// İzin kaydı — admin tarafından geriye dönük/planlı olarak girilir, onay akışı YOKTUR (V1).
+model LeaveRequest {
+  id         String    @id @default(uuid()) @db.Uuid
+  companyId  String    @map("company_id") @db.Uuid
+  employeeId String    @map("employee_id") @db.Uuid
+  type       LeaveType
+  startDate  DateTime  @map("start_date")
+  endDate    DateTime  @map("end_date")
+  days       Decimal   @db.Decimal(6, 2)
+  note       String?
+
+  createdBy String    @map("created_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company  Company  @relation(fields: [companyId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([companyId, employeeId])
+  @@map("leave_requests")
+}
+
+enum PayrollRunStatus {
+  DRAFT
+  COMPLETED
+}
+
+/// Bordro dönemi (ay bazlı, örn. "2026-01"). DRAFT'ta kalemler serbestçe düzenlenir;
+/// COMPLETED'e geçince bir Payment/Expense YARATILMAZ (V1) — yalnızca hesaptan (accountId)
+/// ödendiği işaretlenir; muhasebe entegrasyonu V1.5.
+model PayrollRun {
+  id                String           @id @default(uuid()) @db.Uuid
+  companyId         String           @map("company_id") @db.Uuid
+  period            String // "YYYY-MM"
+  status            PayrollRunStatus @default(DRAFT)
+  accountId         String?          @map("account_id") @db.Uuid
+  totalGross        Decimal          @default(0) @map("total_gross") @db.Decimal(18, 4)
+  totalEmployerCost Decimal          @default(0) @map("total_employer_cost") @db.Decimal(18, 4)
+  totalNet          Decimal          @default(0) @map("total_net") @db.Decimal(18, 4)
+  paidAt            DateTime?        @map("paid_at")
+  note              String?
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company Company          @relation(fields: [companyId], references: [id])
+  account Account?         @relation(fields: [accountId], references: [id])
+  items   PayrollRunItem[]
+
+  @@unique([companyId, period])
+  @@index([companyId, status])
+  @@map("payroll_runs")
+}
+
+/// Kalemler PurchaseOrderItem ile aynı desende companyId TAŞIMAZ — RLS koruması
+/// üst kaydın (PayrollRun) servis katmanında join edilmesiyle sağlanır.
+/// Kesinti oranları V1'de basitleştirilmiş sabitlerdir (bkz. src/lib/modules/payroll/calc.ts
+/// — gerçek bordro için muhasebeci/SGK mevzuatıyla doğrulanmalıdır, bu bir tahmindir).
+model PayrollRunItem {
+  id              String  @id @default(uuid()) @db.Uuid
+  payrollRunId    String  @map("payroll_run_id") @db.Uuid
+  employeeId      String  @map("employee_id") @db.Uuid
+  grossSalary     Decimal @map("gross_salary") @db.Decimal(18, 4)
+  employeeSgkCut  Decimal @map("employee_sgk_cut") @db.Decimal(18, 4)
+  unemploymentCut Decimal @map("unemployment_cut") @db.Decimal(18, 4)
+  incomeTax       Decimal @map("income_tax") @db.Decimal(18, 4)
+  stampTax        Decimal @map("stamp_tax") @db.Decimal(18, 4)
+  employerSgkCost Decimal @map("employer_sgk_cost") @db.Decimal(18, 4)
+  netSalary       Decimal @map("net_salary") @db.Decimal(18, 4)
+
+  payrollRun PayrollRun @relation(fields: [payrollRunId], references: [id])
+  employee   Employee   @relation(fields: [employeeId], references: [id])
+
+  @@index([payrollRunId])
+  @@map("payroll_run_items")
+}
+
+enum TaxObligationType {
+  KDV
+  MUHTASAR
+  GECICI_VERGI
+  SGK_PRIMI
+  GELIR_VERGISI_STOPAJI
+  DIGER
+}
+
+enum TaxObligationStatus {
+  PENDING
+  PAID
+}
+
+/// Vergi/SGK yükümlülüğü — GD-03'teki tekrarlayan gider deseniyle aynı "lazy generate" mantığı
+/// kullanılır (isRecurringTemplate). "Vadesi geçmiş" durumu STORED değildir, dueDate + status'tan
+/// TÜRETİLİR (bkz. src/lib/modules/tax-obligations/service.ts).
+model TaxObligation {
+  id         String               @id @default(uuid()) @db.Uuid
+  companyId  String               @map("company_id") @db.Uuid
+  type       TaxObligationType
+  period     String // "2026-01" / "2026-Q1" gibi serbest metin
+  dueDate    DateTime             @map("due_date")
+  amount     Decimal              @db.Decimal(18, 4)
+  paidAmount Decimal              @default(0) @map("paid_amount") @db.Decimal(18, 4)
+  paidAt     DateTime?            @map("paid_at")
+  accountId  String?              @map("account_id") @db.Uuid
+  status     TaxObligationStatus  @default(PENDING)
+  note       String?
+
+  recurringRule       String? @map("recurring_rule") // "MONTHLY" | "QUARTERLY"
+  isRecurringTemplate Boolean @default(false) @map("is_recurring_template")
+  parentObligationId  String? @map("parent_obligation_id") @db.Uuid
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company Company  @relation(fields: [companyId], references: [id])
+  account Account? @relation(fields: [accountId], references: [id])
+
+  @@index([companyId, status, dueDate])
+  @@map("tax_obligations")
 }
