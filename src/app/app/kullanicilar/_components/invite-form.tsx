@@ -43,7 +43,7 @@ export function InviteForm() {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4">
       <h2 className="mb-3 text-sm font-semibold text-gray-900">{tr.users.inviteNew}</h2>
       <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-2">
         <input
@@ -52,16 +52,16 @@ export function InviteForm() {
           placeholder={tr.users.email}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="min-w-[220px] flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+          className="min-w-[220px] flex-1 rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
         />
-        <select value={role} onChange={(e) => setRole(e.target.value as (typeof ROLES)[number])} className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
+        <select value={role} onChange={(e) => setRole(e.target.value as (typeof ROLES)[number])} className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900">
           {ROLES.map((r) => (
             <option key={r} value={r}>
               {tr.users.roleLabels[r]}
             </option>
           ))}
         </select>
-        <button type="submit" disabled={saving} className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+        <button type="submit" disabled={saving} className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
           {saving ? tr.common.loading : tr.users.inviteNew}
         </button>
       </form>

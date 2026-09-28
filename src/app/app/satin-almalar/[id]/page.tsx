@@ -30,12 +30,12 @@ export default async function SatinAlmaDetayPage({ params }: { params: { id: str
           <Link href="/app/satin-almalar" className="text-xs text-brand-700 hover:underline">
             ← {tr.purchaseOrder.title}
           </Link>
-          <h1 className="mt-1 text-lg font-semibold text-gray-900">{po.number}</h1>
+          <h1 className="mt-1 text-xl font-semibold text-gray-800">{po.number}</h1>
         </div>
         <PurchaseOrderActions purchaseOrderId={po.id} status={po.status} canEdit={canEdit} />
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-white p-4 text-sm sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4 text-sm sm:grid-cols-4">
         <div>
           <p className="text-gray-500">{tr.purchaseOrder.fields.supplier}</p>
           <p className="font-medium text-gray-900">{po.supplier.title}</p>
@@ -55,15 +55,15 @@ export default async function SatinAlmaDetayPage({ params }: { params: { id: str
       </div>
 
       {po.note && (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 text-sm">
+        <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4 text-sm">
           <p className="text-gray-500">{tr.purchaseOrder.fields.note}</p>
           <p className="text-gray-900">{po.note}</p>
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+          <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
             <tr>
               <th className="px-4 py-3">{tr.purchaseOrder.fields.item.description}</th>
               <th className="px-4 py-3 text-right">{tr.purchaseOrder.fields.item.quantity}</th>

@@ -37,12 +37,12 @@ export default async function BordroDetayPage({ params }: { params: { id: string
           <Link href="/app/bordro" className="text-xs text-brand-700 hover:underline">
             ← {tr.payroll.title}
           </Link>
-          <h1 className="mt-1 text-lg font-semibold text-gray-900">{run.period}</h1>
+          <h1 className="mt-1 text-xl font-semibold text-gray-800">{run.period}</h1>
         </div>
         <PayrollRunActions runId={run.id} accounts={accounts.map((a) => ({ id: a.id, name: a.name }))} canEdit={canEdit} />
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-white p-4 text-sm sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4 text-sm sm:grid-cols-4">
         <div>
           <p className="text-gray-500">{tr.payroll.fields.status}</p>
           <Badge color={PAYROLL_RUN_STATUS_COLORS[run.status]}>{tr.payroll.status[run.status as keyof typeof tr.payroll.status]}</Badge>

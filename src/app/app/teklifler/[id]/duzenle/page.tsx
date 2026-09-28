@@ -39,7 +39,7 @@ export default async function TeklifDuzenlePage({ params }: { params: { id: stri
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.quote.edit}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.quote.edit}</h1>
       <QuoteForm
         mode="edit"
         quoteId={quote.id}

@@ -49,7 +49,7 @@ export function QuoteActions({ quoteId, status, canEdit, canConvert, hasOrder }:
         <button
           disabled={busy}
           onClick={() => run(() => callAction(`/api/quotes/${quoteId}/send`))}
-          className="rounded-md bg-brand-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+          className="rounded-lg bg-brand-800 shadow-theme-xs px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
           {tr.quote.actions.send}
         </button>
@@ -76,7 +76,7 @@ export function QuoteActions({ quoteId, status, canEdit, canConvert, hasOrder }:
         <button
           disabled={busy}
           onClick={() => run(() => callAction(`/api/quotes/${quoteId}/revise`), "/app/teklifler")}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
           {tr.quote.actions.revise}
         </button>

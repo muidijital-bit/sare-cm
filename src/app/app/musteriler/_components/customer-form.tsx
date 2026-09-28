@@ -121,7 +121,7 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
           <select
             value={values.type}
             onChange={(e) => setValues((v) => ({ ...v, type: e.target.value as CustomerFormValues["type"] }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           >
             {Object.entries(tr.customer.type).map(([value, label]) => (
               <option key={value} value={value}>
@@ -136,7 +136,7 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
           <select
             value={values.status}
             onChange={(e) => setValues((v) => ({ ...v, status: e.target.value as CustomerFormValues["status"] }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           >
             {Object.entries(tr.customer.status).map(([value, label]) => (
               <option key={value} value={value}>
@@ -152,7 +152,7 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
             required
             value={values.title}
             onChange={(e) => setValues((v) => ({ ...v, title: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -161,7 +161,7 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
           <input
             value={values.taxOffice}
             onChange={(e) => setValues((v) => ({ ...v, taxOffice: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -170,7 +170,7 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
           <input
             value={values.taxNumber}
             onChange={(e) => setValues((v) => ({ ...v, taxNumber: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -180,7 +180,7 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
             value={values.address}
             onChange={(e) => setValues((v) => ({ ...v, address: e.target.value }))}
             rows={2}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -189,7 +189,7 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
           <select
             value={values.sourceId}
             onChange={(e) => setValues((v) => ({ ...v, sourceId: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           >
             <option value="">—</option>
             {sources.map((s) => (
@@ -206,7 +206,7 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
             <select
               value={values.ownerUserId}
               onChange={(e) => setValues((v) => ({ ...v, ownerUserId: e.target.value }))}
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
             >
               <option value="">—</option>
               {users.map((u) => (
@@ -224,7 +224,7 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
             value={values.tags}
             onChange={(e) => setValues((v) => ({ ...v, tags: e.target.value }))}
             placeholder={tr.customer.fields.tagsHint}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
       </div>
@@ -244,25 +244,25 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
                 placeholder={tr.customer.contacts.name}
                 value={contact.name}
                 onChange={(e) => updateContact(i, { name: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 sm:col-span-1"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900 sm:col-span-1"
               />
               <input
                 placeholder={tr.customer.contacts.position}
                 value={contact.position}
                 onChange={(e) => updateContact(i, { position: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 sm:col-span-1"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900 sm:col-span-1"
               />
               <input
                 placeholder={tr.customer.contacts.phone}
                 value={contact.phone}
                 onChange={(e) => updateContact(i, { phone: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 sm:col-span-1"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900 sm:col-span-1"
               />
               <input
                 placeholder={tr.customer.contacts.email}
                 value={contact.email}
                 onChange={(e) => updateContact(i, { email: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 sm:col-span-1"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900 sm:col-span-1"
               />
               <div className="flex items-center justify-between gap-2 sm:col-span-1">
                 <label className="flex items-center gap-1 text-xs text-gray-600">
@@ -288,14 +288,14 @@ export function CustomerForm({ mode, customerId, initialValues, sources, users, 
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+          className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
           {saving ? tr.common.loading : tr.common.save}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           {tr.common.cancel}
         </button>

@@ -26,8 +26,8 @@ export default function SirketSecPage() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={BRAND.logoWhite} alt={BRAND.name} className="h-12 w-auto" />
       <p className="mb-6 mt-2 text-sm text-white/70">{tr.common.tagline}</p>
-      <div className="w-full max-w-sm space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
-        <h2 className="text-lg font-semibold text-gray-900">{tr.company.select}</h2>
+      <div className="w-full max-w-sm space-y-4 rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-6 shadow-lg">
+        <h2 className="text-xl font-semibold text-gray-800">{tr.company.select}</h2>
 
         {memberships.length === 0 ? (
           <p className="text-sm text-gray-600">{tr.company.noMembership}</p>
@@ -39,7 +39,7 @@ export default function SirketSecPage() {
                 <li key={m.companyId}>
                   <button
                     onClick={() => selectCompany(m.companyId)}
-                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-left text-sm hover:border-brand-300 hover:bg-brand-50"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-left text-sm hover:border-brand-300 hover:bg-brand-50"
                   >
                     <span className="font-medium text-gray-900">{m.companyName}</span>
                     <span className="ml-2 text-xs text-gray-500">{m.role}</span>

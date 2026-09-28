@@ -22,7 +22,7 @@ export default async function UrunDuzenlePage({ params }: { params: { id: string
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.product.edit}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.product.edit}</h1>
       <ProductForm
         mode="edit"
         productId={p.id}

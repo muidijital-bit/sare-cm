@@ -55,51 +55,51 @@ export function CompanyInfoForm({ initialValues }: { initialValues: CompanyInfoV
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-gray-200 bg-white p-4">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4">
       <h2 className="text-sm font-semibold text-gray-900">{tr.settings.companyInfo}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700">{tr.settings.fields.name}</label>
-          <input required value={values.name} onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input required value={values.name} onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.settings.fields.taxOffice}</label>
-          <input value={values.taxOffice} onChange={(e) => setValues((v) => ({ ...v, taxOffice: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input value={values.taxOffice} onChange={(e) => setValues((v) => ({ ...v, taxOffice: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.settings.fields.taxNumber}</label>
-          <input value={values.taxNumber} onChange={(e) => setValues((v) => ({ ...v, taxNumber: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input value={values.taxNumber} onChange={(e) => setValues((v) => ({ ...v, taxNumber: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.settings.fields.phone}</label>
-          <input value={values.phone} onChange={(e) => setValues((v) => ({ ...v, phone: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input value={values.phone} onChange={(e) => setValues((v) => ({ ...v, phone: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.settings.fields.defaultVatRate}</label>
-          <input type="number" step="any" min="0" max="100" value={values.defaultVatRate} onChange={(e) => setValues((v) => ({ ...v, defaultVatRate: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input type="number" step="any" min="0" max="100" value={values.defaultVatRate} onChange={(e) => setValues((v) => ({ ...v, defaultVatRate: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700">{tr.settings.fields.address}</label>
-          <textarea value={values.address} onChange={(e) => setValues((v) => ({ ...v, address: e.target.value }))} rows={2} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <textarea value={values.address} onChange={(e) => setValues((v) => ({ ...v, address: e.target.value }))} rows={2} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.settings.fields.quoteValidityDays}</label>
-          <input type="number" min="1" value={values.quoteValidityDays} onChange={(e) => setValues((v) => ({ ...v, quoteValidityDays: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input type="number" min="1" value={values.quoteValidityDays} onChange={(e) => setValues((v) => ({ ...v, quoteValidityDays: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.settings.fields.quoteNumberFormat}</label>
-          <input value={values.quoteNumberFormat} onChange={(e) => setValues((v) => ({ ...v, quoteNumberFormat: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input value={values.quoteNumberFormat} onChange={(e) => setValues((v) => ({ ...v, quoteNumberFormat: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.settings.fields.orderNumberFormat}</label>
-          <input value={values.orderNumberFormat} onChange={(e) => setValues((v) => ({ ...v, orderNumberFormat: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input value={values.orderNumberFormat} onChange={(e) => setValues((v) => ({ ...v, orderNumberFormat: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {saved && <p className="text-sm text-green-700">{tr.settings.saved}</p>}
 
-      <button type="submit" disabled={saving} className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+      <button type="submit" disabled={saving} className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
         {saving ? tr.common.loading : tr.common.save}
       </button>
     </form>

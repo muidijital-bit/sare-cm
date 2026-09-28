@@ -42,14 +42,14 @@ export function StockAdjustForm({ productId, unit }: { productId: string; unit: 
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="örn. -3 veya 10"
-          className="mt-1 w-32 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+          className="mt-1 w-32 rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
         />
       </div>
       <div className="flex-1">
         <label className="block text-xs font-medium text-gray-700">{tr.stock.adjustNote}</label>
-        <input required value={note} onChange={(e) => setNote(e.target.value)} placeholder="örn. Sayım farkı" className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+        <input required value={note} onChange={(e) => setNote(e.target.value)} placeholder="örn. Sayım farkı" className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
       </div>
-      <button type="submit" disabled={saving} className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+      <button type="submit" disabled={saving} className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
         {saving ? tr.common.loading : tr.stock.adjust}
       </button>
     </form>

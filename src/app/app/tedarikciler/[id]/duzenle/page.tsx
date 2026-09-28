@@ -22,7 +22,7 @@ export default async function TedarikciDuzenlePage({ params }: { params: { id: s
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.supplier.edit}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.supplier.edit}</h1>
       <SupplierForm
         mode="edit"
         supplierId={s.id}

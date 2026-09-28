@@ -22,7 +22,7 @@ export default async function YeniSatinAlmaPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.purchaseOrder.new}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.purchaseOrder.new}</h1>
       <PurchaseOrderForm
         suppliers={suppliers}
         products={products.map((p) => ({ id: p.id, name: p.name, defaultCost: p.defaultCost != null ? Number(p.defaultCost) : null, vatRate: Number(p.vatRate) }))}

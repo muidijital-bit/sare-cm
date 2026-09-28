@@ -59,10 +59,10 @@ export default async function MusterilerPage({
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">{tr.customer.title}</h1>
+        <h1 className="text-xl font-semibold text-gray-800">{tr.customer.title}</h1>
         <Link
           href="/app/musteriler/yeni"
-          className="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
+          className="rounded-lg bg-brand-800 shadow-theme-xs px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
           + {tr.customer.new}
         </Link>
@@ -92,9 +92,9 @@ export default async function MusterilerPage({
         />
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+          <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
             <tr>
               {canDelete && (
                 <th className="w-8 px-4 py-3">

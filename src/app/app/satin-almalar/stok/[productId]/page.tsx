@@ -28,9 +28,9 @@ export default async function UrunStokDetayPage({ params }: { params: { productI
       <Link href="/app/satin-almalar/stok" className="text-xs text-brand-700 hover:underline">
         ← {tr.stock.title}
       </Link>
-      <h1 className="mb-6 mt-1 text-lg font-semibold text-gray-900">{product.name}</h1>
+      <h1 className="mb-6 mt-1 text-xl font-semibold text-gray-800">{product.name}</h1>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-white p-4 text-sm">
+      <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4 text-sm">
         <div>
           <p className="text-gray-500">{tr.stock.current}</p>
           <p className={`text-lg font-semibold ${Number(stockQty) < 0 ? "text-red-600" : "text-gray-900"}`}>
@@ -39,7 +39,7 @@ export default async function UrunStokDetayPage({ params }: { params: { productI
         </div>
         <div>
           <p className="text-gray-500">{tr.stock.cost}</p>
-          <p className="text-lg font-semibold text-gray-900">{defaultCost != null ? formatCurrencyTRY(Number(defaultCost)) : "—"}</p>
+          <p className="text-xl font-semibold text-gray-800">{defaultCost != null ? formatCurrencyTRY(Number(defaultCost)) : "—"}</p>
         </div>
       </div>
 
@@ -50,9 +50,9 @@ export default async function UrunStokDetayPage({ params }: { params: { productI
       )}
 
       <h2 className="mb-2 text-sm font-semibold text-gray-900">{tr.stock.history}</h2>
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+          <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
             <tr>
               <th className="px-4 py-3">Tarih</th>
               <th className="px-4 py-3">Tür</th>

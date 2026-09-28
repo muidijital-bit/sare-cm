@@ -99,7 +99,7 @@ export function PaymentForm({ customers, accounts }: Props) {
               setCustomerId(e.target.value);
               setAllocations([]);
             }}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           >
             <option value="">—</option>
             {customers.map((c) => (
@@ -112,7 +112,7 @@ export function PaymentForm({ customers, accounts }: Props) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.payment.fields.account}</label>
-          <select required value={accountId} onChange={(e) => setAccountId(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
+          <select required value={accountId} onChange={(e) => setAccountId(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900">
             <option value="">—</option>
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
@@ -124,12 +124,12 @@ export function PaymentForm({ customers, accounts }: Props) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.payment.fields.paidAt}</label>
-          <input type="date" required value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input type="date" required value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.payment.fields.method}</label>
-          <select value={method} onChange={(e) => setMethod(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
+          <select value={method} onChange={(e) => setMethod(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900">
             {Object.entries(tr.payment.method).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -147,7 +147,7 @@ export function PaymentForm({ customers, accounts }: Props) {
             min="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
           <label className="mt-1 flex items-center gap-1 text-xs text-gray-600">
             <input type="checkbox" checked={isRefund} onChange={(e) => setIsRefund(e.target.checked)} />
@@ -157,7 +157,7 @@ export function PaymentForm({ customers, accounts }: Props) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.payment.fields.reference}</label>
-          <input value={reference} onChange={(e) => setReference(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input value={reference} onChange={(e) => setReference(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
 
         <div className="sm:col-span-2">
@@ -169,7 +169,7 @@ export function PaymentForm({ customers, accounts }: Props) {
             onChange={(e) => setNote(e.target.value)}
             rows={2}
             required={isRefund}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
       </div>
@@ -189,7 +189,7 @@ export function PaymentForm({ customers, accounts }: Props) {
                 <select
                   value={a.orderId}
                   onChange={(e) => updateAllocation(i, { orderId: e.target.value })}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                  className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
                 >
                   <option value="">—</option>
                   {openOrders.map((o) => (
@@ -204,7 +204,7 @@ export function PaymentForm({ customers, accounts }: Props) {
                   placeholder="Mahsup tutarı"
                   value={a.amount}
                   onChange={(e) => updateAllocation(i, { amount: e.target.value })}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                  className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
                 />
                 <button type="button" onClick={() => removeAllocation(i)} className="text-xs text-red-600 hover:underline">
                   {tr.customer.contacts.remove}
@@ -218,10 +218,10 @@ export function PaymentForm({ customers, accounts }: Props) {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-3">
-        <button type="submit" disabled={saving} className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+        <button type="submit" disabled={saving} className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
           {saving ? tr.common.loading : tr.common.save}
         </button>
-        <button type="button" onClick={() => router.back()} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <button type="button" onClick={() => router.back()} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
           {tr.common.cancel}
         </button>
       </div>

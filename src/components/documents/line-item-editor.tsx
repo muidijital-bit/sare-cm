@@ -101,7 +101,7 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
                 <select
                   value={item.productId}
                   onChange={(e) => handleProductSelect(i, e.target.value)}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 sm:col-span-2"
+                  className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900 sm:col-span-2"
                 >
                   <option value="">{tr.document.freeText}</option>
                   {products.map((p) => (
@@ -115,7 +115,7 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
                 placeholder={tr.document.description}
                 value={item.description}
                 onChange={(e) => updateItem(i, { description: e.target.value })}
-                className={`rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 ${products.length > 0 ? "sm:col-span-2" : "sm:col-span-3"}`}
+                className={`rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900 ${products.length > 0 ? "sm:col-span-2" : "sm:col-span-3"}`}
               />
               <input
                 type="number"
@@ -123,13 +123,13 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
                 placeholder={tr.document.quantity}
                 value={item.quantity}
                 onChange={(e) => updateItem(i, { quantity: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               />
               <input
                 placeholder={tr.document.unit}
                 value={item.unit}
                 onChange={(e) => updateItem(i, { unit: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               />
               <input
                 type="number"
@@ -137,7 +137,7 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
                 placeholder={tr.document.unitPrice}
                 value={item.unitPrice}
                 onChange={(e) => updateItem(i, { unitPrice: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               />
             </div>
 
@@ -145,7 +145,7 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
               <select
                 value={item.discountType}
                 onChange={(e) => updateItem(i, { discountType: e.target.value as "PERCENT" | "AMOUNT" })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               >
                 <option value="PERCENT">{tr.document.percent}</option>
                 <option value="AMOUNT">{tr.document.amount}</option>
@@ -156,7 +156,7 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
                 placeholder={tr.document.discount}
                 value={item.discountValue}
                 onChange={(e) => updateItem(i, { discountValue: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               />
               <input
                 type="number"
@@ -164,7 +164,7 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
                 placeholder={tr.document.vatRate}
                 value={item.vatRate}
                 onChange={(e) => updateItem(i, { vatRate: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               />
               <input
                 type="number"
@@ -172,7 +172,7 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
                 placeholder={tr.document.unitCost}
                 value={item.unitCost}
                 onChange={(e) => updateItem(i, { unitCost: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               />
               <div className="flex items-center justify-end text-sm font-medium text-gray-900 sm:col-span-1">
                 {formatCurrencyTRY(
@@ -195,7 +195,7 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
           <select
             value={documentDiscountType}
             onChange={(e) => onDocumentDiscountChange(e.target.value as "PERCENT" | "AMOUNT", documentDiscountValue)}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900"
+            className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1 text-sm text-gray-900"
           >
             <option value="PERCENT">{tr.document.percent}</option>
             <option value="AMOUNT">{tr.document.amount}</option>
@@ -205,7 +205,7 @@ export function LineItemEditor({ items, onChange, products, documentDiscountType
             step="any"
             value={documentDiscountValue}
             onChange={(e) => onDocumentDiscountChange(documentDiscountType, e.target.value)}
-            className="w-24 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900"
+            className="w-24 rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1 text-sm text-gray-900"
           />
         </div>
 

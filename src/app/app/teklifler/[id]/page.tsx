@@ -22,7 +22,7 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
     <div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">{quote.number}</h1>
+          <h1 className="text-xl font-semibold text-gray-800">{quote.number}</h1>
           <div className="mt-1 flex items-center gap-2">
             <Badge color={QUOTE_STATUS_COLORS[quote.status]}>{tr.quote.status[quote.status]}</Badge>
             <Link href={`/app/musteriler/${quote.customer.id}`} className="text-sm text-gray-600 hover:underline">
@@ -32,7 +32,7 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
         </div>
         <div className="flex items-center gap-2">
           {quote.status === "DRAFT" && canEdit && (
-            <Link href={`/app/teklifler/${quote.id}/duzenle`} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
+            <Link href={`/app/teklifler/${quote.id}/duzenle`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
               {tr.quote.edit}
             </Link>
           )}
@@ -42,9 +42,9 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <div className="sm:col-span-2">
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+              <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
                 <tr>
                   <th className="px-3 py-2">{tr.document.description}</th>
                   <th className="px-3 py-2 text-right">{tr.document.quantity}</th>
@@ -75,7 +75,7 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4">
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <dt className="text-gray-500">{tr.document.issueDate}</dt>
@@ -105,7 +105,7 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
           </div>
 
           {quote.parentQuote && (
-            <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4 text-sm">
               <p className="text-gray-500">{tr.quote.revisionOf}</p>
               <Link href={`/app/teklifler/${quote.parentQuote.id}`} className="text-gray-900 hover:underline">
                 {quote.parentQuote.number}
@@ -114,7 +114,7 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
           )}
 
           {quote.revisions.length > 0 && (
-            <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4 text-sm">
               <p className="mb-2 text-gray-500">{tr.quote.revisions}</p>
               <ul className="space-y-1">
                 {quote.revisions.map((r) => (
@@ -130,7 +130,7 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
           )}
 
           {quote.orders.length > 0 && (
-            <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4 text-sm">
               <p className="mb-2 text-gray-500">{tr.quote.linkedOrder}</p>
               {quote.orders.map((o) => (
                 <Link key={o.id} href={`/app/siparisler/${o.id}`} className="text-gray-900 hover:underline">

@@ -111,7 +111,7 @@ export function PurchaseOrderForm({ suppliers, products }: Props) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.purchaseOrder.fields.supplier}</label>
-          <select required value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
+          <select required value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900">
             <option value="">—</option>
             {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
@@ -122,18 +122,18 @@ export function PurchaseOrderForm({ suppliers, products }: Props) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.purchaseOrder.fields.orderedAt}</label>
-          <input type="date" required value={orderedAt} onChange={(e) => setOrderedAt(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input type="date" required value={orderedAt} onChange={(e) => setOrderedAt(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">{tr.purchaseOrder.fields.note}</label>
-        <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+        <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+          <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
             <tr>
               <th className="px-3 py-2">{tr.purchaseOrder.fields.item.product}</th>
               <th className="px-3 py-2">{tr.purchaseOrder.fields.item.description}</th>
@@ -147,7 +147,7 @@ export function PurchaseOrderForm({ suppliers, products }: Props) {
             {items.map((it, i) => (
               <tr key={i}>
                 <td className="px-3 py-2">
-                  <select value={it.productId} onChange={(e) => pickProduct(i, e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900">
+                  <select value={it.productId} onChange={(e) => pickProduct(i, e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900">
                     <option value="">—</option>
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -157,16 +157,16 @@ export function PurchaseOrderForm({ suppliers, products }: Props) {
                   </select>
                 </td>
                 <td className="px-3 py-2">
-                  <input required value={it.description} onChange={(e) => updateItem(i, { description: e.target.value })} className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900" />
+                  <input required value={it.description} onChange={(e) => updateItem(i, { description: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900" />
                 </td>
                 <td className="px-3 py-2">
-                  <input type="number" step="any" min="0.0001" required value={it.quantity} onChange={(e) => updateItem(i, { quantity: e.target.value })} className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900" />
+                  <input type="number" step="any" min="0.0001" required value={it.quantity} onChange={(e) => updateItem(i, { quantity: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900" />
                 </td>
                 <td className="px-3 py-2">
-                  <input type="number" step="any" min="0" required value={it.unitCost} onChange={(e) => updateItem(i, { unitCost: e.target.value })} className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900" />
+                  <input type="number" step="any" min="0" required value={it.unitCost} onChange={(e) => updateItem(i, { unitCost: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900" />
                 </td>
                 <td className="px-3 py-2">
-                  <input type="number" step="any" min="0" max="100" required value={it.vatRate} onChange={(e) => updateItem(i, { vatRate: e.target.value })} className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900" />
+                  <input type="number" step="any" min="0" max="100" required value={it.vatRate} onChange={(e) => updateItem(i, { vatRate: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900" />
                 </td>
                 <td className="px-3 py-2 text-right">
                   <button type="button" onClick={() => removeItem(i)} className="text-xs text-red-600 hover:underline">
@@ -189,10 +189,10 @@ export function PurchaseOrderForm({ suppliers, products }: Props) {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-3">
-        <button type="submit" disabled={saving} className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+        <button type="submit" disabled={saving} className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
           {saving ? tr.common.loading : tr.common.save}
         </button>
-        <button type="button" onClick={() => router.back()} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <button type="button" onClick={() => router.back()} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
           {tr.common.cancel}
         </button>
       </div>

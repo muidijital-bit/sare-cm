@@ -24,7 +24,7 @@ export default async function GiderDuzenlePage({ params }: { params: { id: strin
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.expense.edit}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.expense.edit}</h1>
       {expense.parentExpenseId && <p className="mb-4 text-xs text-amber-700">{tr.expense.recurring.generatedNote}</p>}
       <ExpenseForm
         mode="edit"

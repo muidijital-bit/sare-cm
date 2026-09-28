@@ -37,7 +37,7 @@ export function PaymentFilterBar({ rowCount }: Props) {
       <select
         value={searchParams.get("method") ?? ""}
         onChange={(e) => updateParam("method", e.target.value)}
-        className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+        className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
       >
         <option value="">Tüm yöntemler</option>
         {Object.entries(tr.payment.method).map(([value, label]) => (

@@ -39,7 +39,7 @@ export function QuoteFilterBar({ showOwnerFilter, users, rowCount }: Props) {
       <select
         value={searchParams.get("status") ?? ""}
         onChange={(e) => updateParam("status", e.target.value)}
-        className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+        className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
       >
         <option value="">Tüm durumlar</option>
         {Object.entries(tr.quote.status).map(([value, label]) => (
@@ -53,7 +53,7 @@ export function QuoteFilterBar({ showOwnerFilter, users, rowCount }: Props) {
         <select
           value={searchParams.get("ownerUserId") ?? ""}
           onChange={(e) => updateParam("ownerUserId", e.target.value)}
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+          className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
         >
           <option value="">Tüm sorumlular</option>
           {users.map((u) => (

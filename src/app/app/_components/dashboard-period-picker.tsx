@@ -72,7 +72,7 @@ export function DashboardPeriodPicker({ defaultFrom, defaultTo, activeFrom, acti
           type="date"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
-          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900"
+          className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1 text-sm text-gray-900"
         />
       </div>
       <div>
@@ -81,12 +81,12 @@ export function DashboardPeriodPicker({ defaultFrom, defaultTo, activeFrom, acti
           type="date"
           value={to}
           onChange={(e) => setTo(e.target.value)}
-          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900"
+          className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1 text-sm text-gray-900"
         />
       </div>
       <button
         onClick={() => push(from, to)}
-        className="rounded-md bg-brand-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"
+        className="rounded-lg bg-brand-800 shadow-theme-xs px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"
       >
         Uygula
       </button>

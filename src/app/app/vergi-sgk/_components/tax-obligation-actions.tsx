@@ -52,7 +52,7 @@ export function TaxObligationActions({ obligationId, amount, accounts, canEdit, 
   return (
     <div className="flex items-center justify-end gap-2">
       {canEdit && (
-        <button disabled={busy} onClick={pay} className="rounded-md bg-brand-800 px-2 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+        <button disabled={busy} onClick={pay} className="rounded-lg bg-brand-800 shadow-theme-xs px-2 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
           {tr.taxObligation.pay}
         </button>
       )}

@@ -21,7 +21,7 @@ export default async function TahsilatDetayPage({ params }: { params: { id: stri
     <div className="mx-auto max-w-2xl">
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">{formatCurrencyTRY(Number(payment.amount))}</h1>
+          <h1 className="text-xl font-semibold text-gray-800">{formatCurrencyTRY(Number(payment.amount))}</h1>
           <p className="text-sm text-gray-500">
             {formatDateTR(new Date(payment.paidAt))} · {tr.payment.method[payment.method]}
           </p>
@@ -34,7 +34,7 @@ export default async function TahsilatDetayPage({ params }: { params: { id: stri
         <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">İptal gerekçesi: {payment.cancelReason}</div>
       )}
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4">
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between">
             <dt className="text-gray-500">{tr.document.customer}</dt>
@@ -64,7 +64,7 @@ export default async function TahsilatDetayPage({ params }: { params: { id: stri
       </div>
 
       {payment.allocations.length > 0 && (
-        <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+        <div className="mt-4 rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4">
           <h2 className="mb-2 text-sm font-semibold text-gray-900">{tr.payment.fields.allocations}</h2>
           <ul className="space-y-1 text-sm">
             {payment.allocations.map((a) => (

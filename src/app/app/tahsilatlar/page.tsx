@@ -34,18 +34,18 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">{tr.payment.title}</h1>
+        <h1 className="text-xl font-semibold text-gray-800">{tr.payment.title}</h1>
         <div className="flex items-center gap-3">
           {canExport && (
             <a
               href={`/api/payments/export${exportQuery ? `?${exportQuery}` : ""}`}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               {tr.payment.export}
             </a>
           )}
           {canCreate && (
-            <Link href="/app/tahsilatlar/yeni" className="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
+            <Link href="/app/tahsilatlar/yeni" className="rounded-lg bg-brand-800 shadow-theme-xs px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
               + {tr.payment.new}
             </Link>
           )}
@@ -93,9 +93,9 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
         />
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+          <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
             <tr>
               {canCancel && (
                 <th className="w-8 px-4 py-3">

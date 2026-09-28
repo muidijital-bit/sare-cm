@@ -128,7 +128,7 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
             disabled={!!quoteId}
             value={values.customerId}
             onChange={(e) => setValues((v) => ({ ...v, customerId: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 disabled:bg-gray-100"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900 disabled:bg-gray-100"
           >
             <option value="">—</option>
             {customers.map((c) => (
@@ -146,7 +146,7 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
             required
             value={values.orderDate}
             onChange={(e) => setValues((v) => ({ ...v, orderDate: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -156,7 +156,7 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
             type="date"
             value={values.dueDate}
             onChange={(e) => setValues((v) => ({ ...v, dueDate: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -166,7 +166,7 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
             <select
               value={values.ownerUserId}
               onChange={(e) => setValues((v) => ({ ...v, ownerUserId: e.target.value }))}
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
             >
               <option value="">—</option>
               {users.map((u) => (
@@ -184,7 +184,7 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
             value={values.deliveryAddress}
             onChange={(e) => setValues((v) => ({ ...v, deliveryAddress: e.target.value }))}
             rows={2}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -194,7 +194,7 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
             value={values.note}
             onChange={(e) => setValues((v) => ({ ...v, note: e.target.value }))}
             rows={2}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
       </div>
@@ -222,7 +222,7 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
                 type="date"
                 value={s.dueDate}
                 onChange={(e) => updateSchedule(i, { dueDate: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               />
               <input
                 type="number"
@@ -230,13 +230,13 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
                 placeholder="Tutar"
                 value={s.amount}
                 onChange={(e) => updateSchedule(i, { amount: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               />
               <input
                 placeholder="Açıklama (örn. peşinat)"
                 value={s.description}
                 onChange={(e) => updateSchedule(i, { description: e.target.value })}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
               />
               <button type="button" onClick={() => removeSchedule(i)} className="text-xs text-red-600 hover:underline">
                 {tr.customer.contacts.remove}
@@ -252,11 +252,11 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+          className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
           {saving ? tr.common.loading : tr.common.save}
         </button>
-        <button type="button" onClick={() => router.back()} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <button type="button" onClick={() => router.back()} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
           {tr.common.cancel}
         </button>
       </div>

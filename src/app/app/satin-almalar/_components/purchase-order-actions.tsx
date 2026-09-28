@@ -48,7 +48,7 @@ export function PurchaseOrderActions({ purchaseOrderId, status, canEdit }: Props
   return (
     <div className="flex flex-wrap items-center gap-2">
       {status === "DRAFT" && (
-        <button disabled={busy} onClick={receive} className="rounded-md bg-brand-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+        <button disabled={busy} onClick={receive} className="rounded-lg bg-brand-800 shadow-theme-xs px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
           {tr.purchaseOrder.receive}
         </button>
       )}

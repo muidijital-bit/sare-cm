@@ -57,14 +57,14 @@ export function PayrollRunActions({ runId, accounts, canEdit }: Props) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <select value={accountId} onChange={(e) => setAccountId(e.target.value)} className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900">
+      <select value={accountId} onChange={(e) => setAccountId(e.target.value)} className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-xs text-gray-900">
         {accounts.map((a) => (
           <option key={a.id} value={a.id}>
             {a.name}
           </option>
         ))}
       </select>
-      <button disabled={busy} onClick={complete} className="rounded-md bg-brand-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+      <button disabled={busy} onClick={complete} className="rounded-lg bg-brand-800 shadow-theme-xs px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
         {tr.payroll.complete}
       </button>
       <button disabled={busy} onClick={remove} className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">

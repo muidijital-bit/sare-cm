@@ -120,7 +120,7 @@ export function QuoteForm({ mode, quoteId, initialValues, customers, products, u
             required
             value={values.customerId}
             onChange={(e) => setValues((v) => ({ ...v, customerId: e.target.value, contactId: "" }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           >
             <option value="">—</option>
             {customers.map((c) => (
@@ -137,7 +137,7 @@ export function QuoteForm({ mode, quoteId, initialValues, customers, products, u
             <select
               value={values.contactId}
               onChange={(e) => setValues((v) => ({ ...v, contactId: e.target.value }))}
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
             >
               <option value="">—</option>
               {contacts.map((c) => (
@@ -156,7 +156,7 @@ export function QuoteForm({ mode, quoteId, initialValues, customers, products, u
             required
             value={values.issueDate}
             onChange={(e) => setValues((v) => ({ ...v, issueDate: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -167,7 +167,7 @@ export function QuoteForm({ mode, quoteId, initialValues, customers, products, u
             required
             value={values.validUntil}
             onChange={(e) => setValues((v) => ({ ...v, validUntil: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -177,7 +177,7 @@ export function QuoteForm({ mode, quoteId, initialValues, customers, products, u
             <select
               value={values.ownerUserId}
               onChange={(e) => setValues((v) => ({ ...v, ownerUserId: e.target.value }))}
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
             >
               <option value="">—</option>
               {users.map((u) => (
@@ -195,7 +195,7 @@ export function QuoteForm({ mode, quoteId, initialValues, customers, products, u
             value={values.note}
             onChange={(e) => setValues((v) => ({ ...v, note: e.target.value }))}
             rows={2}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
       </div>
@@ -215,14 +215,14 @@ export function QuoteForm({ mode, quoteId, initialValues, customers, products, u
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+          className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
           {saving ? tr.common.loading : tr.common.save}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           {tr.common.cancel}
         </button>

@@ -19,7 +19,7 @@ export default async function YeniTahsilatPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.payment.new}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.payment.new}</h1>
       <PaymentForm customers={customers} accounts={accounts.map((a) => ({ id: a.id, name: a.name }))} />
     </div>
   );

@@ -39,7 +39,7 @@ export default async function SiparisDuzenlePage({ params }: { params: { id: str
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.order.edit}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.order.edit}</h1>
       <OrderForm
         mode="edit"
         orderId={order.id}

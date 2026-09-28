@@ -19,7 +19,7 @@ export default async function YeniGiderPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.expense.new}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.expense.new}</h1>
       <ExpenseForm mode="create" categories={categories} accounts={accounts.map((a) => ({ id: a.id, name: a.name }))} />
     </div>
   );

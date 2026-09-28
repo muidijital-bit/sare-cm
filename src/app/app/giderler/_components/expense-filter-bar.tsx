@@ -38,7 +38,7 @@ export function ExpenseFilterBar({ categories, rowCount }: Props) {
       <select
         value={searchParams.get("categoryId") ?? ""}
         onChange={(e) => updateParam("categoryId", e.target.value)}
-        className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+        className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
       >
         <option value="">Tüm kategoriler</option>
         {categories.map((c) => (
@@ -54,7 +54,7 @@ export function ExpenseFilterBar({ categories, rowCount }: Props) {
           type="date"
           defaultValue={searchParams.get("dateFrom") ?? ""}
           onChange={(e) => updateParam("dateFrom", e.target.value)}
-          className="rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900"
+          className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-2 text-sm text-gray-900"
         />
       </label>
       <label className="flex items-center gap-1 text-xs text-gray-500">
@@ -63,7 +63,7 @@ export function ExpenseFilterBar({ categories, rowCount }: Props) {
           type="date"
           defaultValue={searchParams.get("dateTo") ?? ""}
           onChange={(e) => updateParam("dateTo", e.target.value)}
-          className="rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900"
+          className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-2 text-sm text-gray-900"
         />
       </label>
     </div>

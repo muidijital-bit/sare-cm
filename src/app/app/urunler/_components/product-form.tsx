@@ -68,7 +68,7 @@ export function ProductForm({ mode, productId, initialValues }: Props) {
             required
             value={values.name}
             onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -77,7 +77,7 @@ export function ProductForm({ mode, productId, initialValues }: Props) {
           <input
             value={values.code}
             onChange={(e) => setValues((v) => ({ ...v, code: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -87,7 +87,7 @@ export function ProductForm({ mode, productId, initialValues }: Props) {
             required
             value={values.unit}
             onChange={(e) => setValues((v) => ({ ...v, unit: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -100,7 +100,7 @@ export function ProductForm({ mode, productId, initialValues }: Props) {
             min="0"
             value={values.listPrice}
             onChange={(e) => setValues((v) => ({ ...v, listPrice: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -112,7 +112,7 @@ export function ProductForm({ mode, productId, initialValues }: Props) {
             min="0"
             value={values.defaultCost}
             onChange={(e) => setValues((v) => ({ ...v, defaultCost: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -126,7 +126,7 @@ export function ProductForm({ mode, productId, initialValues }: Props) {
             max="100"
             value={values.vatRate}
             onChange={(e) => setValues((v) => ({ ...v, vatRate: e.target.value }))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
 
@@ -139,10 +139,10 @@ export function ProductForm({ mode, productId, initialValues }: Props) {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-3">
-        <button type="submit" disabled={saving} className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+        <button type="submit" disabled={saving} className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
           {saving ? tr.common.loading : tr.common.save}
         </button>
-        <button type="button" onClick={() => router.back()} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <button type="button" onClick={() => router.back()} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
           {tr.common.cancel}
         </button>
       </div>

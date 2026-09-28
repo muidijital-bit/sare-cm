@@ -58,7 +58,7 @@ function ItemRow({ runId, row, editable }: { runId: string; row: PayrollItemRow;
     router.refresh();
   }
 
-  const inputClass = "w-24 rounded-md border border-gray-300 bg-white px-2 py-1 text-right text-sm text-gray-900";
+  const inputClass = "w-24 rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1 text-right text-sm text-gray-900";
 
   if (!editable) {
     return (
@@ -87,7 +87,7 @@ function ItemRow({ runId, row, editable }: { runId: string; row: PayrollItemRow;
       <td className="px-4 py-3 text-right font-medium text-gray-900">{formatCurrencyTRY(netOf(values))}</td>
       <td className="px-4 py-3 text-right">
         {dirty && (
-          <button disabled={saving} onClick={save} className="rounded-md bg-brand-800 px-2 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+          <button disabled={saving} onClick={save} className="rounded-lg bg-brand-800 shadow-theme-xs px-2 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
             {saving ? "…" : tr.common.save}
           </button>
         )}
@@ -98,9 +98,9 @@ function ItemRow({ runId, row, editable }: { runId: string; row: PayrollItemRow;
 
 export function PayrollItemsTable({ runId, items, editable }: { runId: string; items: PayrollItemRow[]; editable: boolean }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
       <table className="min-w-full divide-y divide-gray-200 text-sm">
-        <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+        <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
           <tr>
             <th className="px-4 py-3">{tr.payroll.fields.item.employee}</th>
             <th className="px-4 py-3 text-right">{tr.payroll.fields.item.grossSalary}</th>

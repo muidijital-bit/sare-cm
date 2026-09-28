@@ -31,16 +31,16 @@ export default async function PersonelDetayPage({ params }: { params: { id: stri
           <Link href="/app/personel" className="text-xs text-brand-700 hover:underline">
             ← {tr.employee.title}
           </Link>
-          <h1 className="mt-1 text-lg font-semibold text-gray-900">{e.fullName}</h1>
+          <h1 className="mt-1 text-xl font-semibold text-gray-800">{e.fullName}</h1>
         </div>
         {canEdit && (
-          <Link href={`/app/personel/${e.id}/duzenle`} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
+          <Link href={`/app/personel/${e.id}/duzenle`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
             {tr.employee.edit}
           </Link>
         )}
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-white p-4 text-sm sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4 text-sm sm:grid-cols-4">
         <div>
           <p className="text-gray-500">{tr.employee.fields.position}</p>
           <p className="font-medium text-gray-900">{e.position ?? "—"}</p>
@@ -80,9 +80,9 @@ export default async function PersonelDetayPage({ params }: { params: { id: stri
         {canEdit && <LeaveForm employeeId={e.id} />}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+          <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
             <tr>
               <th className="px-4 py-3">{tr.employee.leave.fields.type}</th>
               <th className="px-4 py-3">{tr.employee.leave.fields.startDate}</th>

@@ -83,7 +83,7 @@ export function ExpenseForm({ mode, expenseId, initialValues, categories, accoun
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.category}</label>
-          <select required value={values.categoryId} onChange={(e) => setValues((v) => ({ ...v, categoryId: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
+          <select required value={values.categoryId} onChange={(e) => setValues((v) => ({ ...v, categoryId: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900">
             <option value="">—</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -95,27 +95,27 @@ export function ExpenseForm({ mode, expenseId, initialValues, categories, accoun
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.spentAt}</label>
-          <input type="date" required value={values.spentAt} onChange={(e) => setValues((v) => ({ ...v, spentAt: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input type="date" required value={values.spentAt} onChange={(e) => setValues((v) => ({ ...v, spentAt: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.amount}</label>
-          <input type="number" step="any" required min="0.01" value={values.amount} onChange={(e) => setValues((v) => ({ ...v, amount: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input type="number" step="any" required min="0.01" value={values.amount} onChange={(e) => setValues((v) => ({ ...v, amount: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.vatAmount}</label>
-          <input type="number" step="any" min="0" value={values.vatAmount} onChange={(e) => setValues((v) => ({ ...v, vatAmount: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input type="number" step="any" min="0" value={values.vatAmount} onChange={(e) => setValues((v) => ({ ...v, vatAmount: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.vendor}</label>
-          <input value={values.vendor} onChange={(e) => setValues((v) => ({ ...v, vendor: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <input value={values.vendor} onChange={(e) => setValues((v) => ({ ...v, vendor: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.method}</label>
-          <select value={values.method} onChange={(e) => setValues((v) => ({ ...v, method: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
+          <select value={values.method} onChange={(e) => setValues((v) => ({ ...v, method: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900">
             <option value="">—</option>
             {Object.entries(tr.payment.method).map(([value, label]) => (
               <option key={value} value={value}>
@@ -127,7 +127,7 @@ export function ExpenseForm({ mode, expenseId, initialValues, categories, accoun
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.account}</label>
-          <select value={values.accountId} onChange={(e) => setValues((v) => ({ ...v, accountId: e.target.value }))} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
+          <select value={values.accountId} onChange={(e) => setValues((v) => ({ ...v, accountId: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900">
             <option value="">—</option>
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
@@ -139,7 +139,7 @@ export function ExpenseForm({ mode, expenseId, initialValues, categories, accoun
 
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.note}</label>
-          <textarea value={values.note} onChange={(e) => setValues((v) => ({ ...v, note: e.target.value }))} rows={2} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+          <textarea value={values.note} onChange={(e) => setValues((v) => ({ ...v, note: e.target.value }))} rows={2} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900" />
         </div>
 
         {mode === "create" && (
@@ -155,10 +155,10 @@ export function ExpenseForm({ mode, expenseId, initialValues, categories, accoun
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-3">
-        <button type="submit" disabled={saving} className="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+        <button type="submit" disabled={saving} className="rounded-lg bg-brand-800 shadow-theme-xs px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
           {saving ? tr.common.loading : tr.common.save}
         </button>
-        <button type="button" onClick={() => router.back()} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <button type="button" onClick={() => router.back()} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
           {tr.common.cancel}
         </button>
       </div>

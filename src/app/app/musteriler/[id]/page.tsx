@@ -51,7 +51,7 @@ export default async function MusteriDetayPage({
     <div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">{customer.title}</h1>
+          <h1 className="text-xl font-semibold text-gray-800">{customer.title}</h1>
           <div className="mt-1 flex items-center gap-2">
             <Badge color={CUSTOMER_STATUS_COLORS[customer.status]}>{tr.customer.status[customer.status]}</Badge>
             <span className="text-xs text-gray-500">{tr.customer.type[customer.type]}</span>
@@ -61,7 +61,7 @@ export default async function MusteriDetayPage({
           {canEdit && (
             <Link
               href={`/app/musteriler/${customer.id}/duzenle`}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
               {tr.customer.edit}
             </Link>
@@ -86,7 +86,7 @@ export default async function MusteriDetayPage({
 
       {activeTab === "ozet" && (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4">
             <h2 className="mb-3 text-sm font-semibold text-gray-900">Bilgiler</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -125,7 +125,7 @@ export default async function MusteriDetayPage({
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4">
               <h2 className="mb-3 text-sm font-semibold text-gray-900">MC-10 Bakiye Özeti</h2>
               {balanceResult?.ok ? (
                 <dl className="space-y-2 text-sm">

@@ -31,13 +31,13 @@ export default async function IslemGecmisiPage({ searchParams }: { searchParams:
 
   return (
     <div>
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.audit.title}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.audit.title}</h1>
 
       <AuditFilterBar users={users.map((m) => ({ id: m.user.id, name: m.user.name }))} />
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+          <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
             <tr>
               <th className="px-4 py-3">{tr.audit.fields.date}</th>
               <th className="px-4 py-3">{tr.audit.fields.user}</th>

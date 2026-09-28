@@ -30,7 +30,7 @@ export default async function YeniTeklifPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-6 text-lg font-semibold text-gray-900">{tr.quote.new}</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.quote.new}</h1>
       <QuoteForm
         mode="create"
         customers={customers}

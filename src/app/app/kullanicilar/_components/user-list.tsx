@@ -63,9 +63,9 @@ export function UserList({ rows }: { rows: UserRow[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
       <table className="min-w-full divide-y divide-gray-200 text-sm">
-        <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+        <thead className="border-b border-gray-100 bg-gray-50 text-left text-theme-xs font-medium text-gray-500">
           <tr>
             <th className="px-4 py-3">{tr.users.email}</th>
             <th className="px-4 py-3">{tr.users.role}</th>
@@ -86,7 +86,7 @@ export function UserList({ rows }: { rows: UserRow[] }) {
                     value={row.role}
                     disabled={busyId === row.id}
                     onChange={(e) => changeRole(row.id, e.target.value as MembershipRole)}
-                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 disabled:bg-gray-100"
+                    className="rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1 text-sm text-gray-900 disabled:bg-gray-100"
                   >
                     {ROLE_OPTIONS.map((r) => (
                       <option key={r} value={r}>

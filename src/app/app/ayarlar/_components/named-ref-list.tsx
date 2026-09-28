@@ -46,7 +46,7 @@ export function NamedRefList({ title, apiBase, items }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs p-4">
       <h2 className="mb-3 text-sm font-semibold text-gray-900">{title}</h2>
       <ul className="mb-3 space-y-1">
         {items.map((item) => (
@@ -64,9 +64,9 @@ export function NamedRefList({ title, apiBase, items }: Props) {
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder={tr.settings.namePlaceholder}
-          className="flex-1 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+          className="flex-1 rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-2 py-1.5 text-sm text-gray-900"
         />
-        <button onClick={addItem} disabled={busy} className="rounded-md bg-brand-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+        <button onClick={addItem} disabled={busy} className="rounded-lg bg-brand-800 shadow-theme-xs px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50">
           + {tr.settings.add}
         </button>
       </div>

@@ -28,7 +28,7 @@ export default async function AyarlarPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-gray-900">{tr.settings.title}</h1>
+      <h1 className="text-xl font-semibold text-gray-800">{tr.settings.title}</h1>
 
       <CompanyInfoForm
         initialValues={{
