@@ -36,8 +36,8 @@ function compactCurrency(value: number): string {
 
 function ChartCard({ title, children, empty }: { title: string; children: React.ReactNode; empty?: string }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <p className="mb-3 text-sm font-semibold text-gray-900">{title}</p>
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs md:p-5">
+      <p className="mb-3 text-theme-sm font-semibold text-gray-800">{title}</p>
       {empty ? <p className="py-10 text-center text-xs text-gray-400">{empty}</p> : children}
     </div>
   );

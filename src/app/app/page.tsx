@@ -83,7 +83,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         <p className="mb-4 text-xs text-gray-400">Bu rakamlar yalnızca size ait kayıtları içerir.</p>
       )}
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5">
         <Card label={tr.dashboard.revenue} value={formatCurrencyTRY(metrics.revenue)} icon={TrendingUp} color="blue" />
         <Card label={tr.dashboard.collected} value={formatCurrencyTRY(metrics.collected)} icon={DollarSign} color="emerald" />
         <Card label={tr.dashboard.openReceivable} value={formatCurrencyTRY(metrics.openReceivable)} icon={CreditCard} color="amber" />
@@ -140,7 +140,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       </div>
 
       {canViewTax && upcomingObligations?.ok && (
-        <div className="mt-8 rounded-lg border border-gray-200 bg-white p-4">
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs md:p-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900">{tr.taxObligation.upcomingTitle}</h2>
             <Link href="/app/vergi-sgk" className="text-xs text-brand-700 hover:underline">
@@ -202,25 +202,18 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
 
 type CardColor = "blue" | "emerald" | "amber" | "red" | "rose" | "violet" | "indigo" | "cyan";
 
-/** Tailwind JIT tarama için tam sınıf adları literal olarak burada durmalı (template literal ile üretilemez). */
-const CARD_COLOR_CHIP: Record<CardColor, string> = {
-  blue: "bg-blue-100 text-blue-600",
-  emerald: "bg-emerald-100 text-emerald-600",
-  amber: "bg-amber-100 text-amber-600",
-  red: "bg-red-100 text-red-600",
-  rose: "bg-rose-100 text-rose-600",
-  violet: "bg-violet-100 text-violet-600",
-  indigo: "bg-indigo-100 text-indigo-600",
-  cyan: "bg-cyan-100 text-cyan-600",
-};
-
+/**
+ * TailAdmin'in metrik kartı deseninden port edildi (ikon çipi + kalın title-sm rakam) —
+ * bkz. tailwind.config.ts üstündeki not. İkon çipi artık tek tip nötr gri (TailAdmin
+ * deseni budur, her kart kendi rengiyle boyanmaz); renk ayrımı yalnızca "warn" durumunda
+ * (vadesi geçmiş alacak) error tonuna geçerek dikkat çeker.
+ */
 function Card({
   label,
   value,
   note,
   warn,
   icon: Icon,
-  color,
 }: {
   label: string;
   value: string;
@@ -230,15 +223,15 @@ function Card({
   color: CardColor;
 }) {
   return (
-    <div className={`rounded-lg border p-4 ${warn ? "border-red-200 bg-red-50" : "border-gray-200 bg-white"}`}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs text-gray-500">{label}</p>
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${CARD_COLOR_CHIP[color]}`}>
-          <Icon size={16} />
-        </span>
+    <div className={`rounded-2xl border bg-white p-4 shadow-theme-xs md:p-5 ${warn ? "border-error-200 bg-error-25" : "border-gray-200"}`}>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${warn ? "bg-error-50 text-error-600" : "bg-gray-100 text-gray-700"}`}>
+        <Icon size={18} />
+      </span>
+      <div className="mt-4">
+        <p className="text-theme-xs text-gray-500">{label}</p>
+        <p className={`mt-1 text-title-sm font-bold ${warn ? "text-error-700" : "text-gray-800"}`}>{value}</p>
       </div>
-      <p className={`mt-2 text-xl font-semibold ${warn ? "text-red-700" : "text-gray-900"}`}>{value}</p>
-      {note && <p className="mt-1 text-xs text-amber-600">{note}</p>}
+      {note && <p className="mt-1 text-theme-xs text-warning-600">{note}</p>}
     </div>
   );
 }

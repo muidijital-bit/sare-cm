@@ -2,20 +2,25 @@
  * Genel amaçlı durum rozeti — tek bileşen, tek renk sözlüğü (bkz.
  * .claude/agents/frontend-ui-dev.md: "durum rozetleri tutarlı olmalı"). Yeni bir durum
  * eklerken yalnızca ilgili dict'e (örn. CUSTOMER_STATUS_COLORS) bir satır eklenir.
+ *
+ * Görsel dil TailAdmin'in "light" rozet varyantından port edildi (bkz. tailwind.config.ts
+ * üstündeki not) — anahtar adları (gray/blue/green/amber/red) KORUNDU, yalnızca renk
+ * değerleri tailwind.config.ts'teki yeni success/error/warning/brand skalasına bağlandı;
+ * bu sayede onlarca dosyadaki `<Badge color="green">` gibi kullanımlar değişmeden kalır.
  */
 export type BadgeColor = "gray" | "blue" | "green" | "amber" | "red";
 
 const COLOR_CLASSES: Record<BadgeColor, string> = {
   gray: "bg-gray-100 text-gray-700",
-  blue: "bg-blue-100 text-blue-700",
-  green: "bg-green-100 text-green-700",
-  amber: "bg-amber-100 text-amber-800",
-  red: "bg-red-100 text-red-700",
+  blue: "bg-brand-50 text-brand-600",
+  green: "bg-success-50 text-success-700",
+  amber: "bg-warning-50 text-warning-700",
+  red: "bg-error-50 text-error-700",
 };
 
 export function Badge({ color = "gray", children }: { color?: BadgeColor; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${COLOR_CLASSES[color]}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-theme-xs font-medium ${COLOR_CLASSES[color]}`}>
       {children}
     </span>
   );

@@ -108,10 +108,10 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
         href={item.href}
         onClick={opts.onClick}
         title={compact ? item.label : undefined}
-        className={`group relative flex items-center rounded-lg border-l-[3px] border-transparent px-2 py-1.5 text-sm font-medium transition-all ${
+        className={`group relative flex items-center rounded-lg border-l-[3px] border-transparent px-2 py-2 text-theme-sm font-medium transition-all ${
           compact ? "justify-center" : "gap-3"
         } ${
-          active ? "bg-white/15" : `text-brand-200 ${item.hoverBg} ${item.hoverBorder} hover:text-white`
+          active ? "bg-brand-500/20" : `text-brand-200 ${item.hoverBg} ${item.hoverBorder} hover:text-white`
         }`}
       >
         {/* Seçili öğe çizgisi: parent'ın rounded-lg'sinden bağımsız, düz kenarlı, ayrı bir
@@ -214,24 +214,29 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
 
       {/* Ana kolon: header + içerik + footer */}
       <div className="flex min-h-screen flex-1 flex-col">
-        <header className="hidden flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-white px-4 py-3 sm:px-6 lg:flex">
+        <header className="hidden flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3 shadow-theme-xs sm:px-6 lg:flex">
           <div>
-            <p className="text-sm font-semibold text-brand-900">{companyName}</p>
-            <p className="text-xs text-gray-500">{role}</p>
+            <p className="text-theme-sm font-semibold text-gray-800">{companyName}</p>
+            <p className="text-theme-xs text-gray-500">{role}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {hasMultipleCompanies && (
-              <Link href="/app/sirket-sec" className="text-xs text-brand-700 hover:text-brand-900 hover:underline">
+              <Link href="/app/sirket-sec" className="text-theme-xs text-brand-600 hover:text-brand-800 hover:underline">
                 Şirket değiştir
               </Link>
             )}
-            <div className="text-right">
-              <p className="text-sm text-gray-900">{userName}</p>
-              <p className="text-xs text-gray-500">{userEmail}</p>
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700">
+                {userName.trim().charAt(0).toUpperCase() || "?"}
+              </span>
+              <div className="text-right">
+                <p className="text-theme-sm text-gray-800">{userName}</p>
+                <p className="text-theme-xs text-gray-500">{userEmail}</p>
+              </div>
             </div>
             <button
               onClick={() => signOut({ callbackUrl: "/giris" })}
-              className="rounded-md border border-brand-200 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-theme-xs font-medium text-gray-700 hover:bg-gray-50"
             >
               {tr.auth.logout}
             </button>
