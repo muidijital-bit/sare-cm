@@ -120,6 +120,7 @@ enum NotificationType {
 enum DocumentType {
   QUOTE
   ORDER
+  PURCHASE
 }
 
 // =========================================================
@@ -218,8 +219,9 @@ model Company {
   quoteValidityDays Int     @default(15) @map("quote_validity_days")
 
   // §SA-03 Belge numaralandırma formatı, örn. "TKF-{yil}-{sira}"
-  quoteNumberFormat String @default("TKF-{yil}-{sira}") @map("quote_number_format")
-  orderNumberFormat String @default("SIP-{yil}-{sira}") @map("order_number_format")
+  quoteNumberFormat         String @default("TKF-{yil}-{sira}") @map("quote_number_format")
+  orderNumberFormat         String @default("SIP-{yil}-{sira}") @map("order_number_format")
+  purchaseOrderNumberFormat String @default("SAT-{yil}-{sira}") @map("purchase_order_number_format")
 
   settings Json @default("{}")
 
@@ -236,6 +238,9 @@ model Company {
   products          Product[]
   quotes            Quote[]
   orders            Order[]
+  suppliers         Supplier[]
+  purchaseOrders    PurchaseOrder[]
+  stockMovements    StockMovement[]
   payments          Payment[]
   accounts          Account[]
   expenses          Expense[]
@@ -477,14 +482,19 @@ model Product {
   defaultCost Decimal? @map("default_cost") @db.Decimal(18, 4)
   vatRate     Decimal  @map("vat_rate") @db.Decimal(5, 2)
   isActive    Boolean  @default(true) @map("is_active")
+  /// SM-01: elde bulunan miktar — sipariş onaylanınca düşer, iptalde/alımda geri eklenir. Negatif olabilir
+  /// (V1 kapsamında bilinçli basitleştirme: yetersiz stokta sipariş ENGELLENMEZ, yalnızca eksiye düşer).
+  stockQty    Decimal  @default(0) @map("stock_qty") @db.Decimal(18, 4)
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  company    Company     @relation(fields: [companyId], references: [id])
-  quoteItems QuoteItem[]
-  orderItems OrderItem[]
+  company            Company             @relation(fields: [companyId], references: [id])
+  quoteItems         QuoteItem[]
+  orderItems         OrderItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  stockMovements     StockMovement[]
 
   @@index([companyId, isActive])
   @@map("products")
@@ -610,6 +620,7 @@ model Order {
   items              OrderItem[]
   paymentSchedules   PaymentSchedule[]
   paymentAllocations PaymentAllocation[]
+  stockMovements     StockMovement[]
 
   @@unique([companyId, number])
   @@index([companyId, status])
@@ -740,6 +751,128 @@ model ExpenseCategory {
 
   @@unique([companyId, name])
   @@map("expense_categories")
+}
+
+// =========================================================
+// Tedarikçi / Satın Alma / Stok (§SM — KOBİ genişlemesi)
+// =========================================================
+
+model Supplier {
+  id        String  @id @default(uuid()) @db.Uuid
+  companyId String  @map("company_id") @db.Uuid
+  title     String
+  taxOffice String? @map("tax_office")
+  taxNumber String? @map("tax_number")
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean @default(true) @map("is_active")
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  company        Company         @relation(fields: [companyId], references: [id])
+  purchaseOrders PurchaseOrder[]
+
+  @@index([companyId, isActive])
+  @@map("suppliers")
+}
+
+enum PurchaseOrderStatus {
+  DRAFT // taslak — henüz stok/maliyete işlenmedi
+  RECEIVED // teslim alındı — stok ve ürün maliyeti güncellendi (SM-02)
+  CANCELLED
+}
+
+/// SM-02: tedarikçiden alım belgesi. `RECEIVED` olunca (yalnızca o an) satırlar stok hareketine
+/// ve `Product.defaultCost` güncellemesine dönüşür — taslak alımlar stoğu etkilemez.
+model PurchaseOrder {
+  id         String              @id @default(uuid()) @db.Uuid
+  companyId  String              @map("company_id") @db.Uuid
+  supplierId String              @map("supplier_id") @db.Uuid
+  number     String
+  status     PurchaseOrderStatus @default(DRAFT)
+
+  orderedAt  DateTime  @map("ordered_at")
+  receivedAt DateTime? @map("received_at")
+
+  subtotal Decimal @db.Decimal(18, 4)
+  vatTotal Decimal @map("vat_total") @db.Decimal(18, 4)
+  total    Decimal @db.Decimal(18, 4)
+  note     String?
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  company        Company             @relation(fields: [companyId], references: [id])
+  supplier       Supplier            @relation(fields: [supplierId], references: [id])
+  items          PurchaseOrderItem[]
+  stockMovements StockMovement[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@map("purchase_orders")
+}
+
+/// Diğer belge satırları (quote_items/order_items) gibi doğrudan `company_id`/RLS taşımaz —
+/// erişim daima üst belge (`purchase_order`) üzerinden servis katmanında sağlanır.
+model PurchaseOrderItem {
+  id              String  @id @default(uuid()) @db.Uuid
+  purchaseOrderId String  @map("purchase_order_id") @db.Uuid
+  productId       String? @map("product_id") @db.Uuid
+  description     String
+  quantity        Decimal @db.Decimal(18, 4)
+  unitCost        Decimal @map("unit_cost") @db.Decimal(18, 4)
+  vatRate         Decimal @map("vat_rate") @db.Decimal(5, 2)
+  lineTotal       Decimal @map("line_total") @db.Decimal(18, 4)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  product       Product?      @relation(fields: [productId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@map("purchase_order_items")
+}
+
+enum StockMovementType {
+  PURCHASE // alım teslim alındı → stoğa giriş
+  ORDER_RESERVED // satış siparişi (oluşturma/düzenleme) → stoktan çıkış (negatif miktar)
+  ORDER_CANCELLED // sipariş iptali → önceki rezervasyonun tersi (giriş)
+  ADJUSTMENT // manuel sayım düzeltmesi
+}
+
+/// SM-03: stok hareket defteri — `Product.stockQty` bu tablodaki miktarların (işaretli) toplamıdır;
+/// `quantity` giriş için pozitif, çıkış için negatiftir. `orderId`'ye bağlı hareketler
+/// idempotent yeniden hesaplama için gruplanır (bkz. src/lib/modules/orders/stock.ts).
+model StockMovement {
+  id        String            @id @default(uuid()) @db.Uuid
+  companyId String            @map("company_id") @db.Uuid
+  productId String            @map("product_id") @db.Uuid
+  type      StockMovementType
+  quantity  Decimal           @db.Decimal(18, 4)
+  note      String?
+
+  purchaseOrderId String? @map("purchase_order_id") @db.Uuid
+  orderId         String? @map("order_id") @db.Uuid
+
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company       Company        @relation(fields: [companyId], references: [id])
+  product       Product        @relation(fields: [productId], references: [id])
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  order         Order?         @relation(fields: [orderId], references: [id])
+
+  @@index([companyId, productId])
+  @@index([orderId])
+  @@map("stock_movements")
 }
 
 model Expense {

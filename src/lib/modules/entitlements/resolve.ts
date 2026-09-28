@@ -21,12 +21,19 @@ export function computeEnabledModules(input: {
   // Bu bir GÜVENLİK sınırı değil (RBAC + RLS ayrıca geçerli), yalnızca ürün lisansıdır.
   if (input.catalog.length === 0) return ["*"];
 
+  // Yalnızca kataloğda (isActive) bulunan modüller etkinleştirilebilir — bir modül isActive:false
+  // yapıldığında paket/override'da hâlâ referanslı olsa bile artık HİÇBİR yoldan açılamaz
+  // (bkz. auditLog: canlıya kadar bilinçli kapalı, canlı DB'de bulundu — bir modülü paketten
+  // kaldırmadan yalnızca isActive ile kapatmanın gerçekten çalıştığından emin olmak için eklendi).
+  const catalogKeys = new Set(input.catalog.map((m) => m.key));
+
   const enabled = new Set<string>();
   for (const m of input.catalog) if (m.isCore || m.isFree) enabled.add(m.key);
-  for (const key of input.planModuleKeys) enabled.add(key);
+  for (const key of input.planModuleKeys) if (catalogKeys.has(key)) enabled.add(key);
 
   for (const o of input.overrides) {
     if (o.expiresAt && o.expiresAt.getTime() <= now.getTime()) continue;
+    if (!catalogKeys.has(o.moduleKey)) continue;
     if (o.enabled) enabled.add(o.moduleKey);
     else enabled.delete(o.moduleKey);
   }

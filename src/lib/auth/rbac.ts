@@ -21,7 +21,8 @@ export type Module =
   | "order"
   | "payment"
   | "expense"
-  | "auditLog";
+  | "auditLog"
+  | "supplier";
 
 /** Bir modül için: her eylemin hangi kapsamda (`all`/`own`) izinli olduğu. Eylem yoksa yasak. */
 type ModuleRule = Partial<Record<Action, Scope>>;
@@ -91,6 +92,14 @@ export const PERMISSION_MATRIX: Matrix = {
     ADMIN: VIEW_ONLY,
     SALES: NONE,
     ACCOUNTING: NONE,
+    VIEWER: NONE,
+  },
+  // Tedarikçi/satın alma/stok: mali nitelikli — expense ile aynı desen (satış rolü göremez).
+  supplier: {
+    OWNER: FULL,
+    ADMIN: FULL,
+    SALES: NONE,
+    ACCOUNTING: FULL,
     VIEWER: NONE,
   },
 };

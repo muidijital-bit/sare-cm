@@ -5,6 +5,8 @@
  *
  * - isCore: kapatılamaz (şirket yönetimi olmadan ürün kullanılamaz).
  * - isFree: her pakette ve "Free" pakette açık gelir.
+ * - isActive: false ise modül HERKESTEN gizlenir (menü/sayfa/API) — paketten bağımsız,
+ *   ürün genelinde geçici bir "kapalı" anahtarı (bkz. auditLog: canlıya çıkana kadar kapalı).
  */
 export interface CatalogModule {
   key: string;
@@ -13,6 +15,7 @@ export interface CatalogModule {
   isCore: boolean;
   isFree: boolean;
   sortOrder: number;
+  isActive?: boolean;
 }
 
 export const MODULE_CATALOG: CatalogModule[] = [
@@ -22,9 +25,12 @@ export const MODULE_CATALOG: CatalogModule[] = [
   { key: "order", name: "Siparişler", description: "Tekliften sipariş, durum takibi", isCore: false, isFree: false, sortOrder: 30 },
   { key: "payment", name: "Tahsilatlar", description: "Tahsilat, vade ve mahsuplaşma", isCore: false, isFree: false, sortOrder: 40 },
   { key: "expense", name: "Giderler", description: "Gider kaydı ve kategoriler", isCore: false, isFree: false, sortOrder: 50 },
-  { key: "auditLog", name: "İşlem Geçmişi", description: "Kim ne zaman ne yaptı", isCore: false, isFree: false, sortOrder: 60 },
+  // GEÇİCİ: canlıya çıkana kadar kapalı (test/demo verisiyle dolu, henüz müşteriye gösterilecek durumda değil).
+  // Canlıya alırken: isActive: false satırını kaldırıp `npx tsx scripts/seed-modules.ts` çalıştırın.
+  { key: "auditLog", name: "İşlem Geçmişi", description: "Kim ne zaman ne yaptı", isCore: false, isFree: false, sortOrder: 60, isActive: false },
   { key: "userManagement", name: "Kullanıcılar", description: "Kullanıcı ve rol yönetimi", isCore: true, isFree: true, sortOrder: 70 },
   { key: "companySettings", name: "Şirket Ayarları", description: "Firma bilgileri, numaralandırma, KDV", isCore: true, isFree: true, sortOrder: 80 },
+  { key: "supplier", name: "Tedarikçiler & Satın Alma", description: "Tedarikçi kaydı, alım, ürün maliyeti ve stok takibi", isCore: false, isFree: false, sortOrder: 90 },
 ];
 
 export interface CatalogPlan {
@@ -43,5 +49,5 @@ export interface CatalogPlan {
 export const DEFAULT_PLANS: CatalogPlan[] = [
   { name: "Free", description: "Müşteri ve teklif ile başlayın", maxUsers: 2, maxCustomers: 100, maxStorageMb: 200, price: 0, yearlyPrice: null, moduleKeys: [] },
   { name: "Starter", description: "Sipariş ve tahsilat takibi", maxUsers: 5, maxCustomers: 1000, maxStorageMb: 2000, price: 499, yearlyPrice: 4990, moduleKeys: ["order", "payment"] },
-  { name: "Pro", description: "Tüm modüller", maxUsers: 25, maxCustomers: 20000, maxStorageMb: 20000, price: 999, yearlyPrice: 9990, moduleKeys: ["order", "payment", "expense", "auditLog"] },
+  { name: "Pro", description: "Tüm modüller", maxUsers: 25, maxCustomers: 20000, maxStorageMb: 20000, price: 999, yearlyPrice: 9990, moduleKeys: ["order", "payment", "expense", "auditLog", "supplier"] },
 ];

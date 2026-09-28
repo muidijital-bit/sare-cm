@@ -15,8 +15,8 @@ async function main() {
   for (const m of MODULE_CATALOG) {
     const row = await prisma.appModule.upsert({
       where: { key: m.key },
-      update: { name: m.name, description: m.description, isCore: m.isCore, isFree: m.isFree, sortOrder: m.sortOrder },
-      create: { ...m },
+      update: { name: m.name, description: m.description, isCore: m.isCore, isFree: m.isFree, sortOrder: m.sortOrder, isActive: m.isActive ?? true },
+      create: { ...m, isActive: m.isActive ?? true },
     });
     moduleIds.set(m.key, row.id);
   }

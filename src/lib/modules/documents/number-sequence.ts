@@ -16,7 +16,7 @@ import type { Prisma } from "@prisma/client";
 export async function nextDocumentNumber(
   tx: Prisma.TransactionClient,
   companyId: string,
-  docType: "QUOTE" | "ORDER",
+  docType: "QUOTE" | "ORDER" | "PURCHASE",
   format: string,
 ): Promise<string> {
   const year = new Date().getFullYear();

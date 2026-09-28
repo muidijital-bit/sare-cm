@@ -6,6 +6,7 @@ import type { TenantSession } from "@/lib/auth/session";
 import type { OrderInput } from "@/lib/validation/order";
 import { calculateDocument, type LineInput } from "@/lib/modules/documents/calculations";
 import { nextDocumentNumber } from "@/lib/modules/documents/number-sequence";
+import { reconcileOrderStock, reverseOrderStock } from "./stock";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
 
 interface ListParams {
@@ -191,6 +192,8 @@ export async function createOrder(session: TenantSession, input: OrderInput): Pr
       })),
     });
 
+    await reconcileOrderStock(tx, session.companyId, order.id, input.items.map((it) => ({ productId: it.productId || null, quantity: it.quantity })), session.userId);
+
     if (input.paymentSchedules.length > 0) {
       await tx.paymentSchedule.createMany({
         data: input.paymentSchedules.map((s) => ({
@@ -263,6 +266,8 @@ export async function createOrderFromQuote(session: TenantSession, quoteId: stri
       })),
     });
 
+    await reconcileOrderStock(tx, session.companyId, order.id, quote.items.map((it) => ({ productId: it.productId, quantity: it.quantity })), session.userId);
+
     await writeAuditLog(tx, {
       companyId: session.companyId,
       userId: session.userId,
@@ -333,6 +338,8 @@ export async function updateOrder(session: TenantSession, id: string, input: Ord
         sortOrder: i,
       })),
     });
+
+    await reconcileOrderStock(tx, session.companyId, id, input.items.map((it) => ({ productId: it.productId || null, quantity: it.quantity })), session.userId);
 
     await tx.paymentSchedule.deleteMany({ where: { orderId: id } });
     if (input.paymentSchedules.length > 0) {
@@ -410,6 +417,7 @@ export async function cancelOrder(session: TenantSession, id: string, reason: st
       where: { id },
       data: { status: "CANCELLED", cancelledAt: new Date(), cancelledBy: session.userId, cancelReason: reason, updatedBy: session.userId },
     });
+    await reverseOrderStock(tx, session.companyId, id, session.userId);
     await writeAuditLog(tx, {
       companyId: session.companyId,
       userId: session.userId,

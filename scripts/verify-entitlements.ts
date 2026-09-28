@@ -45,10 +45,14 @@ async function main() {
   const coreRemoved = computeEnabledModules({ catalog, planModuleKeys: [], overrides: [{ moduleKey: "companySettings", enabled: false, expiresAt: null }], now });
   check("Çekirdek modül override ile kapatılamaz", has(coreRemoved, "companySettings"));
   check("Boş katalog: kimse kilitlenmez (['*'])", computeEnabledModules({ catalog: [], planModuleKeys: [], overrides: [] })[0] === "*");
+  const catalogNoAudit = catalog.filter((m) => m.key !== "auditLog");
+  const inactiveModuleLeak = computeEnabledModules({ catalog: catalogNoAudit, planModuleKeys: ["auditLog", "order"], overrides: [{ moduleKey: "auditLog", enabled: true, expiresAt: null }], now });
+  check("isActive:false modül PAKETTE olsa da sızmaz", !has(inactiveModuleLeak, "auditLog") && has(inactiveModuleLeak, "order"));
   const legacy = await prisma.plan.findMany({ where: { name: { notIn: ["Free", "Starter", "Pro"] } }, select: { id: true, name: true } });
+  const totalCatalogSize = await prisma.appModule.count(); // isActive filtresiz — MODULE_CATALOG'daki TÜM modül sayısı
   for (const p of legacy) {
     const n = await prisma.planModule.count({ where: { planId: p.id } });
-    check(`Mevcut paket "${p.name}" tüm modüllere bağlı (${n}/${catalog.length})`, n === catalog.length);
+    check(`Mevcut paket "${p.name}" tüm modüllere bağlı (${n}/${totalCatalogSize})`, n === totalCatalogSize);
   }
 
   // 3) Servis katmanı zorlaması (Free pakette sipariş oluşturulamaz, müşteri oluşturulabilir)

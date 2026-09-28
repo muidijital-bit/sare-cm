@@ -43,3 +43,9 @@ export const ORDER_STATUS_COLORS: Record<string, BadgeColor> = {
   COMPLETED: "green",
   CANCELLED: "red",
 };
+
+export const PURCHASE_ORDER_STATUS_COLORS: Record<string, BadgeColor> = {
+  DRAFT: "gray",
+  RECEIVED: "green",
+  CANCELLED: "red",
+};
