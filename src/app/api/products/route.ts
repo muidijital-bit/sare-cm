@@ -1,15 +1,29 @@
-import { NextResponse } from "next/server";
-import { requireSession, isSession } from "@/lib/api/handlers";
-import { withTenant } from "@/lib/db/tenant-context";
+import { NextRequest } from "next/server";
+import { requireSession, requireWritable, isSession, serviceResultToResponse, zodErrorResponse } from "@/lib/api/handlers";
+import { listProducts, createProduct } from "@/lib/modules/products/service";
+import { productInputSchema, listProductsQuerySchema } from "@/lib/validation/product";
 
-/** TK-02: katalogdan ürün seçimi için salt-okunur liste. Katalog CRUD'u henüz yapılmadı. */
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await requireSession();
   if (!isSession(session)) return session;
 
-  const products = await withTenant(session.companyId, (tx) =>
-    tx.product.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-  );
+  const parsed = listProductsQuerySchema.safeParse(Object.fromEntries(req.nextUrl.searchParams));
+  if (!parsed.success) return zodErrorResponse(parsed.error);
 
-  return NextResponse.json({ items: products });
+  const result = await listProducts(session, parsed.data);
+  return serviceResultToResponse(result);
+}
+
+export async function POST(req: NextRequest) {
+  const session = await requireSession();
+  if (!isSession(session)) return session;
+  const writable = requireWritable(session);
+  if (writable) return writable;
+
+  const body = await req.json().catch(() => null);
+  const parsed = productInputSchema.safeParse(body);
+  if (!parsed.success) return zodErrorResponse(parsed.error);
+
+  const result = await createProduct(session, parsed.data);
+  return serviceResultToResponse(result, 201);
 }

@@ -21,6 +21,9 @@ export interface CatalogModule {
 export const MODULE_CATALOG: CatalogModule[] = [
   { key: "dashboard", name: "Panel", description: "Özet göstergeler ve grafikler", isCore: true, isFree: true, sortOrder: 0 },
   { key: "customer", name: "Müşteriler", description: "Müşteri ve kişi yönetimi", isCore: false, isFree: true, sortOrder: 10 },
+  // Teklif/sipariş ürün seçicisinin dayandığı katalog — çekirdek: hiçbir pakette kapatılamaz,
+  // aksi halde Free pakette bile serbest olan "Teklifler" modülü kullanılamaz hale gelirdi.
+  { key: "product", name: "Ürünler", description: "Ürün/hizmet kataloğu, fiyat ve maliyet", isCore: true, isFree: true, sortOrder: 15 },
   { key: "quote", name: "Teklifler", description: "Teklif hazırlama, gönderme, onay", isCore: false, isFree: true, sortOrder: 20 },
   { key: "order", name: "Siparişler", description: "Tekliften sipariş, durum takibi", isCore: false, isFree: false, sortOrder: 30 },
   { key: "payment", name: "Tahsilatlar", description: "Tahsilat, vade ve mahsuplaşma", isCore: false, isFree: false, sortOrder: 40 },

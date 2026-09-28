@@ -25,7 +25,8 @@ export type Module =
   | "supplier"
   | "employee"
   | "payroll"
-  | "taxObligation";
+  | "taxObligation"
+  | "product";
 
 /** Bir modül için: her eylemin hangi kapsamda (`all`/`own`) izinli olduğu. Eylem yoksa yasak. */
 type ModuleRule = Partial<Record<Action, Scope>>;
@@ -128,6 +129,15 @@ export const PERMISSION_MATRIX: Matrix = {
     SALES: NONE,
     ACCOUNTING: FULL,
     VIEWER: NONE,
+  },
+  // Ürün kataloğu: teklif/sipariş için ÇEKİRDEK altyapı (bkz. catalog.ts isCore:true) —
+  // satış/muhasebe/izleyici fiyat ve maliyeti görebilir ama yalnızca yönetici düzenler.
+  product: {
+    OWNER: FULL,
+    ADMIN: FULL,
+    SALES: VIEW_ONLY,
+    ACCOUNTING: VIEW_ONLY,
+    VIEWER: VIEW_ONLY,
   },
 };
 

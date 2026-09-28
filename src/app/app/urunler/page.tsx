@@ -1,0 +1,108 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getTenantSession } from "@/lib/auth/session";
+import { listProducts } from "@/lib/modules/products/service";
+import { listProductsQuerySchema } from "@/lib/validation/product";
+import { getScope } from "@/lib/auth/access";
+import { AccessDenied } from "@/components/ui/access-denied";
+import { tr, formatCurrencyTRY } from "@/lib/i18n/tr";
+import { RowDeleteButton } from "@/components/ui/row-delete-button";
+import { ProductFilterBar } from "./_components/product-filter-bar";
+
+export default async function UrunlerPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
+  const session = await getTenantSession();
+  if (!session) redirect("/app/sirket-sec");
+
+  const scope = getScope(session, "product", "view");
+  if (!scope) return <AccessDenied session={session} module="product" />;
+
+  const parsed = listProductsQuerySchema.safeParse(searchParams);
+  const query = parsed.success ? parsed.data : { page: 1, pageSize: 20 };
+  const result = await listProducts(session, query);
+  if (!result.ok) return <p className="text-sm text-red-600">{result.message}</p>;
+
+  const { items, total, page, pageSize } = result.data;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const canCreate = !!getScope(session, "product", "create");
+  const canDelete = !!getScope(session, "product", "delete");
+
+  return (
+    <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold text-gray-900">{tr.product.title}</h1>
+        <div className="flex items-center gap-3">
+          {getScope(session, "supplier", "view") && (
+            <Link href="/app/satin-almalar/stok" className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              {tr.stock.title}
+            </Link>
+          )}
+          {canCreate && (
+            <Link href="/app/urunler/yeni" className="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
+              + {tr.product.new}
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <ProductFilterBar rowCount={items.length} />
+
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+            <tr>
+              <th className="px-4 py-3">{tr.product.fields.name}</th>
+              <th className="px-4 py-3">{tr.product.fields.code}</th>
+              <th className="px-4 py-3 text-right">{tr.product.fields.listPrice}</th>
+              <th className="px-4 py-3 text-right">{tr.product.fields.stockQty}</th>
+              <th className="px-4 py-3">{tr.product.fields.isActive}</th>
+              {canDelete && <th className="px-4 py-3"></th>}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                  {tr.product.empty}
+                </td>
+              </tr>
+            )}
+            {items.map((p) => (
+              <tr key={p.id} className="searchable-row-products hover:bg-gray-50" data-search={[p.name, p.code].filter(Boolean).join(" ")}>
+                <td className="px-4 py-3">
+                  <Link href={`/app/urunler/${p.id}/duzenle`} className="font-medium text-gray-900 hover:underline">
+                    {p.name}
+                  </Link>
+                </td>
+                <td className="px-4 py-3 text-gray-600">{p.code ?? "—"}</td>
+                <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(p.listPrice))}</td>
+                <td className={`px-4 py-3 text-right ${Number(p.stockQty) < 0 ? "font-medium text-red-600" : "text-gray-600"}`}>
+                  {p.stockQty.toString()} {p.unit}
+                </td>
+                <td className="px-4 py-3 text-gray-600">{p.isActive ? "Aktif" : "Pasif"}</td>
+                {canDelete && (
+                  <td className="px-4 py-3 text-right">
+                    <RowDeleteButton endpoint={`/api/products/${p.id}`} confirmMessage={tr.product.deleteConfirm} label={tr.product.delete} />
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <Link
+              key={p}
+              href={{ pathname: "/app/urunler", query: { ...searchParams, page: p } }}
+              className={`rounded-md px-3 py-1 ${p === page ? "bg-brand-800 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+            >
+              {p}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

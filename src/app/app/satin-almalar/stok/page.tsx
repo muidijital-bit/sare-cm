@@ -7,8 +7,8 @@ import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY } from "@/lib/i18n/tr";
 
 /**
- * Ürün kataloğu CRUD'u henüz yok (bkz. src/app/api/products/route.ts notu) — bu sayfa mevcut
- * ürünlerin stok/maliyet durumunu gösterir, yeni ürün ekleme burada DEĞİLDİR.
+ * Ürün kataloğu CRUD'u artık /app/urunler altında var (Ürün Yönetimi modülü) — bu sayfa
+ * mevcut ürünlerin stok/maliyet durumunu gösterir, ürün ekleme/düzenleme oraya bağlanır.
  */
 export default async function StokPage() {
   const session = await getTenantSession();
@@ -17,6 +17,7 @@ export default async function StokPage() {
   if (!getScope(session, "supplier", "view")) return <AccessDenied session={session} module="supplier" />;
 
   const products = await withTenant(session.companyId, (tx) => tx.product.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }));
+  const canManageProducts = !!getScope(session, "product", "create");
 
   return (
     <div>
@@ -29,6 +30,11 @@ export default async function StokPage() {
           <Link href="/app/satin-almalar" className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
             {tr.purchaseOrder.title}
           </Link>
+          {canManageProducts && (
+            <Link href="/app/urunler/yeni" className="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
+              + {tr.product.new}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -45,7 +51,7 @@ export default async function StokPage() {
             {products.length === 0 && (
               <tr>
                 <td colSpan={3} className="px-4 py-8 text-center text-gray-400">
-                  Aktif ürün yok. Ürünler, teklif/sipariş/satın alma formlarındaki &quot;Ürün&quot; seçicisinden bağımsız olarak henüz ayrı bir katalog ekranından yönetilmiyor.
+                  {tr.product.empty}
                 </td>
               </tr>
             )}
