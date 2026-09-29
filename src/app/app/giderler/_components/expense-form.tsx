@@ -14,6 +14,7 @@ export interface ExpenseFormValues {
   method: string;
   accountId: string;
   note: string;
+  projectId: string;
   isRecurringTemplate: boolean;
 }
 
@@ -28,6 +29,7 @@ const EMPTY_VALUES: ExpenseFormValues = {
   method: "",
   accountId: "",
   note: "",
+  projectId: "",
   isRecurringTemplate: false,
 };
 
@@ -37,9 +39,13 @@ interface Props {
   initialValues?: Partial<ExpenseFormValues>;
   categories: { id: string; name: string }[];
   accounts: { id: string; name: string }[];
+  /** Açık projeler — boşsa alan gizlenir. */
+  projects?: { id: string; number: string; name: string }[];
+  /** Kayıttan sonra dönülecek sayfa (örn. proje detayından gelindiyse). */
+  returnTo?: string;
 }
 
-export function ExpenseForm({ mode, expenseId, initialValues, categories, accounts }: Props) {
+export function ExpenseForm({ mode, expenseId, initialValues, categories, accounts, projects = [], returnTo }: Props) {
   const router = useRouter();
   const [values, setValues] = useState<ExpenseFormValues>({ ...EMPTY_VALUES, ...initialValues });
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +65,7 @@ export function ExpenseForm({ mode, expenseId, initialValues, categories, accoun
       method: (values.method || null) as ExpenseInput["method"],
       accountId: values.accountId || null,
       note: values.note,
+      projectId: values.isRecurringTemplate ? null : values.projectId || null,
       isRecurringTemplate: values.isRecurringTemplate,
       recurringRule: values.isRecurringTemplate ? "MONTHLY" : null,
     };
@@ -74,7 +81,7 @@ export function ExpenseForm({ mode, expenseId, initialValues, categories, accoun
       return;
     }
 
-    router.push("/app/giderler");
+    router.push(returnTo ?? "/app/giderler");
     router.refresh();
   }
 
@@ -136,6 +143,20 @@ export function ExpenseForm({ mode, expenseId, initialValues, categories, accoun
             ))}
           </select>
         </div>
+
+        {projects.length > 0 && !values.isRecurringTemplate && (
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.project}</label>
+            <select value={values.projectId} onChange={(e) => setValues((v) => ({ ...v, projectId: e.target.value }))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900">
+              <option value="">{tr.document.noProject}</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.number} · {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700">{tr.expense.fields.note}</label>

@@ -14,6 +14,7 @@ export interface PaymentScheduleRow {
 
 export interface OrderFormValues {
   customerId: string;
+  projectId: string;
   orderDate: string;
   dueDate: string;
   deliveryAddress: string;
@@ -29,6 +30,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 const EMPTY_VALUES: OrderFormValues = {
   customerId: "",
+  projectId: "",
   orderDate: today(),
   dueDate: "",
   deliveryAddress: "",
@@ -49,9 +51,11 @@ interface Props {
   products: ProductOption[];
   users: { id: string; name: string }[];
   canAssignOwner: boolean;
+  /** Açık projeler (proje modülü/yetkisi yoksa boş — alan gizlenir). */
+  projects?: { id: string; number: string; name: string; customerId: string }[];
 }
 
-export function OrderForm({ mode, orderId, quoteId, initialValues, customers, products, users, canAssignOwner }: Props) {
+export function OrderForm({ mode, orderId, quoteId, initialValues, customers, products, users, canAssignOwner, projects = [] }: Props) {
   const router = useRouter();
   const [values, setValues] = useState<OrderFormValues>({ ...EMPTY_VALUES, ...initialValues });
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +83,7 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
     const payload: OrderInput = {
       customerId: values.customerId,
       quoteId: quoteId || null,
+      projectId: values.projectId || null,
       orderDate: new Date(values.orderDate),
       dueDate: values.dueDate ? new Date(values.dueDate) : null,
       deliveryAddress: values.deliveryAddress,
@@ -127,7 +132,7 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
             required
             disabled={!!quoteId}
             value={values.customerId}
-            onChange={(e) => setValues((v) => ({ ...v, customerId: e.target.value }))}
+            onChange={(e) => setValues((v) => ({ ...v, customerId: e.target.value, projectId: projects.some((p) => p.id === v.projectId && p.customerId === e.target.value) ? v.projectId : "" }))}
             className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900 disabled:bg-gray-100"
           >
             <option value="">—</option>
@@ -138,6 +143,26 @@ export function OrderForm({ mode, orderId, quoteId, initialValues, customers, pr
             ))}
           </select>
         </div>
+
+        {projects.some((p) => p.customerId === values.customerId) && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">{tr.document.project}</label>
+            <select
+              value={values.projectId}
+              onChange={(e) => setValues((v) => ({ ...v, projectId: e.target.value }))}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
+            >
+              <option value="">{tr.document.noProject}</option>
+              {projects
+                .filter((p) => p.customerId === values.customerId)
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.number} · {p.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{tr.document.orderDate}</label>

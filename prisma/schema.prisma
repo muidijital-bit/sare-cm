@@ -121,6 +121,7 @@ enum DocumentType {
   QUOTE
   ORDER
   PURCHASE
+  PROJECT
 }
 
 // =========================================================
@@ -222,6 +223,7 @@ model Company {
   quoteNumberFormat         String @default("TKF-{yil}-{sira}") @map("quote_number_format")
   orderNumberFormat         String @default("SIP-{yil}-{sira}") @map("order_number_format")
   purchaseOrderNumberFormat String @default("SAT-{yil}-{sira}") @map("purchase_order_number_format")
+  projectNumberFormat       String @default("PRJ-{yil}-{sira}") @map("project_number_format")
 
   settings Json @default("{}")
 
@@ -253,6 +255,9 @@ model Company {
   leaveRequests     LeaveRequest[]
   payrollRuns       PayrollRun[]
   taxObligations    TaxObligation[]
+  projects          Project[]
+  projectMaterials  ProjectMaterial[]
+  projectLabors     ProjectLabor[]
 
   @@map("companies")
 }
@@ -391,6 +396,7 @@ model Customer {
   quotes     Quote[]
   orders     Order[]
   payments   Payment[]
+  projects   Project[]
 
   @@index([companyId, status])
   @@index([companyId, ownerUserId])
@@ -477,18 +483,21 @@ model Activity {
 // =========================================================
 
 model Product {
-  id          String   @id @default(uuid()) @db.Uuid
-  companyId   String   @map("company_id") @db.Uuid
-  code        String?
-  name        String
-  unit        String   @default("adet")
-  listPrice   Decimal  @map("list_price") @db.Decimal(18, 4)
-  defaultCost Decimal? @map("default_cost") @db.Decimal(18, 4)
-  vatRate     Decimal  @map("vat_rate") @db.Decimal(5, 2)
-  isActive    Boolean  @default(true) @map("is_active")
+  id                String   @id @default(uuid()) @db.Uuid
+  companyId         String   @map("company_id") @db.Uuid
+  code              String?
+  name              String
+  unit              String   @default("adet")
+  listPrice         Decimal  @map("list_price") @db.Decimal(18, 4)
+  defaultCost       Decimal? @map("default_cost") @db.Decimal(18, 4)
+  vatRate           Decimal  @map("vat_rate") @db.Decimal(5, 2)
+  isActive          Boolean  @default(true) @map("is_active")
   /// SM-01: elde bulunan miktar — sipariş onaylanınca düşer, iptalde/alımda geri eklenir. Negatif olabilir
   /// (V1 kapsamında bilinçli basitleştirme: yetersiz stokta sipariş ENGELLENMEZ, yalnızca eksiye düşer).
-  stockQty    Decimal  @default(0) @map("stock_qty") @db.Decimal(18, 4)
+  stockQty          Decimal  @default(0) @map("stock_qty") @db.Decimal(18, 4)
+  /// Varsayılan (genellikle alınan) tedarikçi — bilgi amaçlı + yeni satın almada öneri. Asıl alım
+  /// geçmişi purchase_order_items'tan gelir (aynı ürün farklı tedarikçilerden alınabilir).
+  defaultSupplierId String?  @map("default_supplier_id") @db.Uuid
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
@@ -499,6 +508,8 @@ model Product {
   orderItems         OrderItem[]
   purchaseOrderItems PurchaseOrderItem[]
   stockMovements     StockMovement[]
+  defaultSupplier    Supplier?           @relation(fields: [defaultSupplierId], references: [id])
+  projectMaterials   ProjectMaterial[]
 
   @@index([companyId, isActive])
   @@map("products")
@@ -587,6 +598,8 @@ model Order {
   number     String
   customerId String      @map("customer_id") @db.Uuid
   quoteId    String?     @map("quote_id") @db.Uuid
+  /// Proje hakedişi/faturası ise bağlı proje (bkz. Project).
+  projectId  String?     @map("project_id") @db.Uuid
   status     OrderStatus @default(CONFIRMED)
 
   orderDate       DateTime  @map("order_date")
@@ -621,6 +634,7 @@ model Order {
   company            Company             @relation(fields: [companyId], references: [id])
   customer           Customer            @relation(fields: [customerId], references: [id])
   quote              Quote?              @relation(fields: [quoteId], references: [id])
+  project            Project?            @relation(fields: [projectId], references: [id])
   items              OrderItem[]
   paymentSchedules   PaymentSchedule[]
   paymentAllocations PaymentAllocation[]
@@ -686,10 +700,10 @@ model Account {
   createdAt DateTime  @default(now()) @map("created_at")
   deletedAt DateTime? @map("deleted_at")
 
-  company     Company       @relation(fields: [companyId], references: [id])
-  payments    Payment[]
-  expenses    Expense[]
-  payrollRuns PayrollRun[]
+  company        Company         @relation(fields: [companyId], references: [id])
+  payments       Payment[]
+  expenses       Expense[]
+  payrollRuns    PayrollRun[]
   taxObligations TaxObligation[]
 
   @@map("accounts")
@@ -783,6 +797,7 @@ model Supplier {
 
   company        Company         @relation(fields: [companyId], references: [id])
   purchaseOrders PurchaseOrder[]
+  products       Product[]
 
   @@index([companyId, isActive])
   @@map("suppliers")
@@ -852,6 +867,7 @@ enum StockMovementType {
   ORDER_RESERVED // satış siparişi (oluşturma/düzenleme) → stoktan çıkış (negatif miktar)
   ORDER_CANCELLED // sipariş iptali → önceki rezervasyonun tersi (giriş)
   ADJUSTMENT // manuel sayım düzeltmesi
+  PROJECT_CONSUMED // projede kullanılan malzeme → stoktan çıkış (negatif); kayıt silinirse tersi
 }
 
 /// SM-03: stok hareket defteri — `Product.stockQty` bu tablodaki miktarların (işaretli) toplamıdır;
@@ -865,16 +881,18 @@ model StockMovement {
   quantity  Decimal           @db.Decimal(18, 4)
   note      String?
 
-  purchaseOrderId String? @map("purchase_order_id") @db.Uuid
-  orderId         String? @map("order_id") @db.Uuid
+  purchaseOrderId   String? @map("purchase_order_id") @db.Uuid
+  orderId           String? @map("order_id") @db.Uuid
+  projectMaterialId String? @map("project_material_id") @db.Uuid
 
   createdBy String   @map("created_by") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
 
-  company       Company        @relation(fields: [companyId], references: [id])
-  product       Product        @relation(fields: [productId], references: [id])
-  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
-  order         Order?         @relation(fields: [orderId], references: [id])
+  company         Company          @relation(fields: [companyId], references: [id])
+  product         Product          @relation(fields: [productId], references: [id])
+  purchaseOrder   PurchaseOrder?   @relation(fields: [purchaseOrderId], references: [id])
+  order           Order?           @relation(fields: [orderId], references: [id])
+  projectMaterial ProjectMaterial? @relation(fields: [projectMaterialId], references: [id])
 
   @@index([companyId, productId])
   @@index([orderId])
@@ -892,6 +910,8 @@ model Expense {
   method     PaymentMethod?
   accountId  String?        @map("account_id") @db.Uuid
   note       String?
+  /// Projeye ait gider ise (proje kârlılığına yazılır).
+  projectId  String?        @map("project_id") @db.Uuid
 
   // GD-03 Tekrarlayan gider
   recurringRule       String? @map("recurring_rule") // örn. "MONTHLY"
@@ -908,6 +928,7 @@ model Expense {
   company       Company         @relation(fields: [companyId], references: [id])
   category      ExpenseCategory @relation(fields: [categoryId], references: [id])
   account       Account?        @relation(fields: [accountId], references: [id])
+  project       Project?        @relation(fields: [projectId], references: [id])
   parentExpense Expense?        @relation("RecurringExpenses", fields: [parentExpenseId], references: [id])
   generatedFrom Expense[]       @relation("RecurringExpenses")
 
@@ -1038,6 +1059,7 @@ model Employee {
   company       Company          @relation(fields: [companyId], references: [id])
   leaveRequests LeaveRequest[]
   payrollItems  PayrollRunItem[]
+  projectLabors ProjectLabor[]
 
   @@index([companyId, status])
   @@map("employees")
@@ -1148,16 +1170,16 @@ enum TaxObligationStatus {
 /// kullanılır (isRecurringTemplate). "Vadesi geçmiş" durumu STORED değildir, dueDate + status'tan
 /// TÜRETİLİR (bkz. src/lib/modules/tax-obligations/service.ts).
 model TaxObligation {
-  id         String               @id @default(uuid()) @db.Uuid
-  companyId  String               @map("company_id") @db.Uuid
+  id         String              @id @default(uuid()) @db.Uuid
+  companyId  String              @map("company_id") @db.Uuid
   type       TaxObligationType
   period     String // "2026-01" / "2026-Q1" gibi serbest metin
-  dueDate    DateTime             @map("due_date")
-  amount     Decimal              @db.Decimal(18, 4)
-  paidAmount Decimal              @default(0) @map("paid_amount") @db.Decimal(18, 4)
-  paidAt     DateTime?            @map("paid_at")
-  accountId  String?              @map("account_id") @db.Uuid
-  status     TaxObligationStatus  @default(PENDING)
+  dueDate    DateTime            @map("due_date")
+  amount     Decimal             @db.Decimal(18, 4)
+  paidAmount Decimal             @default(0) @map("paid_amount") @db.Decimal(18, 4)
+  paidAt     DateTime?           @map("paid_at")
+  accountId  String?             @map("account_id") @db.Uuid
+  status     TaxObligationStatus @default(PENDING)
   note       String?
 
   recurringRule       String? @map("recurring_rule") // "MONTHLY" | "QUARTERLY"
@@ -1175,4 +1197,99 @@ model TaxObligation {
 
   @@index([companyId, status, dueDate])
   @@map("tax_obligations")
+}
+
+// =========================================================
+// Projeler (iş/inşaat takibi — örn. havuz yapımı)
+// =========================================================
+
+enum ProjectStatus {
+  PLANNED // planlandı
+  IN_PROGRESS // devam ediyor
+  COMPLETED // tamamlandı
+  CANCELLED // iptal
+}
+
+/// Bir müşteriye yapılan iş (örn. havuz inşaatı). Gelir: projeye bağlı siparişler (hakediş/fatura,
+/// alacak-tahsilat mekanizması aynen çalışır). Maliyet: malzeme (stoktan düşer) + işçilik + projeye
+/// bağlı giderler + bağlı siparişlerin satır maliyetleri.
+model Project {
+  id             String        @id @default(uuid()) @db.Uuid
+  companyId      String        @map("company_id") @db.Uuid
+  number         String
+  name           String
+  customerId     String        @map("customer_id") @db.Uuid
+  status         ProjectStatus @default(PLANNED)
+  location       String?
+  startDate      DateTime?     @map("start_date")
+  endDate        DateTime?     @map("end_date")
+  /// Sözleşme bedeli (KDV hariç) — faturalanan ile karşılaştırılır ("kalan hakediş").
+  contractAmount Decimal       @default(0) @map("contract_amount") @db.Decimal(18, 4)
+  note           String?
+  ownerUserId    String        @map("owner_user_id") @db.Uuid
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  company   Company           @relation(fields: [companyId], references: [id])
+  customer  Customer          @relation(fields: [customerId], references: [id])
+  materials ProjectMaterial[]
+  labors    ProjectLabor[]
+  orders    Order[]
+  expenses  Expense[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, customerId])
+  @@map("projects")
+}
+
+/// Projede kullanılan malzeme — kaydedilince stoktan düşer (StockMovement PROJECT_CONSUMED),
+/// silinince geri eklenir. Birim maliyet kayıt anındaki ürün maliyetinin kopyasıdır.
+model ProjectMaterial {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  quantity  Decimal  @db.Decimal(18, 4)
+  unitCost  Decimal  @map("unit_cost") @db.Decimal(18, 4)
+  usedAt    DateTime @map("used_at")
+  note      String?
+
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company        Company         @relation(fields: [companyId], references: [id])
+  project        Project         @relation(fields: [projectId], references: [id])
+  product        Product         @relation(fields: [productId], references: [id])
+  stockMovements StockMovement[]
+
+  @@index([companyId, projectId])
+  @@map("project_materials")
+}
+
+/// Projeye harcanan işçilik — personel (opsiyonel) × saat × saatlik maliyet.
+model ProjectLabor {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  projectId   String   @map("project_id") @db.Uuid
+  employeeId  String?  @map("employee_id") @db.Uuid
+  description String
+  workDate    DateTime @map("work_date")
+  hours       Decimal  @db.Decimal(10, 2)
+  hourlyCost  Decimal  @map("hourly_cost") @db.Decimal(18, 4)
+
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  project  Project   @relation(fields: [projectId], references: [id])
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@index([companyId, projectId])
+  @@map("project_labors")
 }

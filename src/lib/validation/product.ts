@@ -8,6 +8,8 @@ export const productInputSchema = z.object({
   listPrice: z.coerce.number().min(0, "Liste fiyatı negatif olamaz"),
   defaultCost: z.coerce.number().min(0).optional().nullable(),
   vatRate: z.coerce.number().min(0).max(100),
+  /** Varsayılan tedarikçi (opsiyonel) — yeni satın almada önerilir. */
+  defaultSupplierId: z.preprocess((v) => (v === "" ? null : v), z.string().uuid().nullable().optional()),
   isActive: z.boolean().default(true),
 });
 export type ProductInput = z.infer<typeof productInputSchema>;

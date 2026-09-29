@@ -12,18 +12,21 @@ export interface ProductFormValues {
   listPrice: string;
   defaultCost: string;
   vatRate: string;
+  defaultSupplierId: string;
   isActive: boolean;
 }
 
-const EMPTY_VALUES: ProductFormValues = { code: "", name: "", unit: "adet", listPrice: "0", defaultCost: "", vatRate: "20", isActive: true };
+const EMPTY_VALUES: ProductFormValues = { code: "", name: "", unit: "adet", listPrice: "0", defaultCost: "", vatRate: "20", defaultSupplierId: "", isActive: true };
 
 interface Props {
   mode: "create" | "edit";
   productId?: string;
   initialValues?: Partial<ProductFormValues>;
+  /** Boşsa (tedarikçi modülü yok/yetki yok) alan gösterilmez. */
+  suppliers?: { id: string; title: string }[];
 }
 
-export function ProductForm({ mode, productId, initialValues }: Props) {
+export function ProductForm({ mode, productId, initialValues, suppliers = [] }: Props) {
   const router = useRouter();
   const [values, setValues] = useState<ProductFormValues>({ ...EMPTY_VALUES, ...initialValues });
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +44,7 @@ export function ProductForm({ mode, productId, initialValues }: Props) {
       listPrice: Number(values.listPrice),
       defaultCost: values.defaultCost === "" ? null : Number(values.defaultCost),
       vatRate: Number(values.vatRate),
+      defaultSupplierId: values.defaultSupplierId || null,
       isActive: values.isActive,
     };
 
@@ -129,6 +133,25 @@ export function ProductForm({ mode, productId, initialValues }: Props) {
             className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
+
+        {suppliers.length > 0 && (
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">{tr.product.fields.defaultSupplier}</label>
+            <select
+              value={values.defaultSupplierId}
+              onChange={(e) => setValues((v) => ({ ...v, defaultSupplierId: e.target.value }))}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
+            >
+              <option value="">—</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.title}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">{tr.product.fields.defaultSupplierHint}</p>
+          </div>
+        )}
 
         <label className="flex items-center gap-2 text-sm text-gray-700 sm:col-span-2">
           <input type="checkbox" checked={values.isActive} onChange={(e) => setValues((v) => ({ ...v, isActive: e.target.checked }))} />

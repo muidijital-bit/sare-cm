@@ -52,6 +52,7 @@ export default async function UrunlerPage({ searchParams }: { searchParams: Reco
             <tr>
               <th className="px-4 py-3">{tr.product.fields.name}</th>
               <th className="px-4 py-3">{tr.product.fields.code}</th>
+              <th className="px-4 py-3">{tr.product.fields.defaultSupplier}</th>
               <th className="px-4 py-3 text-right">{tr.product.fields.listPrice}</th>
               <th className="px-4 py-3 text-right">{tr.product.fields.stockQty}</th>
               <th className="px-4 py-3">{tr.product.fields.isActive}</th>
@@ -61,7 +62,7 @@ export default async function UrunlerPage({ searchParams }: { searchParams: Reco
           <tbody className="divide-y divide-gray-100">
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                   {tr.product.empty}
                 </td>
               </tr>
@@ -74,6 +75,7 @@ export default async function UrunlerPage({ searchParams }: { searchParams: Reco
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-gray-600">{p.code ?? "—"}</td>
+                <td className="px-4 py-3 text-gray-600">{p.defaultSupplier?.title ?? "—"}</td>
                 <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(p.listPrice))}</td>
                 <td className={`px-4 py-3 text-right ${Number(p.stockQty) < 0 ? "font-medium text-red-600" : "text-gray-600"}`}>
                   {p.stockQty.toString()} {p.unit}

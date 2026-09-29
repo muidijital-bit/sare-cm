@@ -112,6 +112,9 @@ export async function createExpense(session: TenantSession, input: ExpenseInput)
   return withTenant(session.companyId, async (tx) => {
     const category = await tx.expenseCategory.findFirst({ where: { id: input.categoryId, deletedAt: null } });
     if (!category) return notFound("Kategori bulunamadı.");
+    if (input.projectId && !(await tx.project.findFirst({ where: { id: input.projectId, deletedAt: null } }))) {
+      return notFound("Proje bulunamadı.");
+    }
 
     const expense = await tx.expense.create({
       data: {
@@ -124,6 +127,7 @@ export async function createExpense(session: TenantSession, input: ExpenseInput)
         method: input.method || null,
         accountId: input.accountId || null,
         note: input.note || null,
+        projectId: input.isRecurringTemplate ? null : input.projectId || null,
         isRecurringTemplate: input.isRecurringTemplate,
         recurringRule: input.isRecurringTemplate ? input.recurringRule ?? "MONTHLY" : null,
         createdBy: session.userId,
@@ -142,6 +146,9 @@ export async function updateExpense(session: TenantSession, id: string, input: E
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.expense.findFirst({ where: { id, deletedAt: null } });
     if (!existing) return notFound();
+    if (input.projectId && !(await tx.project.findFirst({ where: { id: input.projectId, deletedAt: null } }))) {
+      return notFound("Proje bulunamadı.");
+    }
 
     await tx.expense.update({
       where: { id },
@@ -154,6 +161,7 @@ export async function updateExpense(session: TenantSession, id: string, input: E
         method: input.method || null,
         accountId: input.accountId || null,
         note: input.note || null,
+        projectId: existing.isRecurringTemplate ? null : input.projectId || null,
         updatedBy: session.userId,
       },
     });

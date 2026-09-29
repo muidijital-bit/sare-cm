@@ -3,6 +3,7 @@ import { getTenantSession } from "@/lib/auth/session";
 import { getProduct } from "@/lib/modules/products/service";
 import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
+import { listSupplierOptions } from "@/lib/modules/suppliers/service";
 import { ProductForm } from "../../_components/product-form";
 
 export default async function UrunDuzenlePage({ params }: { params: { id: string } }) {
@@ -19,6 +20,7 @@ export default async function UrunDuzenlePage({ params }: { params: { id: string
     return <p className="text-sm text-red-600">{result.message}</p>;
   }
   const p = result.data;
+  const suppliers = await listSupplierOptions(session);
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -26,6 +28,7 @@ export default async function UrunDuzenlePage({ params }: { params: { id: string
       <ProductForm
         mode="edit"
         productId={p.id}
+        suppliers={suppliers}
         initialValues={{
           code: p.code ?? "",
           name: p.name,
@@ -33,6 +36,7 @@ export default async function UrunDuzenlePage({ params }: { params: { id: string
           listPrice: p.listPrice.toString(),
           defaultCost: p.defaultCost?.toString() ?? "",
           vatRate: p.vatRate.toString(),
+          defaultSupplierId: p.defaultSupplierId ?? "",
           isActive: p.isActive,
         }}
       />

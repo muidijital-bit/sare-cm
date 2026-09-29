@@ -10,6 +10,8 @@ export const paymentScheduleInputSchema = z.object({
 export const orderInputSchema = z.object({
   customerId: z.string().uuid("Müşteri seçin"),
   quoteId: z.string().uuid().optional().nullable(),
+  /** Proje hakedişi/faturası ise — proje aynı müşteriye ait olmalı. */
+  projectId: z.preprocess((v) => (v === "" ? null : v), z.string().uuid().nullable().optional()),
   orderDate: z.coerce.date(),
   dueDate: z.coerce.date().optional().nullable(),
   deliveryAddress: z.string().trim().max(1000).optional().or(z.literal("")),

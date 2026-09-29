@@ -21,7 +21,13 @@ export async function listProducts(session: TenantSession, params: ListParams) {
       ...(params.q ? { OR: [{ name: { contains: params.q, mode: "insensitive" } }, { code: { contains: params.q, mode: "insensitive" } }] } : {}),
     };
     const [items, total] = await Promise.all([
-      tx.product.findMany({ where, orderBy: { name: "asc" }, skip: (params.page - 1) * params.pageSize, take: params.pageSize }),
+      tx.product.findMany({
+        where,
+        orderBy: { name: "asc" },
+        skip: (params.page - 1) * params.pageSize,
+        take: params.pageSize,
+        include: { defaultSupplier: { select: { id: true, title: true } } },
+      }),
       tx.product.count({ where }),
     ]);
     return { ok: true as const, data: { items, total, page: params.page, pageSize: params.pageSize } };
@@ -44,6 +50,9 @@ export async function createProduct(session: TenantSession, input: ProductInput)
   if (!getScope(session, "product", "create")) return forbidden();
 
   return withTenant(session.companyId, async (tx) => {
+    if (input.defaultSupplierId && !(await tx.supplier.findFirst({ where: { id: input.defaultSupplierId, deletedAt: null } }))) {
+      return notFound("Tedarikçi bulunamadı.");
+    }
     const product = await tx.product.create({
       data: {
         companyId: session.companyId,
@@ -53,6 +62,7 @@ export async function createProduct(session: TenantSession, input: ProductInput)
         listPrice: input.listPrice,
         defaultCost: input.defaultCost ?? null,
         vatRate: input.vatRate,
+        defaultSupplierId: input.defaultSupplierId ?? null,
         isActive: input.isActive,
       },
     });
@@ -67,6 +77,9 @@ export async function updateProduct(session: TenantSession, id: string, input: P
   return withTenant(session.companyId, async (tx) => {
     const existing = await tx.product.findFirst({ where: { id, deletedAt: null } });
     if (!existing) return notFound();
+    if (input.defaultSupplierId && !(await tx.supplier.findFirst({ where: { id: input.defaultSupplierId, deletedAt: null } }))) {
+      return notFound("Tedarikçi bulunamadı.");
+    }
 
     await tx.product.update({
       where: { id },
@@ -77,6 +90,7 @@ export async function updateProduct(session: TenantSession, id: string, input: P
         listPrice: input.listPrice,
         defaultCost: input.defaultCost ?? null,
         vatRate: input.vatRate,
+        defaultSupplierId: input.defaultSupplierId ?? null,
         isActive: input.isActive,
       },
     });

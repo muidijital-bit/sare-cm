@@ -4,6 +4,7 @@ import { getOrder } from "@/lib/modules/orders/service";
 import { withTenant } from "@/lib/db/tenant-context";
 import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
+import { listProjectOptions } from "@/lib/modules/projects/service";
 import { OrderForm } from "../../_components/order-form";
 
 export default async function SiparisDuzenlePage({ params }: { params: { id: string } }) {
@@ -21,7 +22,7 @@ export default async function SiparisDuzenlePage({ params }: { params: { id: str
     return <p className="text-sm text-amber-700">İptal edilmiş sipariş düzenlenemez.</p>;
   }
 
-  const [customers, products, users] = await Promise.all([
+  const [customers, products, users, projects] = await Promise.all([
     withTenant(session.companyId, (tx) =>
       tx.customer.findMany({
         where: { deletedAt: null, ...(scope === "own" ? { ownerUserId: session.userId } : {}) },
@@ -35,6 +36,7 @@ export default async function SiparisDuzenlePage({ params }: { params: { id: str
           tx.membership.findMany({ where: { isActive: true }, include: { user: { select: { id: true, name: true } } }, orderBy: { user: { name: "asc" } } }),
         )
       : Promise.resolve([]),
+    listProjectOptions(session, order.projectId),
   ]);
 
   return (
@@ -44,8 +46,10 @@ export default async function SiparisDuzenlePage({ params }: { params: { id: str
         mode="edit"
         orderId={order.id}
         quoteId={order.quoteId ?? undefined}
+        projects={projects}
         initialValues={{
           customerId: order.customerId,
+          projectId: order.projectId ?? "",
           orderDate: new Date(order.orderDate).toISOString().slice(0, 10),
           dueDate: order.dueDate ? new Date(order.dueDate).toISOString().slice(0, 10) : "",
           deliveryAddress: order.deliveryAddress ?? "",

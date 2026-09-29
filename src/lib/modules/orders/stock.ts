@@ -22,6 +22,7 @@ export async function applyStockDeltas(
     createdBy: string;
     orderId?: string;
     purchaseOrderId?: string;
+    projectMaterialId?: string;
     note?: string;
   },
 ): Promise<void> {
@@ -35,6 +36,7 @@ export async function applyStockDeltas(
         quantity: d.delta,
         orderId: params.orderId,
         purchaseOrderId: params.purchaseOrderId,
+        projectMaterialId: params.projectMaterialId,
         note: params.note,
         createdBy: params.createdBy,
       },

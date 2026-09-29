@@ -139,6 +139,16 @@ export async function listOpenOrdersForCustomer(session: TenantSession, customer
   });
 }
 
+/** Sipariş projeye bağlanacaksa: proje var, silinmemiş, aynı müşterinin ve iptal edilmemiş olmalı. */
+async function validateOrderProject(tx: Prisma.TransactionClient, projectId: string | null | undefined, customerId: string): Promise<string | null> {
+  if (!projectId) return null;
+  const project = await tx.project.findFirst({ where: { id: projectId, deletedAt: null } });
+  if (!project) return "Proje bulunamadı.";
+  if (project.customerId !== customerId) return "Seçilen proje bu müşteriye ait değil.";
+  if (project.status === "CANCELLED") return "İptal edilmiş projeye sipariş bağlanamaz.";
+  return null;
+}
+
 export async function createOrder(session: TenantSession, input: OrderInput): Promise<ServiceResult<{ id: string }>> {
   const scope = getScope(session, "order", "create");
   if (!scope) return forbidden();
@@ -149,6 +159,8 @@ export async function createOrder(session: TenantSession, input: OrderInput): Pr
   return withTenant(session.companyId, async (tx) => {
     const customer = await tx.customer.findFirst({ where: { id: input.customerId, deletedAt: null } });
     if (!customer) return notFound("Müşteri bulunamadı.");
+    const projectError = await validateOrderProject(tx, input.projectId, input.customerId);
+    if (projectError) return conflict(projectError);
 
     const company = await tx.company.findUniqueOrThrow({ where: { id: session.companyId } });
     const number = await nextDocumentNumber(tx, session.companyId, "ORDER", company.orderNumberFormat);
@@ -159,6 +171,7 @@ export async function createOrder(session: TenantSession, input: OrderInput): Pr
         number,
         customerId: input.customerId,
         quoteId: input.quoteId || null,
+        projectId: input.projectId || null,
         status: "CONFIRMED",
         orderDate: input.orderDate,
         dueDate: input.dueDate || null,
@@ -301,11 +314,14 @@ export async function updateOrder(session: TenantSession, id: string, input: Ord
     }
 
     const ownerUserId = scope === "own" ? existing.ownerUserId : input.ownerUserId ?? existing.ownerUserId;
+    const projectError = await validateOrderProject(tx, input.projectId, input.customerId);
+    if (projectError) return conflict(projectError);
 
     await tx.order.update({
       where: { id },
       data: {
         customerId: input.customerId,
+        projectId: input.projectId || null,
         orderDate: input.orderDate,
         dueDate: input.dueDate || null,
         deliveryAddress: input.deliveryAddress || null,

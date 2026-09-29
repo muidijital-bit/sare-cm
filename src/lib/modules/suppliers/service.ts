@@ -120,3 +120,11 @@ export async function deleteSupplier(session: TenantSession, id: string): Promis
     return { ok: true as const, data: { id } };
   });
 }
+
+/** Ürün formundaki "Varsayılan tedarikçi" seçicisi için — yetki/lisans yoksa boş liste (alan gizlenir). */
+export async function listSupplierOptions(session: TenantSession): Promise<{ id: string; title: string }[]> {
+  if (!getScope(session, "supplier", "view")) return [];
+  return withTenant(session.companyId, (tx) =>
+    tx.supplier.findMany({ where: { deletedAt: null, isActive: true }, orderBy: { title: "asc" }, select: { id: true, title: true }, take: 500 }),
+  );
+}

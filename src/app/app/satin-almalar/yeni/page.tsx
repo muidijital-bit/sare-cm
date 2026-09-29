@@ -16,7 +16,7 @@ export default async function YeniSatinAlmaPage() {
   const [suppliers, products] = await withTenant(session.companyId, (tx) =>
     Promise.all([
       tx.supplier.findMany({ where: { deletedAt: null, isActive: true }, orderBy: { title: "asc" }, select: { id: true, title: true } }),
-      tx.product.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true, defaultCost: true, vatRate: true } }),
+      tx.product.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true, defaultCost: true, vatRate: true, defaultSupplierId: true } }),
     ]),
   );
 
@@ -25,7 +25,7 @@ export default async function YeniSatinAlmaPage() {
       <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.purchaseOrder.new}</h1>
       <PurchaseOrderForm
         suppliers={suppliers}
-        products={products.map((p) => ({ id: p.id, name: p.name, defaultCost: p.defaultCost != null ? Number(p.defaultCost) : null, vatRate: Number(p.vatRate) }))}
+        products={products.map((p) => ({ id: p.id, name: p.name, defaultCost: p.defaultCost != null ? Number(p.defaultCost) : null, vatRate: Number(p.vatRate), defaultSupplierId: p.defaultSupplierId }))}
       />
     </div>
   );

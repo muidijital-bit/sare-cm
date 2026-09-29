@@ -4,6 +4,7 @@ import { getExpense } from "@/lib/modules/expenses/service";
 import { withTenant } from "@/lib/db/tenant-context";
 import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
+import { listProjectOptions } from "@/lib/modules/projects/service";
 import { ExpenseForm } from "../../_components/expense-form";
 
 export default async function GiderDuzenlePage({ params }: { params: { id: string } }) {
@@ -17,9 +18,10 @@ export default async function GiderDuzenlePage({ params }: { params: { id: strin
   if (!result.ok) return <p className="text-sm text-red-600">{result.message}</p>;
   const expense = result.data;
 
-  const [categories, accounts] = await Promise.all([
+  const [categories, accounts, projects] = await Promise.all([
     withTenant(session.companyId, (tx) => tx.expenseCategory.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" }, select: { id: true, name: true } })),
     withTenant(session.companyId, (tx) => tx.account.findMany({ where: { isActive: true }, orderBy: { name: "asc" } })),
+    expense.isRecurringTemplate ? Promise.resolve([]) : listProjectOptions(session, expense.projectId),
   ]);
 
   return (
@@ -38,7 +40,9 @@ export default async function GiderDuzenlePage({ params }: { params: { id: strin
           method: expense.method ?? "",
           accountId: expense.accountId ?? "",
           note: expense.note ?? "",
+          projectId: expense.projectId ?? "",
         }}
+        projects={projects}
         categories={categories}
         accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}
       />

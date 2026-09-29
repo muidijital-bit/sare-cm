@@ -26,7 +26,8 @@ export type Module =
   | "employee"
   | "payroll"
   | "taxObligation"
-  | "product";
+  | "product"
+  | "project";
 
 /** Bir modül için: her eylemin hangi kapsamda (`all`/`own`) izinli olduğu. Eylem yoksa yasak. */
 type ModuleRule = Partial<Record<Action, Scope>>;
@@ -137,6 +138,15 @@ export const PERMISSION_MATRIX: Matrix = {
     ADMIN: FULL,
     SALES: VIEW_ONLY,
     ACCOUNTING: VIEW_ONLY,
+    VIEWER: VIEW_ONLY,
+  },
+  // Projeler (iş/inşaat): satış kendi projelerini yönetir (sipariş ile aynı desen, silme yok);
+  // muhasebe maliyet/işçilik girer; izleyici yalnızca görür.
+  project: {
+    OWNER: FULL,
+    ADMIN: FULL,
+    SALES: { view: "own", create: "own", edit: "own" },
+    ACCOUNTING: { view: "all", edit: "all", export: "all" },
     VIEWER: VIEW_ONLY,
   },
 };

@@ -31,6 +31,7 @@ interface ProductOption {
   name: string;
   defaultCost: number | null;
   vatRate: number;
+  defaultSupplierId: string | null;
 }
 
 interface Props {
@@ -67,6 +68,10 @@ export function PurchaseOrderForm({ suppliers, products }: Props) {
       unitCost: p?.defaultCost != null ? String(p.defaultCost) : "0",
       vatRate: p ? String(p.vatRate) : "20",
     });
+    // Tedarikçi henüz seçilmediyse ürünün varsayılan tedarikçisi önerilir (kullanıcı değiştirebilir).
+    if (!supplierId && p?.defaultSupplierId && suppliers.some((s) => s.id === p.defaultSupplierId)) {
+      setSupplierId(p.defaultSupplierId);
+    }
   }
 
   const total = items.reduce((sum, it) => {
