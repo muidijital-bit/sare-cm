@@ -29,6 +29,7 @@ export function CompanyList({ companies, plans }: { companies: Company[]; plans:
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -53,7 +54,8 @@ export function CompanyList({ companies, plans }: { companies: Company[]; plans:
       return;
     }
 
-    setInviteLink(`${window.location.origin}/davet/${body.inviteToken}`);
+    setInviteLink(body.inviteUrl ?? `${window.location.origin}/davet/${body.inviteToken}`);
+    setEmailSent(!!body.emailSent);
     setName("");
     setOwnerEmail("");
     setSubscriptionEndsAt("");
@@ -127,7 +129,7 @@ export function CompanyList({ companies, plans }: { companies: Company[]; plans:
 
         {inviteLink && (
           <div className="mt-3 rounded-md border border-amber-400 bg-amber-950/50 p-3 text-sm">
-            <p className="mb-1 text-amber-200">{tr.platform.inviteLinkForOwner}</p>
+            <p className="mb-1 text-amber-200">{emailSent ? tr.platform.inviteEmailSentToOwner : tr.platform.inviteLinkForOwner}</p>
             <div className="flex items-center gap-2">
               <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1 text-xs text-gray-700">{inviteLink}</code>
               <button type="button" onClick={copyLink} className="whitespace-nowrap rounded-md border border-amber-400 px-2 py-1 text-xs font-medium text-amber-200 hover:bg-amber-900">

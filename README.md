@@ -29,7 +29,7 @@
 | Şifre sıfırlama | ✅ |
 | Platform paneli (şirket/paket oluşturma, askıya alma) | ✅ |
 | Tablo iyileştirmeleri (filtreleme, toplu seçme/silme/iptal, Excel/CSV dışa aktarma) | ✅ |
-| **Kapsam dışı / eksik** | Dosya eki yükleme, e-posta gönderimi (davet/sıfırlama linkleri UI'da gösteriliyor), PF-05 (abonelik bitişi yaklaşanlar), PF-07 (destek erişimi), PF-08 (süper admin 2FA), gerçek deploy |
+| **Kapsam dışı / eksik** | Dosya eki yükleme, PF-05 (abonelik bitişi yaklaşanlar), PF-07 (destek erişimi), gerçek deploy |
 
 ## Klasör Yapısı
 

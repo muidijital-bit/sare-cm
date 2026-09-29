@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db/prisma";
 import { hashPassword, validatePassword } from "@/lib/auth/password";
 import { generateSecureToken, PASSWORD_RESET_TOKEN_TTL_MS } from "@/lib/security/tokens";
 import { type ServiceResult, notFound, conflict } from "@/lib/modules/result";
+import { isEmailConfigured } from "@/lib/email/send";
+import { sendPasswordResetEmail } from "@/lib/email/templates";
 
 /**
  * KY-03: Şifre sıfırlama. `users`/`password_reset_tokens` RLS'e tabi DEĞİLDİR
@@ -19,9 +21,11 @@ export async function requestPasswordReset(email: string): Promise<void> {
   const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
   await prisma.passwordResetToken.create({ data: { userId: user.id, token, expiresAt } });
 
-  // E-posta gönderimi henüz yok (sağlayıcı kararı bekleniyor — bkz. README). Üretimde bu asla
-  // istemciye dönmez; yalnızca geliştirme ortamında sunucu logunda görünür ki akış test edilebilsin.
-  if (process.env.NODE_ENV !== "production") {
+  // Bağlantı yalnızca e-postayla gider (Resend, bkz. src/lib/email). Asla istemciye dönmez; e-posta
+  // yapılandırılmamış geliştirme ortamında akış test edilebilsin diye sunucu loguna yazılır.
+  if (isEmailConfigured()) {
+    await sendPasswordResetEmail({ to: user.email, token });
+  } else if (process.env.NODE_ENV !== "production") {
     // eslint-disable-next-line no-console
     console.log(`[DEV] Şifre sıfırlama bağlantısı (${email}): /sifre-sifirla/${token}`);
   }

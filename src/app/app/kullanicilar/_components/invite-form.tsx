@@ -12,6 +12,7 @@ export function InviteForm() {
   const [role, setRole] = useState<(typeof ROLES)[number]>("SALES");
   const [error, setError] = useState<string | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -30,7 +31,8 @@ export function InviteForm() {
       return;
     }
 
-    setInviteLink(`${window.location.origin}/davet/${body.token}`);
+    setInviteLink(body.inviteUrl ?? `${window.location.origin}/davet/${body.token}`);
+    setEmailSent(!!body.emailSent);
     setEmail("");
     router.refresh();
   }
@@ -70,7 +72,7 @@ export function InviteForm() {
 
       {inviteLink && (
         <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
-          <p className="mb-1 text-amber-800">{tr.users.inviteLink}</p>
+          <p className="mb-1 text-amber-800">{emailSent ? tr.users.inviteEmailSent : tr.users.inviteLink}</p>
           <div className="flex items-center gap-2">
             <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1 text-xs text-gray-700">{inviteLink}</code>
             <button type="button" onClick={copyLink} className="whitespace-nowrap rounded-md border border-amber-300 px-2 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100">
