@@ -14,6 +14,7 @@ interface ListParams {
   tag?: string;
   page: number;
   pageSize: number;
+  type?: string;
 }
 
 /**
@@ -35,6 +36,7 @@ export async function listCustomers(session: TenantSession, params: ListParams, 
       deletedAt: null,
       ...(ownScope ? { ownerUserId: session.userId } : params.ownerUserId ? { ownerUserId: params.ownerUserId } : {}),
       ...(params.status ? { status: params.status as Prisma.EnumCustomerStatusFilter["equals"] } : {}),
+      ...(params.type ? { type: params.type as Prisma.EnumCustomerTypeFilter["equals"] } : {}),
       ...(params.sourceId ? { sourceId: params.sourceId } : {}),
       ...(params.tag ? { tags: { some: { tag: { name: params.tag } } } } : {}),
       ...(params.q

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateFromParam, dateToParam } from "./list-filters";
 
 /** §TAX — Vergi & SGK Takibi. GD-03'teki tekrarlayan gider deseniyle aynı (recurringRule). */
 export const taxObligationInputSchema = z.object({
@@ -15,6 +16,8 @@ export type TaxObligationInput = z.infer<typeof taxObligationInputSchema>;
 export const listTaxObligationsQuerySchema = z.object({
   status: z.enum(["PENDING", "PAID"]).optional(),
   type: z.enum(["KDV", "MUHTASAR", "GECICI_VERGI", "SGK_PRIMI", "GELIR_VERGISI_STOPAJI", "DIGER"]).optional(),
+  dateFrom: dateFromParam,
+  dateTo: dateToParam,
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

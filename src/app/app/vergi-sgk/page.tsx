@@ -7,7 +7,10 @@ import { withTenant } from "@/lib/db/tenant-context";
 import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
-import { Badge, TAX_OBLIGATION_STATUS_COLORS } from "@/components/ui/badge";
+import { Badge, TAX_OBLIGATION_STATUS_COLORS, TAX_TYPE_COLORS } from "@/components/ui/badge";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { Pagination } from "@/components/ui/pagination";
+import { exportKeyFor } from "@/lib/export/registry";
 import { TaxObligationActions } from "./_components/tax-obligation-actions";
 
 export default async function VergiSgkPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
@@ -22,7 +25,7 @@ export default async function VergiSgkPage({ searchParams }: { searchParams: Rec
   const result = await listTaxObligations(session, query);
   if (!result.ok) return <p className="text-sm text-red-600">{result.message}</p>;
 
-  const { items } = result.data;
+  const { items, total, page, pageSize } = result.data;
   const canCreate = !!getScope(session, "taxObligation", "create");
   const canEdit = !!getScope(session, "taxObligation", "edit");
   const canDelete = !!getScope(session, "taxObligation", "delete");
@@ -41,6 +44,17 @@ export default async function VergiSgkPage({ searchParams }: { searchParams: Rec
           </Link>
         )}
       </div>
+
+      <GridFilters
+        exportKey={exportKeyFor(session, "vergi-sgk")}
+        rowCount={items.length}
+        total={total}
+        selects={[
+          { param: "type", placeholder: "Tüm türler", options: Object.entries(tr.taxObligation.type).map(([value, label]) => ({ value, label })) },
+          { param: "status", placeholder: "Tüm durumlar", options: Object.entries(tr.taxObligation.status).map(([value, label]) => ({ value, label })) },
+        ]}
+        dateRange={{ label: "Son ödeme" }}
+      />
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -65,12 +79,20 @@ export default async function VergiSgkPage({ searchParams }: { searchParams: Rec
             {items.map((o) => {
               const overdue = o.status === "PENDING" && new Date(o.dueDate) < now;
               return (
-                <tr key={o.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-900">{tr.taxObligation.type[o.type as keyof typeof tr.taxObligation.type]}</td>
+                <tr key={o.id} >
+                  <td className="px-4 py-3">
+                    <Badge color={TAX_TYPE_COLORS[o.type]} dot={false}>
+                      {tr.taxObligation.type[o.type as keyof typeof tr.taxObligation.type]}
+                    </Badge>
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{o.period}</td>
                   <td className={`px-4 py-3 ${overdue ? "font-medium text-red-600" : "text-gray-600"}`}>
                     {formatDateTR(new Date(o.dueDate))}
-                    {overdue && <span className="ml-1 text-xs">({tr.taxObligation.overdue})</span>}
+                    {overdue && (
+                      <span className="ml-2">
+                        <Badge color="red">{tr.taxObligation.overdue}</Badge>
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(o.amount))}</td>
                   <td className="px-4 py-3">
@@ -87,6 +109,8 @@ export default async function VergiSgkPage({ searchParams }: { searchParams: Rec
           </tbody>
         </table>
       </div>
+
+      <Pagination pathname="/app/vergi-sgk" searchParams={searchParams} page={page} total={total} pageSize={pageSize} />
     </div>
   );
 }

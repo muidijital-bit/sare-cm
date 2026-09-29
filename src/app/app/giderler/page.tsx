@@ -8,7 +8,9 @@ import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { DeleteExpenseButton } from "./_components/delete-expense-button";
-import { ExpenseFilterBar } from "./_components/expense-filter-bar";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { Badge, tagColor } from "@/components/ui/badge";
+import { exportKeyFor } from "@/lib/export/registry";
 import { BulkActionBar } from "@/components/ui/bulk-action-bar";
 
 export default async function GiderlerPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
@@ -33,23 +35,13 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canCreate = !!getScope(session, "expense", "create");
   const canDelete = !!getScope(session, "expense", "delete");
-  const canExport = !!getScope(session, "expense", "export");
   const report = reportResult.ok ? reportResult.data : [];
-  const exportQuery = new URLSearchParams(searchParams as Record<string, string>).toString();
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-800">{tr.expense.title}</h1>
         <div className="flex items-center gap-3">
-          {canExport && (
-            <a
-              href={`/api/expenses/export${exportQuery ? `?${exportQuery}` : ""}`}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              {tr.expense.export}
-            </a>
-          )}
           {canCreate && (
             <Link href="/app/giderler/yeni" className="rounded-lg bg-brand-800 shadow-theme-xs px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
               + {tr.expense.new}
@@ -64,7 +56,9 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
           <div className="flex flex-wrap gap-4 text-sm">
             {report.map((r) => (
               <div key={r.categoryId} className="flex items-center gap-2">
-                <span className="text-gray-500">{r.categoryName}:</span>
+                <Badge color={tagColor(r.categoryName)} dot={false}>
+                  {r.categoryName}
+                </Badge>
                 <span className="font-medium text-gray-900">{formatCurrencyTRY(r.total)}</span>
               </div>
             ))}
@@ -72,7 +66,14 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
         </div>
       )}
 
-      <ExpenseFilterBar categories={categories} rowCount={items.length} />
+      <GridFilters
+        exportKey={exportKeyFor(session, "giderler")}
+        search={{ rowSelector: "searchable-row-expenses", placeholder: tr.expense.searchPlaceholder }}
+        rowCount={items.length}
+        total={total}
+        selects={[{ param: "categoryId", placeholder: "Tüm kategoriler", options: categories.map((c) => ({ value: c.id, label: c.name })) }]}
+        dateRange={{ label: "Gider tarihi" }}
+      />
 
       {canDelete && (
         <BulkActionBar
@@ -118,7 +119,7 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
             {items.map((e) => (
               <tr
                 key={e.id}
-                className="searchable-row-expenses hover:bg-gray-50"
+                className="searchable-row-expenses"
                 data-search={[e.category.name, e.vendor].filter(Boolean).join(" ")}
               >
                 {canDelete && (
@@ -132,7 +133,11 @@ export default async function GiderlerPage({ searchParams }: { searchParams: Rec
                   </Link>
                   {e.parentExpenseId && <span className="ml-1 text-xs text-gray-400">(otomatik)</span>}
                 </td>
-                <td className="px-4 py-3 text-gray-600">{e.category.name}</td>
+                <td className="px-4 py-3">
+                  <Badge color={tagColor(e.category.name)} dot={false}>
+                    {e.category.name}
+                  </Badge>
+                </td>
                 <td className="px-4 py-3 text-gray-600">{e.vendor ?? "—"}</td>
                 <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(e.amount))}</td>
                 {canDelete && (

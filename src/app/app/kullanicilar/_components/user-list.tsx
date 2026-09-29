@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { tr } from "@/lib/i18n/tr";
-import { Badge } from "@/components/ui/badge";
+import { Badge, ROLE_COLORS } from "@/components/ui/badge";
 import type { MembershipRole } from "@/lib/auth/rbac";
 
 export interface UserRow {
@@ -95,7 +95,9 @@ export function UserList({ rows }: { rows: UserRow[] }) {
                     ))}
                   </select>
                 ) : (
-                  <span className="text-gray-600">{tr.users.roleLabels[row.role]}</span>
+                  <Badge color={ROLE_COLORS[row.role]} dot={false}>
+                    {tr.users.roleLabels[row.role]}
+                  </Badge>
                 )}
               </td>
               <td className="px-4 py-3">

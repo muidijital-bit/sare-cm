@@ -36,6 +36,7 @@ export type CustomerInput = z.infer<typeof customerInputSchema>;
 export const listCustomersQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
   status: customerStatusSchema.optional(),
+  type: z.enum(["INDIVIDUAL", "CORPORATE"]).optional(),
   sourceId: z.string().uuid().optional(),
   ownerUserId: z.string().uuid().optional(),
   tag: z.string().trim().max(50).optional(),

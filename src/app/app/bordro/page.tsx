@@ -7,6 +7,9 @@ import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY } from "@/lib/i18n/tr";
 import { Badge, PAYROLL_RUN_STATUS_COLORS } from "@/components/ui/badge";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { Pagination } from "@/components/ui/pagination";
+import { exportKeyFor } from "@/lib/export/registry";
 
 export default async function BordroPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -20,7 +23,7 @@ export default async function BordroPage({ searchParams }: { searchParams: Recor
   const result = await listPayrollRuns(session, query);
   if (!result.ok) return <p className="text-sm text-red-600">{result.message}</p>;
 
-  const { items } = result.data;
+  const { items, total, page, pageSize } = result.data;
   const canCreate = !!getScope(session, "payroll", "create");
 
   return (
@@ -33,6 +36,13 @@ export default async function BordroPage({ searchParams }: { searchParams: Recor
           </Link>
         )}
       </div>
+
+      <GridFilters
+        exportKey={exportKeyFor(session, "bordro")}
+        rowCount={items.length}
+        total={total}
+        selects={[{ param: "status", placeholder: "Tüm durumlar", options: Object.entries(tr.payroll.status).map(([value, label]) => ({ value, label })) }]}
+      />
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -54,7 +64,7 @@ export default async function BordroPage({ searchParams }: { searchParams: Recor
               </tr>
             )}
             {items.map((r) => (
-              <tr key={r.id} className="hover:bg-gray-50">
+              <tr key={r.id} >
                 <td className="px-4 py-3">
                   <Link href={`/app/bordro/${r.id}`} className="font-medium text-gray-900 hover:underline">
                     {r.period}
@@ -71,6 +81,8 @@ export default async function BordroPage({ searchParams }: { searchParams: Recor
           </tbody>
         </table>
       </div>
+
+      <Pagination pathname="/app/bordro" searchParams={searchParams} page={page} total={total} pageSize={pageSize} />
     </div>
   );
 }

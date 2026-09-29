@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateFromParam, dateToParam } from "./list-filters";
 import { lineItemInputSchema, documentDiscountSchema } from "./document";
 
 export const paymentScheduleInputSchema = z.object({
@@ -30,6 +31,8 @@ export const listOrdersQuerySchema = z.object({
   status: z.enum(["CONFIRMED", "PREPARING", "DELIVERED", "COMPLETED", "CANCELLED"]).optional(),
   customerId: z.string().uuid().optional(),
   ownerUserId: z.string().uuid().optional(),
+  dateFrom: dateFromParam,
+  dateTo: dateToParam,
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

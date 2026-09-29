@@ -7,6 +7,9 @@ import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, PURCHASE_ORDER_STATUS_COLORS } from "@/components/ui/badge";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { exportKeyFor } from "@/lib/export/registry";
+import { listSupplierOptions } from "@/lib/modules/suppliers/service";
 
 export default async function SatinAlmalarPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -23,6 +26,7 @@ export default async function SatinAlmalarPage({ searchParams }: { searchParams:
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canCreate = !!getScope(session, "supplier", "create");
+  const supplierOptions = await listSupplierOptions(session);
 
   return (
     <div>
@@ -42,6 +46,18 @@ export default async function SatinAlmalarPage({ searchParams }: { searchParams:
           )}
         </div>
       </div>
+
+      <GridFilters
+        exportKey={exportKeyFor(session, "satin-almalar")}
+        search={{ rowSelector: "searchable-row-purchases", placeholder: tr.purchaseOrder.searchPlaceholder }}
+        rowCount={items.length}
+        total={total}
+        selects={[
+          { param: "status", placeholder: "Tüm durumlar", options: Object.entries(tr.purchaseOrder.status).map(([value, label]) => ({ value, label })) },
+          ...(supplierOptions.length > 0 ? [{ param: "supplierId", placeholder: "Tüm tedarikçiler", options: supplierOptions.map((s) => ({ value: s.id, label: s.title })) }] : []),
+        ]}
+        dateRange={{ label: "Alım tarihi" }}
+      />
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -63,7 +79,7 @@ export default async function SatinAlmalarPage({ searchParams }: { searchParams:
               </tr>
             )}
             {items.map((po) => (
-              <tr key={po.id} className="hover:bg-gray-50">
+              <tr key={po.id} className="searchable-row-purchases" data-search={[po.number, po.supplier.title].join(" ")}>
                 <td className="px-4 py-3">
                   <Link href={`/app/satin-almalar/${po.id}`} className="font-medium text-gray-900 hover:underline">
                     {po.number}

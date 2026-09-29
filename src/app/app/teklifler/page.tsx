@@ -8,7 +8,8 @@ import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, QUOTE_STATUS_COLORS } from "@/components/ui/badge";
-import { QuoteFilterBar } from "./_components/quote-filter-bar";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { exportKeyFor } from "@/lib/export/registry";
 import { BulkActionBar } from "@/components/ui/bulk-action-bar";
 import { RowDeleteButton } from "@/components/ui/row-delete-button";
 
@@ -54,7 +55,17 @@ export default async function TekliflerPage({ searchParams }: { searchParams: Re
         )}
       </div>
 
-      <QuoteFilterBar showOwnerFilter={scope === "all"} users={users.map((m) => ({ id: m.user.id, name: m.user.name }))} rowCount={items.length} />
+      <GridFilters
+        exportKey={exportKeyFor(session, "teklifler")}
+        search={{ rowSelector: "searchable-row-quotes", placeholder: tr.quote.searchPlaceholder }}
+        rowCount={items.length}
+        total={total}
+        selects={[
+          { param: "status", placeholder: "Tüm durumlar", options: Object.entries(tr.quote.status).map(([value, label]) => ({ value, label })) },
+          ...(scope === "all" ? [{ param: "ownerUserId", placeholder: "Tüm sorumlular", options: users.map((m) => ({ value: m.user.id, label: m.user.name })) }] : []),
+        ]}
+        dateRange={{ label: "Teklif tarihi" }}
+      />
 
       {canDelete && (
         <BulkActionBar
@@ -106,7 +117,7 @@ export default async function TekliflerPage({ searchParams }: { searchParams: Re
               return (
                 <tr
                   key={q.id}
-                  className="searchable-row-quotes hover:bg-gray-50"
+                  className="searchable-row-quotes"
                   data-search={[q.number, q.customer.title, tr.quote.status[q.status]].join(" ")}
                 >
                   {canDelete && (

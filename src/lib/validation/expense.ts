@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateFromParam, dateToParam } from "./list-filters";
 
 export const expenseInputSchema = z.object({
   categoryId: z.string().uuid("Kategori seçin"),
@@ -21,8 +22,9 @@ export type ExpenseInput = z.infer<typeof expenseInputSchema>;
 export const listExpensesQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
   categoryId: z.string().uuid().optional(),
-  dateFrom: z.coerce.date().optional(),
-  dateTo: z.coerce.date().optional(),
+  dateFrom: dateFromParam,
+  dateTo: dateToParam,
+  projectId: z.string().uuid().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

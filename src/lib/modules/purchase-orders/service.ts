@@ -7,6 +7,7 @@ import type { PurchaseOrderInput, StockAdjustmentInput } from "@/lib/validation/
 import { nextDocumentNumber } from "@/lib/modules/documents/number-sequence";
 import { applyStockDeltas } from "@/lib/modules/orders/stock";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
+import { dateRange } from "@/lib/validation/list-filters";
 
 const { Decimal } = Prisma;
 
@@ -16,6 +17,8 @@ interface ListParams {
   supplierId?: string;
   page: number;
   pageSize: number;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 interface ItemTotal {
@@ -54,6 +57,7 @@ export async function listPurchaseOrders(session: TenantSession, params: ListPar
       deletedAt: null,
       ...(params.status ? { status: params.status as Prisma.EnumPurchaseOrderStatusFilter["equals"] } : {}),
       ...(params.supplierId ? { supplierId: params.supplierId } : {}),
+      ...dateRange("orderedAt", params.dateFrom, params.dateTo),
       ...(params.q ? { OR: [{ number: { contains: params.q, mode: "insensitive" } }, { supplier: { title: { contains: params.q, mode: "insensitive" } } }] } : {}),
     };
     const [items, total] = await Promise.all([

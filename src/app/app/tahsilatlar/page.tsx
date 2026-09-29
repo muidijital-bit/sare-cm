@@ -6,8 +6,9 @@ import { listPaymentsQuerySchema } from "@/lib/validation/payment";
 import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
-import { Badge } from "@/components/ui/badge";
-import { PaymentFilterBar } from "./_components/payment-filter-bar";
+import { Badge, PAYMENT_METHOD_COLORS } from "@/components/ui/badge";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { exportKeyFor } from "@/lib/export/registry";
 import { BulkActionBar } from "@/components/ui/bulk-action-bar";
 import { RowDeleteButton } from "@/components/ui/row-delete-button";
 
@@ -27,23 +28,13 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canCreate = !!getScope(session, "payment", "create");
   const canCancel = !!getScope(session, "payment", "delete");
-  const canExport = !!getScope(session, "payment", "export");
   const overdue = overdueResult.ok ? overdueResult.data : [];
-  const exportQuery = new URLSearchParams(searchParams as Record<string, string>).toString();
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-800">{tr.payment.title}</h1>
         <div className="flex items-center gap-3">
-          {canExport && (
-            <a
-              href={`/api/payments/export${exportQuery ? `?${exportQuery}` : ""}`}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              {tr.payment.export}
-            </a>
-          )}
           {canCreate && (
             <Link href="/app/tahsilatlar/yeni" className="rounded-lg bg-brand-800 shadow-theme-xs px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
               + {tr.payment.new}
@@ -73,7 +64,17 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
         </div>
       )}
 
-      <PaymentFilterBar rowCount={items.length} />
+      <GridFilters
+        exportKey={exportKeyFor(session, "tahsilatlar")}
+        search={{ rowSelector: "searchable-row-payments", placeholder: tr.payment.searchPlaceholder }}
+        rowCount={items.length}
+        total={total}
+        selects={[
+          { param: "method", placeholder: "Tüm yöntemler", options: Object.entries(tr.payment.method).map(([value, label]) => ({ value, label })) },
+          { param: "status", placeholder: "Aktif + iptal", options: [{ value: "active", label: "Aktif" }, { value: "cancelled", label: "İptal edilmiş" }] },
+        ]}
+        dateRange={{ label: "Tahsilat tarihi" }}
+      />
 
       {canCancel && (
         <BulkActionBar
@@ -121,7 +122,7 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
             {items.map((p) => (
               <tr
                 key={p.id}
-                className="searchable-row-payments hover:bg-gray-50"
+                className="searchable-row-payments"
                 data-search={[p.customer.title, tr.payment.method[p.method], p.account.name].join(" ")}
               >
                 {canCancel && (
@@ -135,7 +136,11 @@ export default async function TahsilatlarPage({ searchParams }: { searchParams: 
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-gray-600">{p.customer.title}</td>
-                <td className="px-4 py-3 text-gray-600">{tr.payment.method[p.method]}</td>
+                <td className="px-4 py-3">
+                  <Badge color={PAYMENT_METHOD_COLORS[p.method]} dot={false}>
+                    {tr.payment.method[p.method]}
+                  </Badge>
+                </td>
                 <td className="px-4 py-3 text-gray-600">{p.account.name}</td>
                 <td className={`px-4 py-3 text-right ${Number(p.amount) < 0 ? "text-red-600" : "text-gray-900"}`}>
                   {p.isCancelled && <Badge color="gray">{tr.payment.cancelled}</Badge>} {formatCurrencyTRY(Number(p.amount))}

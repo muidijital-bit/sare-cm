@@ -5,6 +5,8 @@ import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { InviteForm } from "./_components/invite-form";
 import { UserList } from "./_components/user-list";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { exportKeyFor } from "@/lib/export/registry";
 
 export default async function KullanicilarPage() {
   const session = await getTenantSession();
@@ -23,6 +25,9 @@ export default async function KullanicilarPage() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-gray-800">{tr.users.title}</h1>
       {canInvite && <InviteForm />}
+      <div>
+        <GridFilters exportKey={exportKeyFor(session, "kullanicilar")} rowCount={result.data.length} total={result.data.length} />
+      </div>
       <UserList
         rows={result.data.map((r) => ({
           kind: r.kind,

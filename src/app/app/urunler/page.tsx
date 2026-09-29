@@ -7,7 +7,10 @@ import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY } from "@/lib/i18n/tr";
 import { RowDeleteButton } from "@/components/ui/row-delete-button";
-import { ProductFilterBar } from "./_components/product-filter-bar";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { Badge, tagColor } from "@/components/ui/badge";
+import { exportKeyFor } from "@/lib/export/registry";
+import { listSupplierOptions } from "@/lib/modules/suppliers/service";
 
 export default async function UrunlerPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -22,6 +25,7 @@ export default async function UrunlerPage({ searchParams }: { searchParams: Reco
   if (!result.ok) return <p className="text-sm text-red-600">{result.message}</p>;
 
   const { items, total, page, pageSize } = result.data;
+  const supplierOptions = await listSupplierOptions(session);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canCreate = !!getScope(session, "product", "create");
   const canDelete = !!getScope(session, "product", "delete");
@@ -44,7 +48,17 @@ export default async function UrunlerPage({ searchParams }: { searchParams: Reco
         </div>
       </div>
 
-      <ProductFilterBar rowCount={items.length} />
+      <GridFilters
+        exportKey={exportKeyFor(session, "urunler")}
+        search={{ rowSelector: "searchable-row-products", placeholder: tr.product.searchPlaceholder }}
+        rowCount={items.length}
+        total={total}
+        selects={[
+          { param: "active", placeholder: "Aktif + pasif", options: [{ value: "true", label: "Aktif" }, { value: "false", label: "Pasif" }] },
+          { param: "stock", placeholder: "Tüm stok durumları", options: [{ value: "negative", label: "Eksi stok" }, { value: "zero", label: "Stok yok (0)" }, { value: "positive", label: "Stokta var" }] },
+          ...(supplierOptions.length > 0 ? [{ param: "supplierId", placeholder: "Tüm tedarikçiler", options: supplierOptions.map((s) => ({ value: s.id, label: s.title })) }] : []),
+        ]}
+      />
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -68,19 +82,21 @@ export default async function UrunlerPage({ searchParams }: { searchParams: Reco
               </tr>
             )}
             {items.map((p) => (
-              <tr key={p.id} className="searchable-row-products hover:bg-gray-50" data-search={[p.name, p.code].filter(Boolean).join(" ")}>
+              <tr key={p.id} className="searchable-row-products" data-search={[p.name, p.code].filter(Boolean).join(" ")}>
                 <td className="px-4 py-3">
                   <Link href={`/app/urunler/${p.id}/duzenle`} className="font-medium text-gray-900 hover:underline">
                     {p.name}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-gray-600">{p.code ?? "—"}</td>
-                <td className="px-4 py-3 text-gray-600">{p.defaultSupplier?.title ?? "—"}</td>
+                <td className="px-4 py-3">{p.defaultSupplier ? <Badge color={tagColor(p.defaultSupplier.title)} dot={false}>{p.defaultSupplier.title}</Badge> : <span className="text-gray-400">—</span>}</td>
                 <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(p.listPrice))}</td>
                 <td className={`px-4 py-3 text-right ${Number(p.stockQty) < 0 ? "font-medium text-red-600" : "text-gray-600"}`}>
                   {p.stockQty.toString()} {p.unit}
                 </td>
-                <td className="px-4 py-3 text-gray-600">{p.isActive ? "Aktif" : "Pasif"}</td>
+                <td className="px-4 py-3">
+                  <Badge color={p.isActive ? "green" : "gray"}>{p.isActive ? "Aktif" : "Pasif"}</Badge>
+                </td>
                 {canDelete && (
                   <td className="px-4 py-3 text-right">
                     <RowDeleteButton endpoint={`/api/products/${p.id}`} confirmMessage={tr.product.deleteConfirm} label={tr.product.delete} />

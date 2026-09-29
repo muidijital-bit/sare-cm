@@ -2,7 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTenantSession } from "@/lib/auth/session";
 import { listProjects } from "@/lib/modules/projects/service";
-import { listProjectsQuerySchema, PROJECT_STATUSES } from "@/lib/validation/project";
+import { listProjectsQuerySchema } from "@/lib/validation/project";
+import { withTenant } from "@/lib/db/tenant-context";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { exportKeyFor } from "@/lib/export/registry";
 import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
@@ -23,7 +26,14 @@ export default async function ProjelerPage({ searchParams }: { searchParams: Rec
   const { items, total, page, pageSize } = result.data;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canCreate = !!getScope(session, "project", "create");
-  const activeStatus = parsed.success ? parsed.data.status : undefined;
+  const customerScope = getScope(session, "customer", "view");
+  const customers = await withTenant(session.companyId, (tx) =>
+    tx.customer.findMany({
+      where: { deletedAt: null, projects: { some: { deletedAt: null } }, ...(customerScope === "own" ? { ownerUserId: session.userId } : {}) },
+      orderBy: { title: "asc" },
+      select: { id: true, title: true },
+    }),
+  );
 
   return (
     <div>
@@ -36,23 +46,16 @@ export default async function ProjelerPage({ searchParams }: { searchParams: Rec
         )}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2 text-sm">
-        <Link
-          href="/app/projeler"
-          className={`rounded-full border px-3 py-1 ${!activeStatus ? "border-violet-200 bg-violet-50 text-violet-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-        >
-          Tümü
-        </Link>
-        {PROJECT_STATUSES.map((s) => (
-          <Link
-            key={s}
-            href={{ pathname: "/app/projeler", query: { status: s } }}
-            className={`rounded-full border px-3 py-1 ${activeStatus === s ? "border-violet-200 bg-violet-50 text-violet-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-          >
-            {tr.project.status[s]}
-          </Link>
-        ))}
-      </div>
+      <GridFilters
+        exportKey={exportKeyFor(session, "projeler")}
+        search={{ rowSelector: "searchable-row-projects", placeholder: "Proje, no, konum veya müşteri ara…" }}
+        rowCount={items.length}
+        total={total}
+        selects={[
+          { param: "status", placeholder: "Tüm durumlar", options: Object.entries(tr.project.status).map(([value, label]) => ({ value, label })) },
+          ...(customers.length > 0 ? [{ param: "customerId", placeholder: "Tüm müşteriler", options: customers.map((c) => ({ value: c.id, label: c.title })) }] : []),
+        ]}
+      />
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -75,7 +78,7 @@ export default async function ProjelerPage({ searchParams }: { searchParams: Rec
               </tr>
             )}
             {items.map((p) => (
-              <tr key={p.id} className="hover:bg-gray-50">
+              <tr key={p.id} className="searchable-row-projects" data-search={[p.number, p.name, p.location, p.customer.title].filter(Boolean).join(" ")} >
                 <td className="px-4 py-3 text-gray-500">{p.number}</td>
                 <td className="px-4 py-3">
                   <Link href={`/app/projeler/${p.id}`} className="font-medium text-gray-900 hover:underline">

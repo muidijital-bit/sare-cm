@@ -8,6 +8,7 @@ import { calculateDocument, type LineInput } from "@/lib/modules/documents/calcu
 import { nextDocumentNumber } from "@/lib/modules/documents/number-sequence";
 import { reconcileOrderStock, reverseOrderStock } from "./stock";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
+import { dateRange } from "@/lib/validation/list-filters";
 
 interface ListParams {
   q?: string;
@@ -16,6 +17,8 @@ interface ListParams {
   ownerUserId?: string;
   page: number;
   pageSize: number;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 function toLineInputs(items: OrderInput["items"]): LineInput[] {
@@ -38,6 +41,7 @@ export async function listOrders(session: TenantSession, params: ListParams) {
       ...(scope === "own" ? { ownerUserId: session.userId } : params.ownerUserId ? { ownerUserId: params.ownerUserId } : {}),
       ...(params.status ? { status: params.status as Prisma.EnumOrderStatusFilter["equals"] } : {}),
       ...(params.customerId ? { customerId: params.customerId } : {}),
+      ...dateRange("orderDate", params.dateFrom, params.dateTo),
       ...(params.q
         ? { OR: [{ number: { contains: params.q, mode: "insensitive" } }, { customer: { title: { contains: params.q, mode: "insensitive" } } }] }
         : {}),

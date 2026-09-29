@@ -6,7 +6,8 @@ import { listAuditLogsQuerySchema } from "@/lib/validation/audit";
 import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatDateTR } from "@/lib/i18n/tr";
-import { AuditFilterBar } from "./_components/audit-filter-bar";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { exportKeyFor } from "@/lib/export/registry";
 
 export default async function IslemGecmisiPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -33,7 +34,17 @@ export default async function IslemGecmisiPage({ searchParams }: { searchParams:
     <div>
       <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.audit.title}</h1>
 
-      <AuditFilterBar users={users.map((m) => ({ id: m.user.id, name: m.user.name }))} />
+      <GridFilters
+        exportKey={exportKeyFor(session, "islem-gecmisi")}
+        rowCount={items.length}
+        total={total}
+        selects={[
+          { param: "userId", placeholder: "Tüm kullanıcılar", options: users.map((m) => ({ value: m.user.id, label: m.user.name })) },
+          { param: "entityType", placeholder: "Tüm modüller", options: Object.entries(tr.audit.entityType).map(([value, label]) => ({ value, label: String(label) })) },
+          { param: "action", placeholder: "Tüm işlemler", options: Object.entries(tr.audit.action).map(([value, label]) => ({ value, label: String(label) })) },
+        ]}
+        dateRange={{ label: "Tarih" }}
+      />
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">

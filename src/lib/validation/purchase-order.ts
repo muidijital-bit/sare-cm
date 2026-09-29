@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateFromParam, dateToParam } from "./list-filters";
 
 /** §SM-02 — Satın alma (tedarikçiden alım) satırları: teklif/sipariş satırından daha basit,
  *  iskonto yok, yalnızca miktar × birim maliyet + KDV. */
@@ -23,6 +24,8 @@ export const listPurchaseOrdersQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
   status: z.enum(["DRAFT", "RECEIVED", "CANCELLED"]).optional(),
   supplierId: z.string().uuid().optional(),
+  dateFrom: dateFromParam,
+  dateTo: dateToParam,
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

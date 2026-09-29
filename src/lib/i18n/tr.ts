@@ -507,7 +507,7 @@ export const tr = {
     adjust: "Stok Düzelt",
     adjustNote: "Düzeltme gerekçesi",
     empty: "Stok hareketi yok.",
-    type: { PURCHASE: "Alım", ORDER_RESERVED: "Sipariş Rezervasyonu", ORDER_CANCELLED: "Sipariş İptali", ADJUSTMENT: "Manuel Düzeltme" },
+    type: { PURCHASE: "Alım", ORDER_RESERVED: "Sipariş Rezervasyonu", ORDER_CANCELLED: "Sipariş İptali", ADJUSTMENT: "Manuel Düzeltme", PROJECT_CONSUMED: "Projede Kullanım" },
   },
   audit: {
     title: "İşlem Geçmişi",

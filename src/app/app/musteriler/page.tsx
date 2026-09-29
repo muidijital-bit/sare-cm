@@ -7,8 +7,9 @@ import { listCustomersQuerySchema } from "@/lib/validation/customer";
 import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr } from "@/lib/i18n/tr";
-import { Badge, CUSTOMER_STATUS_COLORS } from "@/components/ui/badge";
-import { CustomerFilterBar } from "./_components/customer-filter-bar";
+import { Badge, CUSTOMER_STATUS_COLORS, CUSTOMER_TYPE_COLORS, tagColor } from "@/components/ui/badge";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { exportKeyFor } from "@/lib/export/registry";
 import { BulkActionBar } from "@/components/ui/bulk-action-bar";
 import { RowDeleteButton } from "@/components/ui/row-delete-button";
 
@@ -68,11 +69,17 @@ export default async function MusterilerPage({
         </Link>
       </div>
 
-      <CustomerFilterBar
-        sources={sources}
-        showOwnerFilter={scope === "all"}
-        users={users.map((m) => ({ id: m.user.id, name: m.user.name }))}
+      <GridFilters
+        exportKey={exportKeyFor(session, "musteriler")}
+        search={{ rowSelector: "searchable-row-customers", placeholder: tr.customer.searchPlaceholder }}
         rowCount={items.length}
+        total={total}
+        selects={[
+          { param: "status", placeholder: "Tüm durumlar", options: Object.entries(tr.customer.status).map(([value, label]) => ({ value, label })) },
+          { param: "type", placeholder: "Tüm türler", options: Object.entries(tr.customer.type).map(([value, label]) => ({ value, label })) },
+          { param: "sourceId", placeholder: "Tüm kaynaklar", options: sources.map((s) => ({ value: s.id, label: s.name })) },
+          ...(scope === "all" ? [{ param: "ownerUserId", placeholder: "Tüm sorumlular", options: users.map((m) => ({ value: m.user.id, label: m.user.name })) }] : []),
+        ]}
       />
 
       {canDelete && (
@@ -123,7 +130,7 @@ export default async function MusterilerPage({
               return (
                 <tr
                   key={c.id}
-                  className="searchable-row-customers hover:bg-gray-50"
+                  className="searchable-row-customers"
                   data-search={[c.title, c.taxNumber, c.source?.name, tr.customer.status[c.status], tr.customer.type[c.type]]
                     .filter(Boolean)
                     .join(" ")}
@@ -139,15 +146,19 @@ export default async function MusterilerPage({
                     </Link>
                     {c.taxNumber && <p className="text-xs text-gray-400">{c.taxNumber}</p>}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{tr.customer.type[c.type]}</td>
+                  <td className="px-4 py-3">
+                    <Badge color={CUSTOMER_TYPE_COLORS[c.type]} dot={false}>
+                      {tr.customer.type[c.type]}
+                    </Badge>
+                  </td>
                   <td className="px-4 py-3">
                     <Badge color={CUSTOMER_STATUS_COLORS[c.status]}>{tr.customer.status[c.status]}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{c.source?.name ?? "—"}</td>
+                  <td className="px-4 py-3">{c.source ? <Badge color={tagColor(c.source.name)} dot={false}>{c.source.name}</Badge> : <span className="text-gray-400">—</span>}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {c.tags.map((t) => (
-                        <Badge key={t.tag.name} color="gray">
+                        <Badge key={t.tag.name} color={tagColor(t.tag.name)} dot={false}>
                           {t.tag.name}
                         </Badge>
                       ))}

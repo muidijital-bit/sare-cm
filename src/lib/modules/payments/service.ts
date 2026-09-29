@@ -5,6 +5,7 @@ import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import type { PaymentInput } from "@/lib/validation/payment";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
+import { dateRange } from "@/lib/validation/list-filters";
 
 interface ListParams {
   q?: string;
@@ -12,6 +13,9 @@ interface ListParams {
   method?: string;
   page: number;
   pageSize: number;
+  status?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 export async function listPayments(session: TenantSession, params: ListParams) {
@@ -21,6 +25,8 @@ export async function listPayments(session: TenantSession, params: ListParams) {
     const where: Prisma.PaymentWhereInput = {
       ...(params.customerId ? { customerId: params.customerId } : {}),
       ...(params.method ? { method: params.method as Prisma.EnumPaymentMethodFilter["equals"] } : {}),
+      ...(params.status ? { isCancelled: params.status === "cancelled" } : {}),
+      ...dateRange("paidAt", params.dateFrom, params.dateTo),
       ...(params.q ? { customer: { title: { contains: params.q, mode: "insensitive" } } } : {}),
     };
 
@@ -180,6 +186,8 @@ export async function exportPayments(session: TenantSession, params: Omit<ListPa
     const where: Prisma.PaymentWhereInput = {
       ...(params.customerId ? { customerId: params.customerId } : {}),
       ...(params.method ? { method: params.method as Prisma.EnumPaymentMethodFilter["equals"] } : {}),
+      ...(params.status ? { isCancelled: params.status === "cancelled" } : {}),
+      ...dateRange("paidAt", params.dateFrom, params.dateTo),
       ...(params.q ? { customer: { title: { contains: params.q, mode: "insensitive" } } } : {}),
     };
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateFromParam, dateToParam } from "./list-filters";
 import { lineItemInputSchema, documentDiscountSchema } from "./document";
 
 export const quoteInputSchema = z.object({
@@ -19,6 +20,8 @@ export const listQuotesQuerySchema = z.object({
   status: z.enum(["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED"]).optional(),
   customerId: z.string().uuid().optional(),
   ownerUserId: z.string().uuid().optional(),
+  dateFrom: dateFromParam,
+  dateTo: dateToParam,
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

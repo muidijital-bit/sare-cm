@@ -8,7 +8,8 @@ import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, ORDER_STATUS_COLORS } from "@/components/ui/badge";
-import { OrderFilterBar } from "./_components/order-filter-bar";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { exportKeyFor } from "@/lib/export/registry";
 import { RowDeleteButton } from "@/components/ui/row-delete-button";
 
 export default async function SiparislerPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
@@ -50,7 +51,17 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
         )}
       </div>
 
-      <OrderFilterBar showOwnerFilter={scope === "all"} users={users.map((m) => ({ id: m.user.id, name: m.user.name }))} rowCount={items.length} />
+      <GridFilters
+        exportKey={exportKeyFor(session, "siparisler")}
+        search={{ rowSelector: "searchable-row-orders", placeholder: tr.order.searchPlaceholder }}
+        rowCount={items.length}
+        total={total}
+        selects={[
+          { param: "status", placeholder: "Tüm durumlar", options: Object.entries(tr.order.status).map(([value, label]) => ({ value, label })) },
+          ...(scope === "all" ? [{ param: "ownerUserId", placeholder: "Tüm sorumlular", options: users.map((m) => ({ value: m.user.id, label: m.user.name })) }] : []),
+        ]}
+        dateRange={{ label: "Sipariş tarihi" }}
+      />
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -78,7 +89,7 @@ export default async function SiparislerPage({ searchParams }: { searchParams: R
               return (
                 <tr
                   key={o.id}
-                  className="searchable-row-orders hover:bg-gray-50"
+                  className="searchable-row-orders"
                   data-search={[o.number, o.customer.title, tr.order.status[o.status]].join(" ")}
                 >
                   <td className="px-4 py-3">

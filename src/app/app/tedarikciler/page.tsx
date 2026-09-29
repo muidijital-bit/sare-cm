@@ -7,7 +7,9 @@ import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr } from "@/lib/i18n/tr";
 import { RowDeleteButton } from "@/components/ui/row-delete-button";
-import { SupplierFilterBar } from "./_components/supplier-filter-bar";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { Badge } from "@/components/ui/badge";
+import { exportKeyFor } from "@/lib/export/registry";
 
 export default async function TedarikcilerPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -45,7 +47,13 @@ export default async function TedarikcilerPage({ searchParams }: { searchParams:
         </div>
       </div>
 
-      <SupplierFilterBar rowCount={items.length} />
+      <GridFilters
+        exportKey={exportKeyFor(session, "tedarikciler")}
+        search={{ rowSelector: "searchable-row-suppliers", placeholder: tr.supplier.searchPlaceholder }}
+        rowCount={items.length}
+        total={total}
+        selects={[{ param: "active", placeholder: "Aktif + pasif", options: [{ value: "true", label: "Aktif" }, { value: "false", label: "Pasif" }] }]}
+      />
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -67,7 +75,7 @@ export default async function TedarikcilerPage({ searchParams }: { searchParams:
               </tr>
             )}
             {items.map((s) => (
-              <tr key={s.id} className="searchable-row-suppliers hover:bg-gray-50" data-search={[s.title, s.taxNumber, s.phone].filter(Boolean).join(" ")}>
+              <tr key={s.id} className="searchable-row-suppliers" data-search={[s.title, s.taxNumber, s.phone].filter(Boolean).join(" ")}>
                 <td className="px-4 py-3">
                   <Link href={`/app/tedarikciler/${s.id}/duzenle`} className="font-medium text-gray-900 hover:underline">
                     {s.title}
@@ -75,7 +83,9 @@ export default async function TedarikcilerPage({ searchParams }: { searchParams:
                 </td>
                 <td className="px-4 py-3 text-gray-600">{s.taxNumber ?? "—"}</td>
                 <td className="px-4 py-3 text-gray-600">{s.phone ?? "—"}</td>
-                <td className="px-4 py-3 text-gray-600">{s.isActive ? "Aktif" : "Pasif"}</td>
+                <td className="px-4 py-3">
+                  <Badge color={s.isActive ? "green" : "gray"}>{s.isActive ? "Aktif" : "Pasif"}</Badge>
+                </td>
                 {canDelete && (
                   <td className="px-4 py-3 text-right">
                     <RowDeleteButton endpoint={`/api/suppliers/${s.id}`} confirmMessage={tr.supplier.deleteConfirm} label={tr.supplier.delete} />

@@ -16,6 +16,10 @@ export type ProductInput = z.infer<typeof productInputSchema>;
 
 export const listProductsQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
+  active: z.enum(["true", "false"]).optional(),
+  /** Stok durumu: eksi (negatif), sıfır, pozitif. */
+  stock: z.enum(["negative", "zero", "positive"]).optional(),
+  supplierId: z.string().uuid().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

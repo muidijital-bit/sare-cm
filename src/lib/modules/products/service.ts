@@ -10,6 +10,9 @@ interface ListParams {
   q?: string;
   page: number;
   pageSize: number;
+  active?: string;
+  stock?: string;
+  supplierId?: string;
 }
 
 export async function listProducts(session: TenantSession, params: ListParams) {
@@ -19,6 +22,9 @@ export async function listProducts(session: TenantSession, params: ListParams) {
     const where: Prisma.ProductWhereInput = {
       deletedAt: null,
       ...(params.q ? { OR: [{ name: { contains: params.q, mode: "insensitive" } }, { code: { contains: params.q, mode: "insensitive" } }] } : {}),
+      ...(params.active ? { isActive: params.active === "true" } : {}),
+      ...(params.supplierId ? { defaultSupplierId: params.supplierId } : {}),
+      ...(params.stock === "negative" ? { stockQty: { lt: 0 } } : params.stock === "zero" ? { stockQty: 0 } : params.stock === "positive" ? { stockQty: { gt: 0 } } : {}),
     };
     const [items, total] = await Promise.all([
       tx.product.findMany({

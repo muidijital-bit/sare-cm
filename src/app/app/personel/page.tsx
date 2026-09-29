@@ -6,8 +6,9 @@ import { listEmployeesQuerySchema } from "@/lib/validation/employee";
 import { getScope } from "@/lib/auth/access";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { tr, formatCurrencyTRY } from "@/lib/i18n/tr";
-import { Badge, EMPLOYEE_STATUS_COLORS } from "@/components/ui/badge";
-import { EmployeeFilterBar } from "./_components/employee-filter-bar";
+import { Badge, EMPLOYEE_STATUS_COLORS, tagColor } from "@/components/ui/badge";
+import { GridFilters } from "@/components/ui/grid-filters";
+import { exportKeyFor } from "@/lib/export/registry";
 
 export default async function PersonelPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const session = await getTenantSession();
@@ -36,7 +37,13 @@ export default async function PersonelPage({ searchParams }: { searchParams: Rec
         )}
       </div>
 
-      <EmployeeFilterBar rowCount={items.length} />
+      <GridFilters
+        exportKey={exportKeyFor(session, "personel")}
+        search={{ rowSelector: "searchable-row-employees", placeholder: tr.employee.searchPlaceholder }}
+        rowCount={items.length}
+        total={total}
+        selects={[{ param: "status", placeholder: "Tüm durumlar", options: Object.entries(tr.employee.status).map(([value, label]) => ({ value, label })) }]}
+      />
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-theme-xs">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -60,7 +67,7 @@ export default async function PersonelPage({ searchParams }: { searchParams: Rec
             {items.map((e) => (
               <tr
                 key={e.id}
-                className="searchable-row-employees hover:bg-gray-50"
+                className="searchable-row-employees"
                 data-search={[e.fullName, e.position, e.department].filter(Boolean).join(" ")}
               >
                 <td className="px-4 py-3">
@@ -69,7 +76,7 @@ export default async function PersonelPage({ searchParams }: { searchParams: Rec
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-gray-600">{e.position ?? "—"}</td>
-                <td className="px-4 py-3 text-gray-600">{e.department ?? "—"}</td>
+                <td className="px-4 py-3">{e.department ? <Badge color={tagColor(e.department)} dot={false}>{e.department}</Badge> : <span className="text-gray-400">—</span>}</td>
                 <td className="px-4 py-3 text-right text-gray-900">{formatCurrencyTRY(Number(e.grossSalary))}</td>
                 <td className="px-4 py-3">
                   <Badge color={EMPLOYEE_STATUS_COLORS[e.status]}>{tr.employee.status[e.status as keyof typeof tr.employee.status]}</Badge>

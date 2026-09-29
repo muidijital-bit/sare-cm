@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateFromParam, dateToParam } from "./list-filters";
 
 export const paymentMethodSchema = z.enum(["CASH", "BANK_TRANSFER", "CREDIT_CARD", "CHECK"]);
 
@@ -41,6 +42,9 @@ export const listPaymentsQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
   customerId: z.string().uuid().optional(),
   method: paymentMethodSchema.optional(),
+  status: z.enum(["active", "cancelled"]).optional(),
+  dateFrom: dateFromParam,
+  dateTo: dateToParam,
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

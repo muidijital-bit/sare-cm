@@ -14,6 +14,7 @@ interface ListParams {
   dateTo?: Date;
   page: number;
   pageSize: number;
+  projectId?: string;
 }
 
 /**
@@ -68,6 +69,7 @@ export async function listExpenses(session: TenantSession, params: ListParams) {
       deletedAt: null,
       isRecurringTemplate: false, // şablonlar listede görünmez, yalnızca ürettikleri kayıtlar
       ...(params.categoryId ? { categoryId: params.categoryId } : {}),
+      ...(params.projectId ? { projectId: params.projectId } : {}),
       ...(params.dateFrom || params.dateTo
         ? { spentAt: { ...(params.dateFrom ? { gte: params.dateFrom } : {}), ...(params.dateTo ? { lte: params.dateTo } : {}) } }
         : {}),
@@ -229,6 +231,7 @@ export async function exportExpenses(session: TenantSession, params: Omit<ListPa
       deletedAt: null,
       isRecurringTemplate: false,
       ...(params.categoryId ? { categoryId: params.categoryId } : {}),
+      ...(params.projectId ? { projectId: params.projectId } : {}),
       ...(params.dateFrom || params.dateTo
         ? { spentAt: { ...(params.dateFrom ? { gte: params.dateFrom } : {}), ...(params.dateTo ? { lte: params.dateTo } : {}) } }
         : {}),

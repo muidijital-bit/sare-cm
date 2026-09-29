@@ -6,12 +6,15 @@ import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import type { TaxObligationInput, PayTaxObligationInput } from "@/lib/validation/tax-obligation";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
+import { dateRange } from "@/lib/validation/list-filters";
 
 interface ListParams {
   status?: string;
   type?: string;
   page: number;
   pageSize: number;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 /**
@@ -57,6 +60,7 @@ export async function listTaxObligations(session: TenantSession, params: ListPar
       isRecurringTemplate: false,
       ...(params.status ? { status: params.status as Prisma.EnumTaxObligationStatusFilter["equals"] } : {}),
       ...(params.type ? { type: params.type as Prisma.EnumTaxObligationTypeFilter["equals"] } : {}),
+      ...dateRange("dueDate", params.dateFrom, params.dateTo),
     };
     const [items, total] = await Promise.all([
       tx.taxObligation.findMany({ where, orderBy: { dueDate: "asc" }, skip: (params.page - 1) * params.pageSize, take: params.pageSize }),

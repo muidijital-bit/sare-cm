@@ -10,6 +10,7 @@ interface ListParams {
   q?: string;
   page: number;
   pageSize: number;
+  active?: string;
 }
 
 /** Müşteri listesiyle aynı desen (bkz. src/lib/modules/customers/service.ts listCustomers). */
@@ -19,6 +20,7 @@ export async function listSuppliers(session: TenantSession, params: ListParams, 
   const run = async (tx: Prisma.TransactionClient) => {
     const where: Prisma.SupplierWhereInput = {
       deletedAt: null,
+      ...(params.active ? { isActive: params.active === "true" } : {}),
       ...(params.q
         ? {
             OR: [

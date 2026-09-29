@@ -36,3 +36,26 @@ body {
 .legal th, .legal td { border: 1px solid #e4e7ec; padding: 0.5rem 0.625rem; text-align: left; vertical-align: top; }
 .legal th { background: #f9fafb; font-weight: 600; color: #344054; }
 .legal a { color: #6d28d9; text-decoration: underline; }
+
+/*
+ * Tüm gridler (uygulama içindeki tablolar): zebra satırlar + okunaklı başlık. Tek yerden — sayfa
+ * sayfa sınıf eklemek yerine. `hover:bg-*` sınıfları daha yüksek özgüllükte olduğu için fare
+ * üzerindeyken vurgu zebra rengini ezer. Tablo dışı listeler etkilenmez.
+ */
+main table tbody tr:nth-child(even) {
+  background-color: #f6f4fe; /* violet-50 tonunda — beyaz satırlarla net ayrışır */
+}
+main table tbody tr {
+  transition: background-color 0.12s ease;
+}
+main table tbody tr:hover {
+  background-color: #ede9fe; /* violet-100 */
+}
+main table thead th {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+main table tbody td {
+  vertical-align: middle;
+}
