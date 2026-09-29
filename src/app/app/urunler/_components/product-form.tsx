@@ -22,11 +22,12 @@ interface Props {
   mode: "create" | "edit";
   productId?: string;
   initialValues?: Partial<ProductFormValues>;
-  /** Boşsa (tedarikçi modülü yok/yetki yok) alan gösterilmez. */
   suppliers?: { id: string; title: string }[];
+  /** Tedarikçi modülü açık ve görme yetkisi var mı — yoksa alan hiç gösterilmez. */
+  supplierAccess?: boolean;
 }
 
-export function ProductForm({ mode, productId, initialValues, suppliers = [] }: Props) {
+export function ProductForm({ mode, productId, initialValues, suppliers = [], supplierAccess = false }: Props) {
   const router = useRouter();
   const [values, setValues] = useState<ProductFormValues>({ ...EMPTY_VALUES, ...initialValues });
   const [error, setError] = useState<string | null>(null);
@@ -133,6 +134,19 @@ export function ProductForm({ mode, productId, initialValues, suppliers = [] }: 
             className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 px-3 py-2 text-sm text-gray-900"
           />
         </div>
+
+        {supplierAccess && suppliers.length === 0 && (
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">{tr.product.fields.defaultSupplier}</label>
+            <p className="mt-1 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500">
+              Henüz tedarikçi yok.{" "}
+              <a href="/app/tedarikciler/yeni" className="font-medium text-brand-700 hover:underline">
+                Tedarikçi ekleyin
+              </a>{" "}
+              — sonra buradan seçebilirsiniz.
+            </p>
+          </div>
+        )}
 
         {suppliers.length > 0 && (
           <div className="sm:col-span-2">

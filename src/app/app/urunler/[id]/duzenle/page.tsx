@@ -29,6 +29,7 @@ export default async function UrunDuzenlePage({ params }: { params: { id: string
         mode="edit"
         productId={p.id}
         suppliers={suppliers}
+        supplierAccess={!!getScope(session, "supplier", "view")}
         initialValues={{
           code: p.code ?? "",
           name: p.name,

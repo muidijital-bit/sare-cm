@@ -16,7 +16,7 @@ export default async function YeniUrunPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-6 text-xl font-semibold text-gray-800">{tr.product.new}</h1>
-      <ProductForm mode="create" suppliers={await listSupplierOptions(session)} />
+      <ProductForm mode="create" suppliers={await listSupplierOptions(session)} supplierAccess={!!getScope(session, "supplier", "view")} />
     </div>
   );
 }
