@@ -18,6 +18,7 @@ export default function DavetKabulPage({ params }: { params: { token: string } }
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,7 +37,7 @@ export default function DavetKabulPage({ params }: { params: { token: string } }
     const res = await fetch("/api/invitations/accept", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: params.token, name, password }),
+      body: JSON.stringify({ token: params.token, name, password, acceptTerms }),
     });
     const body = await res.json().catch(() => ({}));
     setSubmitting(false);
@@ -93,11 +94,25 @@ export default function DavetKabulPage({ params }: { params: { token: string } }
                 />
               </div>
 
+              <label className="flex items-start gap-2 text-xs leading-5 text-gray-600">
+                <input type="checkbox" required checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-0.5" />
+                <span>
+                  <a href="/yasal/kullanim-kosullari" target="_blank" className="font-medium text-brand-700 underline">
+                    Kullanım Koşulları
+                  </a>
+                  &apos;nı okudum, kabul ediyorum;{" "}
+                  <a href="/yasal/kvkk-aydinlatma" target="_blank" className="font-medium text-brand-700 underline">
+                    KVKK Aydınlatma Metni
+                  </a>
+                  &apos;ni okudum.
+                </span>
+              </label>
+
               {error && <p className="text-sm text-red-600">{error}</p>}
 
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !acceptTerms}
                 className="w-full rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
               >
                 {submitting ? tr.common.loading : tr.users.acceptSubmit}

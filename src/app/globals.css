@@ -23,3 +23,16 @@ body {
   color: #111827; /* gray-900 */
   background-color: #f9fafb; /* gray-50 */
 }
+
+/* Yasal metin sayfaları (/yasal/*) — tipografi eklentisi yerine hafif, elle yazılmış düzen. */
+.legal h1 { font-size: 1.625rem; line-height: 2.1rem; font-weight: 700; color: #101828; margin-bottom: 0.5rem; letter-spacing: -0.01em; }
+.legal h2 { font-size: 1.125rem; font-weight: 600; color: #101828; margin-top: 2rem; margin-bottom: 0.5rem; }
+.legal h3 { font-weight: 600; color: #1d2939; margin-top: 1.25rem; margin-bottom: 0.25rem; }
+.legal p { margin-bottom: 0.75rem; }
+.legal ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+.legal ol { list-style: decimal; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+.legal li { margin-bottom: 0.25rem; }
+.legal table { width: 100%; font-size: 0.875rem; margin: 0.75rem 0 1rem; border-collapse: collapse; }
+.legal th, .legal td { border: 1px solid #e4e7ec; padding: 0.5rem 0.625rem; text-align: left; vertical-align: top; }
+.legal th { background: #f9fafb; font-weight: 600; color: #344054; }
+.legal a { color: #6d28d9; text-decoration: underline; }

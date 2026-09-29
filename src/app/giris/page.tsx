@@ -1,6 +1,7 @@
 import { tr } from "@/lib/i18n/tr";
 import { LoginForm } from "./_components/login-form";
 import { BRAND } from "@/lib/brand";
+import { LEGAL_LINKS } from "@/lib/legal";
 
 /**
  * Giriş ekranı fonu — WeTransfer tarzı tam-ekran fotoğraf + koyu degrade katmanı.
@@ -35,6 +36,14 @@ export default function GirisPage() {
         <p className="mb-6 mt-2 text-sm text-white/80">{tr.common.tagline}</p>
 
         <LoginForm />
+
+        <nav className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-white/60">
+          {LEGAL_LINKS.map((l) => (
+            <a key={l.href} href={l.href} className="hover:text-white hover:underline">
+              {l.label}
+            </a>
+          ))}
+        </nav>
       </div>
     </main>
   );

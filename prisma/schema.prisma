@@ -284,6 +284,10 @@ model User {
   isSuperAdmin    Boolean @default(false) @map("is_super_admin")
   twoFactorSecret String? @map("two_factor_secret")
 
+  /// Kullanım koşulları + KVKK aydınlatma onayı (ispat için) — sürüm src/lib/legal.ts LEGAL.version.
+  termsAcceptedAt DateTime? @map("terms_accepted_at")
+  termsVersion    String?   @map("terms_version")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

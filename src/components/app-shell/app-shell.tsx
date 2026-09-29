@@ -9,6 +9,7 @@ import type { MembershipRole } from "@/lib/auth/rbac";
 import { NAV_ITEMS, NAV_GROUPS, MOBILE_PRIMARY_COUNT, isNavItemVisible, type NavItem } from "@/lib/nav-items";
 import { tr } from "@/lib/i18n/tr";
 import { BRAND } from "@/lib/brand";
+import { LEGAL_LINKS } from "@/lib/legal";
 
 interface AppShellProps {
   companyName: string;
@@ -256,6 +257,14 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
 
         <footer className="hidden border-t border-gray-200 px-4 py-3 text-center text-xs text-gray-400 sm:px-6 lg:block">
           {BRAND.name} · V1
+          {LEGAL_LINKS.map((l) => (
+            <span key={l.href}>
+              {" · "}
+              <a href={l.href} target="_blank" className="hover:text-gray-600 hover:underline">
+                {l.label}
+              </a>
+            </span>
+          ))}
         </footer>
       </div>
 

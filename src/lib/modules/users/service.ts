@@ -8,6 +8,7 @@ import { generateSecureToken, INVITATION_TOKEN_TTL_MS } from "@/lib/security/tok
 import type { TenantSession } from "@/lib/auth/session";
 import type { InviteUserInput, UpdateMembershipInput } from "@/lib/validation/users";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
+import { LEGAL } from "@/lib/legal";
 
 export interface CompanyUserRow {
   kind: "member" | "invitation";
@@ -205,6 +206,8 @@ export async function acceptInvitation(token: string, name: string, password: st
       const passwordHash = await hashPassword(password);
       user = await tx.user.create({ data: { email: invite.email, name, passwordHash, isActive: true } });
     }
+    // Onay şeması zorunlu tuttuğu için buraya ancak onaylanmış istekle gelinir (bkz. acceptInvitationInputSchema).
+    await tx.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date(), termsVersion: LEGAL.version } });
 
     const existingMembership = await tx.membership.findUnique({ where: { userId_companyId: { userId: user.id, companyId: invite.companyId } } });
     if (existingMembership) {

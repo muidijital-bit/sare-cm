@@ -19,5 +19,7 @@ export const acceptInvitationInputSchema = z.object({
   token: z.string().min(1),
   name: z.string().trim().min(1, "Ad soyad zorunlu").max(200),
   password: z.string().min(1),
+  /** Kullanım Koşulları + KVKK Aydınlatma Metni onayı — zorunlu (ispat için tarih/sürüm kaydedilir). */
+  acceptTerms: z.literal(true, { errorMap: () => ({ message: "Devam etmek için Kullanım Koşulları ve KVKK Aydınlatma Metni'ni onaylayın." }) }),
 });
 export type AcceptInvitationInput = z.infer<typeof acceptInvitationInputSchema>;
