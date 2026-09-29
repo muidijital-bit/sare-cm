@@ -23,11 +23,11 @@ interface AppShellProps {
 const SIDEBAR_COLLAPSED_KEY = "sare-cm:sidebar-collapsed";
 
 /**
- * Sidebar zemini — mor/indigo gradyan (kullanıcı geri bildirimi: "sol bar lacivert yerine
- * mor gradientli olsun"). Masaüstü kabuk, mobil çekmece VE mobil üst/alt çubuklar aynı
- * sabiti paylaşır, tek yerden değişir.
+ * Sidebar zemini — beyaz zemin, koyu yazı; mor yalnızca aktif öğe vurgusunda (kullanıcı geri
+ * bildirimi: mor gradyan "çok patlak, göz yordu"). Masaüstü kabuk, mobil çekmece VE mobil
+ * üst/alt çubuklar aynı sabiti paylaşır, tek yerden değişir.
  */
-const SIDEBAR_GRADIENT = "bg-gradient-to-b from-violet-600 via-purple-700 to-indigo-950";
+const SIDEBAR_BG = "bg-white border-gray-200";
 
 /** Basit hamburger ikonu — küçük bir ikon kütüphanesi eklemeye gerek bırakmaz. */
 function HamburgerIcon() {
@@ -42,7 +42,7 @@ function HamburgerIcon() {
 
 /**
  * Uygulama içinde HERKES muiflow logosunu görür (müşteri firma logosu menüde kullanılmaz).
- * Logo beyaz/şeffaf, koyu zemin üzerine oturur — mor gradyan zeminde de okunur kalır.
+ * Sidebar beyaz olduğundan koyu logo kullanılır; amblem beyaz PNG olduğu için `invert` ile koyulaştırılır.
  * `next/image` yerine düz `<img>`: küçük sabit logo için optimizasyon kazancı önemsizdir ve
  * `next/image` + tam statik sayfa kombinasyonu bilinen bir Next.js 13.5 build hatasına
  * yol açıyordu.
@@ -51,10 +51,10 @@ function LogoMark({ compact = false }: { compact?: boolean }) {
   if (compact) {
     // Daraltılmış menüde tam logoyu sıkıştırmak yerine "mu" amblemi kullanılır.
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={BRAND.mark} alt={BRAND.name} className="h-5 w-auto shrink-0" />;
+    return <img src={BRAND.mark} alt={BRAND.name} className="h-5 w-auto shrink-0 invert" />;
   }
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={BRAND.logoWhite} alt={BRAND.name} className="h-7 w-auto shrink-0" />;
+  return <img src={BRAND.logoDark} alt={BRAND.name} className="h-6 w-auto shrink-0" />;
 }
 
 export function AppShell({ companyName, role, userName, userEmail, hasMultipleCompanies, enabledModules, children }: AppShellProps) {
@@ -97,7 +97,7 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
         <span
           key={item.key}
           title="Yakında"
-          className={`flex cursor-not-allowed items-center rounded-lg px-3 py-2.5 text-sm text-white/40 ${
+          className={`flex cursor-not-allowed items-center rounded-lg px-3 py-2.5 text-sm text-gray-400 ${
             compact ? "justify-center" : "justify-between gap-3"
           }`}
         >
@@ -118,7 +118,7 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
         title={compact ? item.label : undefined}
         className={`flex items-center rounded-lg px-3 py-2.5 text-theme-sm font-medium transition-all ${
           compact ? "justify-center" : "gap-3"
-        } ${active ? "bg-white/15 text-white shadow-theme-xs" : "text-white/70 hover:bg-white/10 hover:text-white"}`}
+        } ${active ? "bg-violet-50 text-violet-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}
       >
         <Icon size={17} className="shrink-0" />
         {!compact && <span className="truncate">{item.label}</span>}
@@ -134,7 +134,7 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
       return (
         <div key={group.key} className="mt-5 first:mt-0">
           {!opts.compact && (
-            <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-white/45">{group.label}</p>
+            <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">{group.label}</p>
           )}
           <div className="space-y-0.5">{items.map((item) => renderNavLink(item, opts))}</div>
         </div>
@@ -145,13 +145,13 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
   return (
     <div className="min-h-screen bg-gray-50 lg:flex">
       {/* Mobil üst çubuk — yalnızca <lg genişlikte görünür */}
-      <div className={`flex items-center justify-between px-4 py-3 lg:hidden ${SIDEBAR_GRADIENT}`}>
+      <div className={`flex items-center justify-between border-b px-4 py-3 lg:hidden ${SIDEBAR_BG}`}>
         <LogoMark />
         <button
           onClick={() => setDrawerOpen(true)}
           aria-label="Menüyü aç"
           aria-expanded={drawerOpen}
-          className="rounded-md p-2 text-white/90 hover:bg-white/10"
+          className="rounded-md p-2 text-gray-700 hover:bg-gray-100"
         >
           <HamburgerIcon />
         </button>
@@ -166,26 +166,26 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
         aria-hidden={!drawerOpen}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col shadow-2xl transition-transform duration-200 ease-out lg:hidden ${SIDEBAR_GRADIENT} ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col shadow-2xl transition-transform duration-200 ease-out lg:hidden ${SIDEBAR_BG} ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4">
           <LogoMark />
-          <button onClick={() => setDrawerOpen(false)} aria-label="Menüyü kapat" className="rounded-md p-2 text-white/80 hover:bg-white/10">
+          <button onClick={() => setDrawerOpen(false)} aria-label="Menüyü kapat" className="rounded-md p-2 text-gray-500 hover:bg-gray-100">
             <X size={18} />
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-3">{renderNavGroups({ onClick: () => setDrawerOpen(false) })}</nav>
-        <div className="space-y-2 border-t border-white/10 px-4 py-4">
-          <p className="truncate text-sm text-white">{userName}</p>
-          <p className="truncate text-xs text-white/60">{userEmail}</p>
+        <div className="space-y-2 border-t border-gray-100 px-4 py-4">
+          <p className="truncate text-sm font-medium text-gray-900">{userName}</p>
+          <p className="truncate text-xs text-gray-500">{userEmail}</p>
           {hasMultipleCompanies && (
-            <Link href="/app/sirket-sec" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2 text-xs text-white/60 hover:text-white">
+            <Link href="/app/sirket-sec" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-900">
               <Repeat size={13} /> Şirket değiştir
             </Link>
           )}
-          <button onClick={() => signOut({ callbackUrl: "/giris" })} className="flex items-center gap-2 pt-1 text-xs font-medium text-white/60 hover:text-white">
+          <button onClick={() => signOut({ callbackUrl: "/giris" })} className="flex items-center gap-2 pt-1 text-xs font-medium text-gray-500 hover:text-gray-900">
             <LogOut size={13} /> {tr.auth.logout}
           </button>
         </div>
@@ -193,18 +193,18 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
 
       {/* Masaüstü sol menü — daraltılabilir */}
       <aside
-        className={`relative hidden shrink-0 transition-[width] duration-200 ease-out lg:flex lg:min-h-screen lg:flex-col ${SIDEBAR_GRADIENT} ${
+        className={`relative hidden shrink-0 transition-[width] duration-200 ease-out lg:flex lg:min-h-screen lg:flex-col border-r ${SIDEBAR_BG} ${
           collapsed ? "lg:w-[72px]" : "lg:w-64"
         }`}
       >
-        <div className={`flex items-center border-b border-white/10 px-4 py-5 ${collapsed ? "justify-center px-2" : "justify-between"}`}>
+        <div className={`flex items-center border-b border-gray-100 px-4 py-5 ${collapsed ? "justify-center px-2" : "justify-between"}`}>
           <LogoMark compact={collapsed} />
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-3">{renderNavGroups({ compact: collapsed })}</nav>
         <button
           onClick={toggleCollapsed}
           aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
-          className="flex items-center justify-center gap-2 border-t border-white/10 py-3 text-xs font-medium text-white/60 hover:bg-white/5 hover:text-white"
+          className="flex items-center justify-center gap-2 border-t border-gray-100 py-3 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900"
         >
           {collapsed ? (
             <ChevronRight size={15} />
@@ -260,7 +260,7 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
       </div>
 
       {/* Mobil alt sekme çubuğu — en önemli modüllere tek dokunuşla erişim */}
-      <nav className={`fixed inset-x-0 bottom-0 z-30 flex pb-[env(safe-area-inset-bottom)] lg:hidden ${SIDEBAR_GRADIENT}`} aria-label="Ana menü">
+      <nav className={`fixed inset-x-0 bottom-0 z-30 flex pb-[env(safe-area-inset-bottom)] border-t lg:hidden ${SIDEBAR_BG}`} aria-label="Ana menü">
         {primaryItems.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
@@ -269,16 +269,16 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
             <Link
               key={item.key}
               href={item.href}
-              className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${active ? "text-white" : "text-white/60"}`}
+              className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${active ? "text-violet-700" : "text-gray-500"}`}
             >
-              <span className={`flex h-7 w-11 items-center justify-center rounded-full transition-colors ${active ? "bg-white/20" : ""}`}>
+              <span className={`flex h-7 w-11 items-center justify-center rounded-full transition-colors ${active ? "bg-violet-50" : ""}`}>
                 <Icon size={18} />
               </span>
               <span className="truncate">{item.label}</span>
             </Link>
           );
         })}
-        <button onClick={() => setDrawerOpen(true)} className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-white/60">
+        <button onClick={() => setDrawerOpen(true)} className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-gray-500">
           <span className="flex h-7 w-11 items-center justify-center">
             <MoreHorizontal size={18} />
           </span>
