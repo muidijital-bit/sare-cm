@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
+    "@tremor/react": "^3.18.7",
     "bcryptjs": "2.4.3",
     "dayjs": "1.11.13",
     "next": "13.5.11",

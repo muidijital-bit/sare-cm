@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import "dayjs/locale/tr";
 import { withTenant } from "@/lib/db/tenant-context";
 import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
@@ -168,7 +169,7 @@ export async function getDashboardCharts(session: TenantSession): Promise<Dashbo
     const months: { month: string; label: string; revenue: number; collected: number }[] = [];
     for (let i = 11; i >= 0; i--) {
       const d = dayjs().subtract(i, "month");
-      months.push({ month: d.format("YYYY-MM"), label: d.format("MMM YY"), revenue: 0, collected: 0 });
+      months.push({ month: d.format("YYYY-MM"), label: d.locale("tr").format("MMM YY"), revenue: 0, collected: 0 });
     }
     const byMonth = new Map(months.map((m) => [m.month, m]));
     for (const o of periodOrders) {
