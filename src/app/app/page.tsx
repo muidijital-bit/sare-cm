@@ -22,6 +22,8 @@ import { getDashboardCharts, getDashboardMetrics } from "@/lib/modules/dashboard
 import { getUpcomingObligations } from "@/lib/modules/tax-obligations/service";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { DashboardPeriodPicker } from "./_components/dashboard-period-picker";
+import { OnboardingChecklist } from "./_components/onboarding-checklist";
+import { getOnboarding } from "@/lib/modules/onboarding/service";
 import {
   CollectionRateChart,
   ExpenseCategoryChart,
@@ -71,10 +73,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   const to = (searchParams.to && parseDateInput(searchParams.to, true)) || defaultTo;
 
   const canViewTax = !!getScope(session, "taxObligation", "view");
-  const [metrics, charts, upcomingObligations] = await Promise.all([
+  const [metrics, charts, upcomingObligations, onboarding] = await Promise.all([
     getDashboardMetrics(session, from, to),
     getDashboardCharts(session),
     canViewTax ? getUpcomingObligations(session, 5) : Promise.resolve(null),
+    getOnboarding(session),
   ]);
 
   // Trend rozetleri: son 12 ay serisinden bu ay vs geçen ay (yalnız ciro/tahsilat için veri var;
@@ -124,6 +127,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
           {tr.company.suspendedBanner}
         </div>
       )}
+
+      {onboarding && onboarding.steps.length > 0 && <OnboardingChecklist data={onboarding} />}
 
       {metrics.scopedToOwn && <p className="text-xs text-gray-400">Bu rakamlar yalnızca size ait kayıtları içerir.</p>}
 
