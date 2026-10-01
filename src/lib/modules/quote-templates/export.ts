@@ -11,8 +11,8 @@ import { itemNet, sheetTotals } from "./calc";
  */
 export type ExportMode = "customer" | "internal";
 
-const BRAND = "FF6D28D9";
-const BRAND_SOFT = "FFF3EEFF";
+const BRAND = "FF1F2937"; // koyu gri — müşteri belgesinde nötr renk
+const BRAND_SOFT = "FFF2F4F7";
 const GRAY = "FF667085";
 const BORDER = { style: "thin" as const, color: { argb: "FFE4E7EC" } };
 const TL = '#,##0.00 "₺"';
@@ -194,7 +194,7 @@ function buildSheet(wb: ExcelJS.Workbook, content: WorkbookContent, s: TemplateS
     if (g.title) {
       ws.mergeCells(r, 1, r, last);
       ws.getCell(r, 1).value = g.title;
-      ws.getCell(r, 1).font = { bold: true, color: { argb: "FF4C1D95" } };
+      ws.getCell(r, 1).font = { bold: true, color: { argb: "FF111827" } };
       ws.getCell(r, 1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BRAND_SOFT } };
       r++;
     }
