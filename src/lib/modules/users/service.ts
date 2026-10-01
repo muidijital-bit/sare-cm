@@ -3,7 +3,7 @@ import { withTenant, withPlatformBypass } from "@/lib/db/tenant-context";
 import { writeAuditLog } from "@/lib/audit/log";
 import { getScope } from "@/lib/auth/access";
 import type { MembershipRole } from "@/lib/auth/rbac";
-import { hashPassword, validatePassword } from "@/lib/auth/password";
+import { hashPassword, validatePassword, verifyPassword } from "@/lib/auth/password";
 import { generateSecureToken, INVITATION_TOKEN_TTL_MS } from "@/lib/security/tokens";
 import type { TenantSession } from "@/lib/auth/session";
 import type { InviteUserInput, UpdateMembershipInput } from "@/lib/validation/users";
@@ -19,6 +19,8 @@ export interface CompanyUserRow {
   isActive: boolean;
   invitedAt?: Date;
   expiresAt?: Date;
+  /** Davetin süresi dolmuş (kabul edilmemiş) — listede "Süresi doldu" + yeniden gönder. */
+  expired?: boolean;
 }
 
 /** KY-04..KY-08: şirketin aktif üyeleri + bekleyen davetleri birleşik liste. */
@@ -32,8 +34,9 @@ export async function listCompanyUsers(session: TenantSession): Promise<ServiceR
       orderBy: { createdAt: "asc" },
     });
 
+    // Bekleyen + son 30 günde süresi dolmuş (kabul edilmemiş) davetler
     const invitations = await tx.invitationToken.findMany({
-      where: { companyId: session.companyId, acceptedAt: null, expiresAt: { gt: new Date() } },
+      where: { companyId: session.companyId, acceptedAt: null, expiresAt: { gt: new Date(Date.now() - 30 * 86400000) } },
       orderBy: { createdAt: "desc" },
     });
 
@@ -55,6 +58,7 @@ export async function listCompanyUsers(session: TenantSession): Promise<ServiceR
         isActive: true,
         invitedAt: i.createdAt,
         expiresAt: i.expiresAt,
+        expired: i.expiresAt <= new Date(),
       })),
     ];
 
@@ -97,6 +101,33 @@ export async function inviteUser(session: TenantSession, input: InviteUserInput)
     await writeAuditLog(tx, { companyId: session.companyId, userId: session.userId, action: "USER_INVITE", entityType: "invitation", changes: { email: { eski: null, yeni: input.email }, role: { eski: null, yeni: input.role } } });
 
     return { ok: true as const, data: { token, expiresAt } };
+  });
+}
+
+/** Daveti yeniden gönder: yeni bağlantı (eskisi geçersiz olur) ve 72 saat yeni süre. */
+export async function resendInvitation(
+  session: TenantSession,
+  invitationId: string,
+): Promise<ServiceResult<{ token: string; email: string; role: MembershipRole; expiresAt: Date }>> {
+  if (!getScope(session, "userManagement", "create")) return forbidden();
+
+  return withTenant(session.companyId, async (tx) => {
+    const invite = await tx.invitationToken.findFirst({ where: { id: invitationId, companyId: session.companyId, acceptedAt: null } });
+    if (!invite) return notFound("Davet bulunamadı.");
+
+    // Süresi dolmuş davet yeniden açılıyorsa kullanıcı limiti tekrar kontrol edilir
+    if (invite.expiresAt <= new Date()) {
+      const company = await tx.company.findUniqueOrThrow({ where: { id: session.companyId }, include: { plan: true } });
+      const active = await tx.membership.count({ where: { companyId: session.companyId, isActive: true } });
+      const pending = await tx.invitationToken.count({ where: { companyId: session.companyId, acceptedAt: null, expiresAt: { gt: new Date() } } });
+      if (active + pending >= company.plan.maxUsers) return conflict(`Paket kullanıcı limitine (${company.plan.maxUsers}) ulaşıldı.`);
+    }
+
+    const token = generateSecureToken();
+    const expiresAt = new Date(Date.now() + INVITATION_TOKEN_TTL_MS);
+    await tx.invitationToken.update({ where: { id: invite.id }, data: { token, expiresAt, invitedBy: session.userId } });
+    await writeAuditLog(tx, { companyId: session.companyId, userId: session.userId, action: "USER_INVITE", entityType: "invitation", entityId: invite.id, changes: { email: { eski: null, yeni: invite.email }, yenidenGonderim: { eski: null, yeni: true } } });
+    return { ok: true as const, data: { token, email: invite.email, role: invite.role, expiresAt } };
   });
 }
 
@@ -171,6 +202,8 @@ export interface InvitationInfo {
   role: MembershipRole;
   companyName: string;
   valid: boolean;
+  /** Bu e-postayla muiflow hesabı var mı — kabul sayfası şifre belirleme yerine mevcut şifreyi ister. */
+  existingUser: boolean;
 }
 
 /** Davet kabul sayfası için — oturumsuz, bilinçli olarak `withPlatformBypass` kullanır. */
@@ -179,15 +212,13 @@ export async function getInvitationInfo(token: string): Promise<InvitationInfo |
     const invite = await tx.invitationToken.findUnique({ where: { token }, include: { company: { select: { name: true } } } });
     if (!invite) return null;
     const valid = !invite.acceptedAt && invite.expiresAt > new Date();
-    return { email: invite.email, role: invite.role, companyName: invite.company.name, valid };
+    const existingUser = valid ? !!(await tx.user.findUnique({ where: { email: invite.email }, select: { id: true } })) : false;
+    return { email: invite.email, role: invite.role, companyName: invite.company.name, valid, existingUser };
   });
 }
 
 /** KY-04: daveti kabul eder — kullanıcı yoksa oluşturur, üyelik açar. Oturumsuz (public) uçtan çağrılır. */
-export async function acceptInvitation(token: string, name: string, password: string): Promise<ServiceResult<{ email: string }>> {
-  const passwordCheck = validatePassword(password);
-  if (!passwordCheck.valid) return { ok: false, status: 400, message: passwordCheck.errors.join(" ") };
-
+export async function acceptInvitation(token: string, name: string | undefined, password: string): Promise<ServiceResult<{ email: string }>> {
   return withPlatformBypass(async (tx) => {
     const invite = await tx.invitationToken.findUnique({ where: { token } });
     if (!invite) return notFound("Davet bulunamadı.");
@@ -202,9 +233,15 @@ export async function acceptInvitation(token: string, name: string, password: st
     }
 
     let user = await tx.user.findUnique({ where: { email: invite.email } });
-    if (!user) {
+    if (user) {
+      // Hesabı zaten var (başka bir şirketten): yeni şifre belirlemez, mevcut şifresiyle kimliğini doğrular.
+      if (!(await verifyPassword(password, user.passwordHash))) return { ok: false as const, status: 400, message: "Şifre hatalı. Mevcut muiflow şifrenizi girin." };
+    } else {
+      if (!name?.trim()) return { ok: false as const, status: 400, message: "Ad soyad zorunlu." };
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) return { ok: false as const, status: 400, message: passwordCheck.errors.join(" ") };
       const passwordHash = await hashPassword(password);
-      user = await tx.user.create({ data: { email: invite.email, name, passwordHash, isActive: true } });
+      user = await tx.user.create({ data: { email: invite.email, name: name.trim(), passwordHash, isActive: true } });
     }
     // Onay şeması zorunlu tuttuğu için buraya ancak onaylanmış istekle gelinir (bkz. acceptInvitationInputSchema).
     await tx.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date(), termsVersion: LEGAL.version } });

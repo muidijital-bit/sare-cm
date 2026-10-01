@@ -11,7 +11,7 @@ import "dotenv/config";
 import { randomUUID } from "crypto";
 import { prisma } from "../src/lib/db/prisma";
 import { withPlatformBypass } from "../src/lib/db/tenant-context";
-import { inviteUser, acceptInvitation, updateMembership, listCompanyUsers, cancelInvitation } from "../src/lib/modules/users/service";
+import { inviteUser, acceptInvitation, updateMembership, listCompanyUsers, cancelInvitation, resendInvitation, getInvitationInfo } from "../src/lib/modules/users/service";
 import type { TenantSession } from "../src/lib/auth/session";
 
 const DEMO_COMPANY_ID = "00000000-0000-0000-0000-000000000002";
@@ -103,6 +103,35 @@ async function main() {
     const invites = await withPlatformBypass((tx) => tx.invitationToken.findMany({ where: { companyId: DEMO_COMPANY_ID, email: secondEmail } }));
     const cancelResult = await cancelInvitation(ownerSession, invites[0].id);
     assert(cancelResult.ok, "Davet iptal edildi");
+  }
+
+  // 12) Süresi dolan davet + yeniden gönder + hesabı olan kullanıcının mevcut şifresiyle kabulü
+  if (newMembership) {
+    await updateMembership(ownerSession, newMembership.id, { isActive: false });
+    const again = await inviteUser(ownerSession, { email: testEmail, role: "VIEWER" });
+    assert(again.ok, "Pasif üyeye yeniden davet oluşturuldu");
+    if (again.ok) {
+      await withPlatformBypass((tx) => tx.invitationToken.updateMany({ where: { token: again.data.token }, data: { expiresAt: new Date(Date.now() - 60_000) } }));
+      const list = await listCompanyUsers(ownerSession);
+      const row = list.ok ? list.data.find((r) => r.kind === "invitation" && r.email === testEmail) : undefined;
+      assert(!!row?.expired, "Süresi dolan davet listede 'süresi doldu' olarak görünüyor");
+      const denied = await resendInvitation(salesSession, row!.id);
+      assert(!denied.ok && denied.status === 403, "SALES daveti yeniden gönderemiyor (403)");
+      const resent = await resendInvitation(ownerSession, row!.id);
+      assert(resent.ok && resent.data.token !== again.data.token && resent.data.expiresAt > new Date(), "Yeniden gönderim: yeni bağlantı ve yeni süre");
+      const oldInfo = await getInvitationInfo(again.data.token);
+      assert(oldInfo === null, "Eski davet bağlantısı artık geçersiz");
+      if (resent.ok) {
+        const info = await getInvitationInfo(resent.data.token);
+        assert(!!info?.valid && info.existingUser, "Kabul sayfası hesabın zaten var olduğunu biliyor");
+        const wrong = await acceptInvitation(resent.data.token, undefined, "YanlisSifre#1");
+        assert(!wrong.ok && wrong.status === 400, "Hesabı olan kullanıcı yanlış şifreyle kabul edemiyor");
+        const right = await acceptInvitation(resent.data.token, undefined, "GucluSifre#2026");
+        assert(right.ok, "Hesabı olan kullanıcı mevcut şifresiyle daveti kabul etti");
+        const m = await withPlatformBypass((tx) => tx.membership.findUnique({ where: { id: newMembership.id } }));
+        assert(!!m?.isActive && m.role === "VIEWER", "Üyelik yeniden aktif, yeni rol uygulandı");
+      }
+    }
   }
 
   // Temizlik

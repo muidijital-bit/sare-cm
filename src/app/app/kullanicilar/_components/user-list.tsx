@@ -5,6 +5,7 @@ import { useState } from "react";
 import { tr } from "@/lib/i18n/tr";
 import { Badge, ROLE_COLORS } from "@/components/ui/badge";
 import type { MembershipRole } from "@/lib/auth/rbac";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/ui/sweetalert";
 
 export interface UserRow {
   kind: "member" | "invitation";
@@ -14,6 +15,7 @@ export interface UserRow {
   role: MembershipRole;
   isActive: boolean;
   expiresAt?: string;
+  expired?: boolean;
 }
 
 const ROLE_OPTIONS: MembershipRole[] = ["OWNER", "ADMIN", "SALES", "ACCOUNTING", "VIEWER"];
@@ -46,6 +48,17 @@ export function UserList({ rows }: { rows: UserRow[] }) {
       setError(body.error ?? tr.common.error);
       return;
     }
+    router.refresh();
+  }
+
+  async function resendInvitation(row: UserRow) {
+    setBusyId(row.id);
+    const res = await fetch(`/api/users/invitations/${row.id}/resend`, { method: "POST" });
+    const body = await res.json().catch(() => ({}));
+    setBusyId(null);
+    if (!res.ok) return notifyError(body.error ?? tr.common.error);
+    if (body.emailSent) await notifySuccess(`Davet e-postası ${row.email} adresine yeniden gönderildi.`);
+    else await notifyInfo(`E-posta gönderilemedi. Bu bağlantıyı kişiye siz iletin (72 saat geçerli):\n\n${body.inviteUrl}`, "Yeni davet bağlantısı");
     router.refresh();
   }
 
@@ -102,7 +115,11 @@ export function UserList({ rows }: { rows: UserRow[] }) {
               </td>
               <td className="px-4 py-3">
                 {row.kind === "invitation" ? (
-                  <Badge color="amber">{tr.users.pending}</Badge>
+                  row.expired ? (
+                    <Badge color="red">Süresi doldu</Badge>
+                  ) : (
+                    <Badge color="amber">{tr.users.pending}</Badge>
+                  )
                 ) : row.isActive ? (
                   <Badge color="green">{tr.users.active}</Badge>
                 ) : (
@@ -111,9 +128,14 @@ export function UserList({ rows }: { rows: UserRow[] }) {
               </td>
               <td className="px-4 py-3 text-right">
                 {row.kind === "invitation" ? (
-                  <button onClick={() => cancelInvitation(row.id)} disabled={busyId === row.id} className="text-xs text-red-600 hover:underline disabled:opacity-50">
-                    {tr.customer.delete}
-                  </button>
+                  <span className="inline-flex gap-3">
+                    <button onClick={() => resendInvitation(row)} disabled={busyId === row.id} className="text-xs font-medium text-brand-700 hover:underline disabled:opacity-50">
+                      Yeniden gönder
+                    </button>
+                    <button onClick={() => cancelInvitation(row.id)} disabled={busyId === row.id} className="text-xs text-red-600 hover:underline disabled:opacity-50">
+                      {tr.customer.delete}
+                    </button>
+                  </span>
                 ) : (
                   <button
                     onClick={() => toggleActive(row.id, !row.isActive)}

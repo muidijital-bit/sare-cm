@@ -10,6 +10,7 @@ interface InvitationInfo {
   role: string;
   companyName: string;
   valid: boolean;
+  existingUser: boolean;
 }
 
 export default function DavetKabulPage({ params }: { params: { token: string } }) {
@@ -37,7 +38,7 @@ export default function DavetKabulPage({ params }: { params: { token: string } }
     const res = await fetch("/api/invitations/accept", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: params.token, name, password, acceptTerms }),
+      body: JSON.stringify({ token: params.token, name: info?.existingUser ? undefined : name, password, acceptTerms }),
     });
     const body = await res.json().catch(() => ({}));
     setSubmitting(false);
@@ -72,7 +73,13 @@ export default function DavetKabulPage({ params }: { params: { token: string } }
               <span className="text-xs text-gray-400">{info.email}</span>
             </p>
 
+            {info.existingUser && (
+              <p className="rounded-md bg-gray-50 px-3 py-2 text-xs leading-5 text-gray-600">
+                Bu e-postayla zaten bir muiflow hesabınız var. Daveti kabul etmek için mevcut şifrenizi girin; giriş yaptıktan sonra şirketler arasında geçiş yapabilirsiniz.
+              </p>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {!info.existingUser && (
               <div>
                 <label className="block text-sm font-medium text-gray-700">{tr.users.acceptName}</label>
                 <input
@@ -82,12 +89,13 @@ export default function DavetKabulPage({ params }: { params: { token: string } }
                   className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
                 />
               </div>
+              )}
               <div>
-                <label className="block text-sm font-medium text-gray-700">{tr.users.acceptPassword}</label>
+                <label className="block text-sm font-medium text-gray-700">{info.existingUser ? "Mevcut şifreniz" : tr.users.acceptPassword}</label>
                 <input
                   type="password"
                   required
-                  minLength={10}
+                  minLength={info.existingUser ? 1 : 10}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
@@ -115,7 +123,7 @@ export default function DavetKabulPage({ params }: { params: { token: string } }
                 disabled={submitting || !acceptTerms}
                 className="w-full rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
               >
-                {submitting ? tr.common.loading : tr.users.acceptSubmit}
+                {submitting ? tr.common.loading : info.existingUser ? "Daveti kabul et" : tr.users.acceptSubmit}
               </button>
             </form>
           </>

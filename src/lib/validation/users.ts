@@ -17,7 +17,8 @@ export type UpdateMembershipInput = z.infer<typeof updateMembershipInputSchema>;
 
 export const acceptInvitationInputSchema = z.object({
   token: z.string().min(1),
-  name: z.string().trim().min(1, "Ad soyad zorunlu").max(200),
+  // Hesabı olan kullanıcıda ad istenmez (mevcut şifreyle kabul eder); yeni kullanıcıda serviste zorunlu.
+  name: z.string().trim().max(200).optional(),
   password: z.string().min(1),
   /** Kullanım Koşulları + KVKK Aydınlatma Metni onayı — zorunlu (ispat için tarih/sürüm kaydedilir). */
   acceptTerms: z.literal(true, { errorMap: () => ({ message: "Devam etmek için Kullanım Koşulları ve KVKK Aydınlatma Metni'ni onaylayın." }) }),

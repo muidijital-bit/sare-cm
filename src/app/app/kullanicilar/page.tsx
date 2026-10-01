@@ -36,6 +36,7 @@ export default async function KullanicilarPage() {
           name: r.name,
           role: r.role,
           isActive: r.isActive,
+          expired: r.expired,
         }))}
       />
     </div>
