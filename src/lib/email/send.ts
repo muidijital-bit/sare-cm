@@ -5,7 +5,9 @@
  * Ortam değişkenleri:
  * - RESEND_API_KEY : tanımsızsa e-posta GÖNDERİLMEZ (sessizce `{ sent: false }` döner) — yerel geliştirme
  *                    ve anahtar henüz eklenmemiş ortamlar eskisi gibi çalışır (bağlantı UI'da gösterilir).
- * - EMAIL_FROM     : gönderen, örn. `muiflow <bildirim@muiflow.com>` (alan adı Resend'de doğrulanmış olmalı).
+ * - EMAIL_FROM     : gönderen, örn. `muiflow <bildirim@muiflow.com>` (alan adı Resend'de doğrulanmış olmalı;
+ *                    bu adreste gerçek bir posta kutusu olması GEREKMEZ).
+ * - EMAIL_REPLY_TO : isteğe bağlı — alıcı "Yanıtla" derse yanıtın gideceği gerçek adres (örn. destek kutusu).
  *
  * Gönderim hatası çağıranın işlemini BOZMAZ (davet/sıfırlama kaydı zaten oluşmuştur); hata loglanır ve
  * `{ sent: false }` döner — çağıran gerekirse bağlantıyı UI'da göstermeye devam eder.
@@ -31,6 +33,7 @@ export async function sendEmail(input: { to: string; subject: string; html: stri
       body: JSON.stringify({
         from: process.env.EMAIL_FROM ?? "muiflow <bildirim@muiflow.com>",
         to: [input.to],
+        ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
         subject: input.subject,
         html: input.html,
         text: input.text,
