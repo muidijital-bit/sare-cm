@@ -53,6 +53,23 @@ export async function updateCompanySettings(session: TenantSession, input: Compa
   });
 }
 
+/** Firma logosu — üst çubukta firma adının yanında ve yeni teklif şablonlarında varsayılan olarak kullanılır. */
+export async function updateCompanyLogo(session: TenantSession, logoUrl: string | null): Promise<ServiceResult<{ id: string }>> {
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
+  return withTenant(session.companyId, async (tx) => {
+    await tx.company.update({ where: { id: session.companyId }, data: { logoUrl } });
+    await writeAuditLog(tx, {
+      companyId: session.companyId,
+      userId: session.userId,
+      action: "UPDATE",
+      entityType: "company",
+      entityId: session.companyId,
+      changes: { logo: { eski: null, yeni: logoUrl ? "yüklendi" : "kaldırıldı" } },
+    });
+    return { ok: true as const, data: { id: session.companyId } };
+  });
+}
+
 // =========================================================
 // SA-04/05/06: Kaynak / Kategori / Hesap CRUD (ortak desen)
 // =========================================================

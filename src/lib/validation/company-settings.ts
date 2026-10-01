@@ -15,6 +15,15 @@ export const companySettingsInputSchema = z.object({
 
 export type CompanySettingsInput = z.infer<typeof companySettingsInputSchema>;
 
+/** Firma logosu: tarayıcıda küçültülmüş PNG/JPEG data URL (≈300 KB sınırı) ya da null (kaldır). */
+export const companyLogoInputSchema = z.object({
+  logoUrl: z
+    .string()
+    .max(400_000, "Logo çok büyük; daha küçük bir görsel deneyin.")
+    .regex(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/, "Geçersiz görsel (PNG veya JPG yükleyin).")
+    .nullable(),
+});
+
 /** SA-04/SA-05/SA-06: basit adlandırılmış referans kayıtları (kaynak/kategori/hesap) ortak şeması. */
 export const namedRefInputSchema = z.object({
   name: z.string().trim().min(1, "Ad zorunlu").max(200),

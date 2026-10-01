@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Kullanım Koşulları · muiflow" };
+export const metadata: Metadata = { title: "Kullanım Koşulları" };
 
 export default function KullanimKosullariPage() {
   return (

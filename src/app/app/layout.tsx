@@ -2,6 +2,7 @@ import { getTenantSession } from "@/lib/auth/session";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { TermsBanner } from "@/components/legal/terms-banner";
 import { prisma } from "@/lib/db/prisma";
+import { withTenant } from "@/lib/db/tenant-context";
 import { LEGAL } from "@/lib/legal";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -14,12 +15,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   // Güncel yasal metin sürümü onaylanmamışsa (eski kullanıcılar / metin güncellemesi) şerit gösterilir.
-  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { termsVersion: true } });
+  const [user, company] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.userId }, select: { termsVersion: true } }),
+    withTenant(session.companyId, (tx) => tx.company.findUnique({ where: { id: session.companyId }, select: { logoUrl: true } })),
+  ]);
   const needsTerms = user?.termsVersion !== LEGAL.version;
 
   return (
     <AppShell
       companyName={session.companyName}
+      companyLogo={company?.logoUrl ?? null}
       role={session.role}
       userName={session.userName}
       userEmail={session.userEmail}

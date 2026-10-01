@@ -5,6 +5,7 @@ import { withTenant } from "@/lib/db/tenant-context";
 import { getScope } from "@/lib/auth/access";
 import { tr } from "@/lib/i18n/tr";
 import { CompanyInfoForm } from "./_components/company-info-form";
+import { CompanyLogoForm } from "./_components/company-logo-form";
 import { NamedRefList } from "./_components/named-ref-list";
 import { AccountList } from "./_components/account-list";
 
@@ -29,6 +30,8 @@ export default async function AyarlarPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-gray-800">{tr.settings.title}</h1>
+
+      <CompanyLogoForm initialLogo={company.logoUrl} canEdit={!!getScope(session, "companySettings", "edit")} />
 
       <CompanyInfoForm
         initialValues={{

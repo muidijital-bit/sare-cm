@@ -13,6 +13,8 @@ import { LEGAL_LINKS } from "@/lib/legal";
 
 interface AppShellProps {
   companyName: string;
+  /** Firma logosu (Şirket Ayarları) — üst çubukta firma adının solunda. */
+  companyLogo: string | null;
   role: MembershipRole;
   userName: string;
   userEmail: string;
@@ -58,7 +60,7 @@ function LogoMark({ compact = false }: { compact?: boolean }) {
   return <img src={BRAND.logoDark} alt={BRAND.name} className="h-6 w-auto shrink-0" />;
 }
 
-export function AppShell({ companyName, role, userName, userEmail, hasMultipleCompanies, enabledModules, children }: AppShellProps) {
+export function AppShell({ companyName, companyLogo, role, userName, userEmail, hasMultipleCompanies, enabledModules, children }: AppShellProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -229,9 +231,15 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
       {/* Ana kolon: header + içerik + footer */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:h-screen lg:min-h-0">
         <header className="hidden flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3 shadow-theme-xs sm:px-6 lg:flex">
-          <div>
-            <p className="text-theme-sm font-semibold text-gray-800">{companyName}</p>
-            <p className="text-theme-xs text-gray-500">{role}</p>
+          <div className="flex items-center gap-3">
+            {companyLogo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={companyLogo} alt="" className="h-9 max-w-[120px] object-contain" />
+            )}
+            <div>
+              <p className="text-theme-sm font-semibold text-gray-800">{companyName}</p>
+              <p className="text-theme-xs text-gray-500">{role}</p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             {hasMultipleCompanies && (
@@ -258,7 +266,11 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
         </header>
 
         {/* Mobilde şirket adı — üst çubuğun kalabalıklaşmaması için ince bir şerit */}
-        <div className="border-b border-gray-200 bg-white px-4 py-2 sm:px-6 lg:hidden">
+        <div className="flex items-center gap-2 border-b border-gray-200 bg-white px-4 py-2 sm:px-6 lg:hidden">
+          {companyLogo && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={companyLogo} alt="" className="h-6 max-w-[80px] object-contain" />
+          )}
           <p className="truncate text-sm font-semibold text-gray-800">{companyName}</p>
         </div>
 

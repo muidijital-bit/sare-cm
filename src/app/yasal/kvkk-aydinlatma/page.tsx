@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "KVKK Aydınlatma Metni · muiflow" };
+export const metadata: Metadata = { title: "KVKK Aydınlatma Metni" };
 
 export default function KvkkAydinlatmaPage() {
   return (

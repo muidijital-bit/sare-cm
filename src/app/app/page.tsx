@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ComponentType } from "react";
@@ -59,6 +60,8 @@ function parseDateInput(value: string, endOfDay: boolean): Date | null {
     ? new Date(Number(y), Number(m) - 1, Number(d), 23, 59, 59, 999)
     : new Date(Number(y), Number(m) - 1, Number(d), 0, 0, 0, 0);
 }
+
+export const metadata: Metadata = { title: "Panel" };
 
 export default async function DashboardPage({ searchParams }: { searchParams: { from?: string; to?: string } }) {
   const session = await getTenantSession();

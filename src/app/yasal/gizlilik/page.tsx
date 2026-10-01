@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Gizlilik ve Çerez Politikası · muiflow" };
+export const metadata: Metadata = { title: "Gizlilik ve Çerez Politikası" };
 
 export default function GizlilikPage() {
   return (

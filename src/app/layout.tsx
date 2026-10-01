@@ -11,7 +11,8 @@ import { tr } from "@/lib/i18n/tr";
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
 
 export const metadata: Metadata = {
-  title: tr.common.appName,
+  // Sayfa/modül layout'larındaki başlık "Ürünler · muiflow" olarak sekmede görünür.
+  title: { default: tr.common.appName, template: `%s · ${tr.common.appName}` },
   description: "Çok şirketli CRM & satış yönetimi platformu",
 };
 
