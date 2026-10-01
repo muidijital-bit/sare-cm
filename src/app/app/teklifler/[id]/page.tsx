@@ -6,6 +6,7 @@ import { getScope } from "@/lib/auth/access";
 import { tr, formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { Badge, QUOTE_STATUS_COLORS } from "@/components/ui/badge";
 import { QuoteActions } from "../_components/quote-actions";
+import { withTenant } from "@/lib/db/tenant-context";
 
 export default async function TeklifDetayPage({ params }: { params: { id: string } }) {
   const session = await getTenantSession();
@@ -17,6 +18,10 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
 
   const canEdit = !!getScope(session, "quote", "edit") && (getScope(session, "quote", "edit") === "all" || quote.ownerUserId === session.userId);
   const canConvert = !!getScope(session, "order", "create");
+  // Teklif Şablonları'ndan dönüştürüldüyse: sayfalı (logolu, antetli) teklif belgesi
+  const workbook = await withTenant(session.companyId, (tx) =>
+    tx.quoteWorkbook.findFirst({ where: { convertedQuoteId: quote.id, deletedAt: null }, select: { id: true } }),
+  );
 
   return (
     <div>
@@ -30,7 +35,17 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {workbook && (
+            <>
+              <Link href={`/app/teklif-sablonlari/${workbook.id}`} className="rounded-lg border border-violet-200 px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-50">
+                Sayfalı teklifi aç
+              </Link>
+              <a href={`/api/quote-templates/${workbook.id}/export?mode=customer`} className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50">
+                Excel (sayfalı)
+              </a>
+            </>
+          )}
           {quote.status === "DRAFT" && canEdit && (
             <Link href={`/app/teklifler/${quote.id}/duzenle`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
               {tr.quote.edit}

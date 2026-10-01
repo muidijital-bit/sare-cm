@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Copy, Download, FilePlus, Trash2 } from "react-feather";
+import { Copy, Download, Edit2, FilePlus, Trash2 } from "react-feather";
 import { confirmDelete, notifyError } from "@/lib/ui/sweetalert";
 
 async function call(url: string, method: string, body?: unknown) {
@@ -54,6 +55,13 @@ export function TemplateRowActions({
       <a href={`/api/quote-templates/${id}/export?mode=customer`} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50" title="Excel (müşteri sürümü)">
         <Download size={13} /> Excel
       </a>
+      <Link
+        href={`/app/teklif-sablonlari/${id}`}
+        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+        title={canManage ? "Şablonu düzenle" : "Şablonu görüntüle"}
+      >
+        <Edit2 size={13} /> {canManage ? "Düzenle" : "Görüntüle"}
+      </Link>
       {canManage && (
         <>
           <button

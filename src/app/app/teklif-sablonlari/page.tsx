@@ -6,7 +6,6 @@ import { withTenant } from "@/lib/db/tenant-context";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { Badge } from "@/components/ui/badge";
 import { canManageTemplates, listWorkbooks } from "@/lib/modules/quote-templates/service";
-import { workbookContentSchema } from "@/lib/modules/quote-templates/types";
 import { formatCurrencyTRY, formatDateTR } from "@/lib/i18n/tr";
 import { TemplateRowActions, DeleteButton } from "./_components/workbook-actions";
 
@@ -21,7 +20,7 @@ export default async function TeklifSablonlariPage({ searchParams }: { searchPar
   const canPrepare = !!getScope(session, "quote", "create");
   const canDelete = !!getScope(session, "quote", "delete");
 
-  const [result, customers, templates] = await Promise.all([
+  const [result, customers] = await Promise.all([
     listWorkbooks(session, tab, searchParams.q),
     canPrepare && tab === "TEMPLATE"
       ? withTenant(session.companyId, (tx) =>
@@ -32,12 +31,8 @@ export default async function TeklifSablonlariPage({ searchParams }: { searchPar
           }),
         )
       : Promise.resolve([]),
-    tab === "TEMPLATE"
-      ? withTenant(session.companyId, (tx) => tx.quoteWorkbook.findMany({ where: { kind: "TEMPLATE", deletedAt: null }, select: { id: true, content: true } }))
-      : Promise.resolve([]),
   ]);
   if (!result.ok) return <p className="text-sm text-red-600">{result.message}</p>;
-  const sheetNamesById = new Map(templates.map((t) => [t.id, workbookContentSchema.parse(t.content).sheets.map((s) => s.name)]));
   const rows = result.data;
 
   return (
@@ -134,9 +129,12 @@ export default async function TeklifSablonlariPage({ searchParams }: { searchPar
                 <td className="px-4 py-3 text-gray-500">{formatDateTR(new Date(r.updatedAt))}</td>
                 <td className="px-4 py-3">
                   {tab === "TEMPLATE" ? (
-                    <TemplateRowActions id={r.id} sheetNames={sheetNamesById.get(r.id) ?? []} customers={customers} canPrepare={canPrepare} canManage={canManage} />
+                    <TemplateRowActions id={r.id} sheetNames={r.sheetNames} customers={customers} canPrepare={canPrepare} canManage={canManage} />
                   ) : (
                     <div className="flex justify-end gap-1.5">
+                      <Link href={`/app/teklif-sablonlari/${r.id}`} className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                        Düzenle
+                      </Link>
                       <a href={`/api/quote-templates/${r.id}/export?mode=customer`} className="rounded-lg border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50">
                         Excel
                       </a>

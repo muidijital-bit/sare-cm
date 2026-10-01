@@ -33,6 +33,7 @@ export interface WorkbookRow {
   customerTitle: string | null;
   sheetCount: number;
   total: number;
+  sheetNames: string[];
   convertedQuoteId: string | null;
   quoteNo: string;
   updatedAt: Date;
@@ -41,6 +42,8 @@ export interface WorkbookRow {
 export async function listWorkbooks(session: TenantSession, kind: QuoteWorkbookKind, q?: string): Promise<ServiceResult<WorkbookRow[]>> {
   if (!getScope(session, "quote", "view")) return forbidden();
   return withTenant(session.companyId, async (tx) => {
+    // İçerik (logo + tüm sayfalar) liste için çekilmez: önce satırlar, sonra yalnızca sayfalar ve
+    // müşteri bilgisi (antet/logo hariç) — logolu şablonlarda liste sorgusu MB'larca veri taşıyordu.
     const rows = await tx.quoteWorkbook.findMany({
       where: {
         ...scopeWhere(session, kind),
@@ -48,18 +51,24 @@ export async function listWorkbooks(session: TenantSession, kind: QuoteWorkbookK
       },
       orderBy: { updatedAt: "desc" },
       take: 500,
-      include: { customer: { select: { title: true } } },
+      select: { id: true, name: true, description: true, convertedQuoteId: true, updatedAt: true, customer: { select: { title: true } } },
     });
+    const ids = rows.map((r) => r.id);
+    const parts = ids.length
+      ? await tx.$queryRaw<{ id: string; c: unknown }[]>`SELECT id::text AS id, (content - 'branding' - 'cover') AS c FROM quote_workbooks WHERE id = ANY(${ids}::uuid[])`
+      : [];
+    const byId = new Map(parts.map((x) => [x.id, workbookContentSchema.parse(x.c)]));
     return {
       ok: true as const,
       data: rows.map((r) => {
-        const content = workbookContentSchema.parse(r.content);
+        const content = byId.get(r.id) ?? workbookContentSchema.parse({});
         return {
           id: r.id,
           name: r.name,
           description: r.description,
           customerTitle: r.customer?.title ?? null,
           sheetCount: content.sheets.length,
+          sheetNames: content.sheets.map((sh) => sh.name),
           total: workbookTotal(content),
           convertedQuoteId: r.convertedQuoteId,
           quoteNo: content.customer.quoteNo,
@@ -102,7 +111,7 @@ export async function getWorkbook(session: TenantSession, id: string): Promise<S
         updatedAt: r.updatedAt,
       },
     };
-  });
+  }, WRITE_TX);
 }
 
 function canWrite(session: TenantSession, kind: QuoteWorkbookKind, ownerUserId?: string): boolean {
@@ -270,5 +279,5 @@ export async function convertToSalesQuote(session: TenantSession, id: string): P
     const content = { ...wb.data.content, customer: { ...wb.data.content.customer, quoteNo: quote.number } };
     await tx.quoteWorkbook.update({ where: { id }, data: { convertedQuoteId: created.data.id, content: content as Prisma.InputJsonValue, updatedBy: session.userId } });
     return { ok: true as const, data: { quoteId: created.data.id, number: quote.number } };
-  });
+  }, WRITE_TX);
 }
