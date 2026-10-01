@@ -18,12 +18,32 @@ const BORDER = { style: "thin" as const, color: { argb: "FFE4E7EC" } };
 const TL = '#,##0.00 "₺"';
 const CUR: Record<string, string> = { TRY: TL, EUR: '#,##0.00 "€"', USD: '"$"#,##0.00' };
 
-function addLogo(wb: ExcelJS.Workbook, ws: ExcelJS.Worksheet, dataUrl: string, col: number, row: number, widthPx = 170) {
+/** PNG/JPEG başlığından gerçek piksel boyutu (logo oranı bozulmasın diye). */
+function imageSize(buf: Buffer): { w: number; h: number } | null {
+  if (buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47) return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+  if (buf[0] === 0xff && buf[1] === 0xd8) {
+    let i = 2;
+    while (i + 9 < buf.length) {
+      if (buf[i] !== 0xff) return null;
+      const marker = buf[i + 1];
+      const len = buf.readUInt16BE(i + 2);
+      // SOF0..SOF15 (DHT/JPG/DAC hariç) → yükseklik, genişlik
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) return { w: buf.readUInt16BE(i + 7), h: buf.readUInt16BE(i + 5) };
+      i += 2 + len;
+    }
+  }
+  return null;
+}
+
+/** Logo, en/boy oranı korunarak maxW × maxH kutusuna sığdırılır. */
+function addLogo(wb: ExcelJS.Workbook, ws: ExcelJS.Worksheet, dataUrl: string, col: number, row: number, maxW = 170, maxH = 62) {
   const m = /^data:image\/(png|jpe?g|gif);base64,(.+)$/i.exec(dataUrl || "");
   if (!m) return;
   const ext = m[1].toLowerCase() === "jpg" ? "jpeg" : (m[1].toLowerCase() as "png" | "jpeg" | "gif");
+  const size = imageSize(Buffer.from(m[2], "base64")) ?? { w: 100, h: 42 };
+  const scale = Math.min(maxW / size.w, maxH / size.h);
   const id = wb.addImage({ base64: m[2], extension: ext });
-  ws.addImage(id, { tl: { col, row }, ext: { width: widthPx, height: Math.round(widthPx * 0.42) } });
+  ws.addImage(id, { tl: { col, row }, ext: { width: Math.round(size.w * scale), height: Math.round(size.h * scale) } });
 }
 
 function pageSetup(ws: ExcelJS.Worksheet, content: WorkbookContent) {
@@ -164,7 +184,7 @@ function buildSheet(wb: ExcelJS.Workbook, content: WorkbookContent, s: TemplateS
   pageSetup(ws, content);
   const cur = CUR[s.pricing.currency] ?? TL;
 
-  addLogo(wb, ws, content.branding.logoDataUrl, 0, 0, 130);
+  addLogo(wb, ws, content.branding.logoDataUrl, 0, 0, 130, 50);
   let r = 4;
   ws.mergeCells(r, 1, r, last);
   const title = ws.getCell(r, 1);
