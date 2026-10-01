@@ -4,6 +4,7 @@ import { writeAuditLog, diffFields } from "@/lib/audit/log";
 import { getScope } from "@/lib/auth/access";
 import type { TenantSession } from "@/lib/auth/session";
 import type { CompanySettingsInput } from "@/lib/validation/company-settings";
+import { type ThemeKey, themeKeyOf } from "@/lib/theme";
 import { type ServiceResult, forbidden, notFound, conflict } from "@/lib/modules/result";
 
 /** SA-01/02/03/07: Şirket ayarlarını getirir/güncelleri. */
@@ -65,6 +66,26 @@ export async function updateCompanyLogo(session: TenantSession, logoUrl: string 
       entityType: "company",
       entityId: session.companyId,
       changes: { logo: { eski: null, yeni: logoUrl ? "yüklendi" : "kaldırıldı" } },
+    });
+    return { ok: true as const, data: { id: session.companyId } };
+  });
+}
+
+/** Tema rengi (5 hazır seçenek) — companies.settings.themeColor. */
+export async function updateCompanyTheme(session: TenantSession, theme: ThemeKey): Promise<ServiceResult<{ id: string }>> {
+  if (!getScope(session, "companySettings", "edit")) return forbidden();
+  return withTenant(session.companyId, async (tx) => {
+    const c = await tx.company.findUniqueOrThrow({ where: { id: session.companyId }, select: { settings: true } });
+    const prev = themeKeyOf(c.settings);
+    const settings = { ...((c.settings ?? {}) as Record<string, unknown>), themeColor: theme };
+    await tx.company.update({ where: { id: session.companyId }, data: { settings: settings as Prisma.InputJsonValue } });
+    await writeAuditLog(tx, {
+      companyId: session.companyId,
+      userId: session.userId,
+      action: "UPDATE",
+      entityType: "company",
+      entityId: session.companyId,
+      changes: { themeColor: { eski: prev, yeni: theme } },
     });
     return { ok: true as const, data: { id: session.companyId } };
   });

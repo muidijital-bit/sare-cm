@@ -47,7 +47,7 @@ export default async function ProjeDetayPage({ params }: { params: { id: string 
     : [[], []];
 
   const costParts = [
-    { label: tr.project.summary.material, value: s.materialCost, color: "bg-violet-500" },
+    { label: tr.project.summary.material, value: s.materialCost, color: "bg-brand-500" },
     { label: tr.project.summary.labor, value: s.laborCost, color: "bg-sky-500" },
     { label: tr.project.summary.expense, value: s.expenseCost, color: "bg-amber-500" },
     { label: tr.project.summary.orderLineCost, value: s.orderLineCost, color: "bg-fuchsia-500" },

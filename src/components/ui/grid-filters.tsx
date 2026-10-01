@@ -83,7 +83,7 @@ export function GridFilters({ exportKey, search, rowCount, total, selects = [], 
             key={s.param}
             value={searchParams.get(s.param) ?? ""}
             onChange={(e) => update({ [s.param]: e.target.value })}
-            className={`${CONTROL} ${searchParams.get(s.param) ? "border-violet-300 bg-violet-50/60" : ""}`}
+            className={`${CONTROL} ${searchParams.get(s.param) ? "border-brand-300 bg-brand-50/60" : ""}`}
           >
             <option value="">{s.placeholder}</option>
             {s.options.map((o) => (
@@ -122,7 +122,7 @@ export function GridFilters({ exportKey, search, rowCount, total, selects = [], 
                   ["year", "Bu yıl"],
                 ] as const
               ).map(([k, l]) => (
-                <button key={k} type="button" onClick={() => preset(k)} className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:border-violet-300 hover:text-violet-700">
+                <button key={k} type="button" onClick={() => preset(k)} className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:border-brand-300 hover:text-brand-700">
                   {l}
                 </button>
               ))}

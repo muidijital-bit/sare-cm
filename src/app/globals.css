@@ -6,6 +6,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tema rengi varsayılanı (mor) — /app içinde firma seçimine göre layout'ta ezilir (src/lib/theme.ts). */
+:root {
+  --brand-25: 248 245 255;
+  --brand-50: 241 235 255;
+  --brand-100: 228 216 255;
+  --brand-200: 203 179 255;
+  --brand-300: 171 130 255;
+  --brand-400: 144 97 250;
+  --brand-500: 124 58 237;
+  --brand-600: 109 40 217;
+  --brand-700: 91 33 182;
+  --brand-800: 76 29 149;
+  --brand-900: 59 19 112;
+  --brand-950: 42 14 82;
+}
+
+
 /*
  * V1 arayüzü şimdilik yalnızca açık (light) tema için tasarlandı — koyu tema desteği
  * §9 Fonksiyonel Olmayan İsterler kapsamında yok. `color-scheme: light` olmadan,
@@ -43,13 +60,13 @@ body {
  * üzerindeyken vurgu zebra rengini ezer. Tablo dışı listeler etkilenmez.
  */
 main table tbody tr:nth-child(even) {
-  background-color: #f6f4fe; /* violet-50 tonunda — beyaz satırlarla net ayrışır */
+  background-color: rgb(var(--brand-25)); /* tema renginin en açık tonu — beyaz satırlarla ayrışır */
 }
 main table tbody tr {
   transition: background-color 0.12s ease;
 }
 main table tbody tr:hover {
-  background-color: #ede9fe; /* violet-100 */
+  background-color: rgb(var(--brand-50));
 }
 main table thead th {
   font-weight: 600;

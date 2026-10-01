@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Copy, Download, FileText, Plus, Trash2, X } from "react-feather";
 import { formatCurrencyTRY } from "@/lib/i18n/tr";
 import { notifyError, confirmDelete } from "@/lib/ui/sweetalert";
+import { isLightLogo, prepareLogo, readFileAsDataUrl, withDarkBackground } from "@/lib/ui/logo";
 import {
   CURRENCIES,
   emptySheet,
@@ -141,25 +142,28 @@ export function WorkbookEditor({ kind, id, initial, customers = [], canEdit, can
 
   async function onLogo(file: File) {
     if (!/^image\/(png|jpe?g|gif|webp|svg\+xml)$/.test(file.type)) return notifyError("PNG, JPG veya SVG yükleyin.");
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload = () => resolve(String(fr.result));
-      fr.onerror = reject;
-      fr.readAsDataURL(file);
-    });
-    // Büyük görselleri 600 px genişliğe küçült (PNG) — veritabanı ve Excel boyutu küçük kalsın.
-    const img = new Image();
-    img.src = dataUrl;
-    await img.decode();
-    const scale = Math.min(1, 600 / img.width);
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
-    canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const out = canvas.toDataURL("image/png");
+    // 600 px'e küçült, beyaz zemini şeffaflaştır, logo kadar kırp. Excel sayfası beyaz olduğundan açık
+    // renkli (beyaz) logo koyu, yuvarlatılmış bir zemine oturtulur.
+    const { dataUrl, light } = await prepareLogo(await readFileAsDataUrl(file), 600);
+    const out = light ? await withDarkBackground(dataUrl) : dataUrl;
     if (out.length > 590_000) return notifyError("Logo çok büyük; daha küçük bir görsel deneyin.");
     update((c) => (c.branding.logoDataUrl = out));
   }
+
+  // Yeni şablon: antete Şirket Ayarları'ndaki logo gelir — açık renkliyse Excel'de görünsün diye koyu zemine oturtulur.
+  useEffect(() => {
+    const logo = initial.content.branding.logoDataUrl;
+    if (id || !logo) return;
+    isLightLogo(logo)
+      .then(async (light) => {
+        if (!light) return;
+        const out = await withDarkBackground(logo);
+        setContent((prev) => ({ ...prev, branding: { ...prev.branding, logoDataUrl: out } }));
+      })
+      .catch(() => {});
+    // yalnızca ilk açılışta
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -189,7 +193,7 @@ export function WorkbookEditor({ kind, id, initial, customers = [], canEdit, can
             </button>
           )}
           {kind === "QUOTE" && canEdit && !initial.convertedQuoteId && (
-            <button onClick={convert} className="inline-flex items-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-sm font-medium text-violet-800 hover:bg-violet-100">
+            <button onClick={convert} className="inline-flex items-center gap-1.5 rounded-lg border border-brand-300 bg-brand-50 px-3 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100">
               <FileText size={14} /> Satış teklifine dönüştür
             </button>
           )}
@@ -213,7 +217,7 @@ export function WorkbookEditor({ kind, id, initial, customers = [], canEdit, can
               update((c) => c.sheets.push(emptySheet(`Sayfa ${c.sheets.length + 1}`)));
               setTab(content.sheets.length);
             }}
-            className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:border-violet-300 hover:text-violet-700"
+            className="inline-flex items-center gap-1 rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:border-brand-300 hover:text-brand-700"
           >
             <Plus size={14} /> Sayfa
           </button>
@@ -267,7 +271,7 @@ function TabButton({ active, muted, onClick, children }: { active: boolean; mute
     <button
       onClick={onClick}
       className={`max-w-[200px] truncate rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-        active ? "bg-brand-800 text-white shadow-theme-xs" : muted ? "border border-gray-200 bg-white text-gray-400 hover:text-gray-700" : "border border-gray-200 bg-white text-gray-700 hover:border-violet-300"
+        active ? "bg-brand-800 text-white shadow-theme-xs" : muted ? "border border-gray-200 bg-white text-gray-400 hover:text-gray-700" : "border border-gray-200 bg-white text-gray-700 hover:border-brand-300"
       }`}
     >
       {children}
@@ -422,7 +426,7 @@ function CoverTab({
                     <input type="checkbox" disabled={ro} checked={s.includeInSummary} onChange={(e) => update((c) => (c.sheets[i].includeInSummary = e.target.checked))} />
                   </td>
                   <td className="py-2 pr-3">
-                    <button onClick={() => openSheet(i)} className="font-medium text-violet-700 hover:underline">
+                    <button onClick={() => openSheet(i)} className="font-medium text-brand-700 hover:underline">
                       {s.name}
                     </button>
                   </td>
@@ -521,7 +525,7 @@ function SheetTab({
             {numField("Genel gider (₺)", p.overheadCost, (n) => update((s) => (s.pricing.overheadCost = n)), "Kârdan sonra eklenir")}
           </div>
         </div>
-        <div className={`${CARD} bg-gradient-to-br from-violet-50 to-white`}>
+        <div className={`${CARD} bg-gradient-to-br from-brand-50 to-white`}>
           <h3 className="mb-2 text-[15px] font-semibold text-gray-900">Sayfa toplamı</h3>
           <dl className="space-y-1 text-sm">
             {showCosts && (
@@ -532,7 +536,7 @@ function SheetTab({
                 <Row k="Kâr" v={formatCurrencyTRY(t.profit)} />
               </>
             )}
-            <div className="mt-2 border-t border-violet-100 pt-2">
+            <div className="mt-2 border-t border-brand-100 pt-2">
               <Row k="SATIŞ (KDV hariç)" v={formatCurrencyTRY(t.total)} bold />
             </div>
           </dl>
@@ -547,7 +551,7 @@ function SheetTab({
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-[15px] font-semibold text-gray-900">Teknik özellikler</h3>
           {!ro && (
-            <button onClick={() => update((s) => s.specs.push({ label: "", value: "" }))} className="text-sm text-violet-700 hover:underline">
+            <button onClick={() => update((s) => s.specs.push({ label: "", value: "" }))} className="text-sm text-brand-700 hover:underline">
               + Özellik
             </button>
           )}
@@ -572,7 +576,7 @@ function SheetTab({
         <GroupCard key={gi} group={g} gi={gi} ro={ro} showCosts={showCosts} discountPct={p.discountPct} cur={cur} update={update} />
       ))}
       {!ro && (
-        <button onClick={() => update((s) => s.groups.push({ title: `${s.groups.length + 1}- `, items: [emptyItem()], saleBasis: "cost", listDiscountPct: 0 }))} className="w-full rounded-2xl border border-dashed border-gray-300 py-3 text-sm text-gray-600 hover:border-violet-300 hover:text-violet-700">
+        <button onClick={() => update((s) => s.groups.push({ title: `${s.groups.length + 1}- `, items: [emptyItem()], saleBasis: "cost", listDiscountPct: 0 }))} className="w-full rounded-2xl border border-dashed border-gray-300 py-3 text-sm text-gray-600 hover:border-brand-300 hover:text-brand-700">
           + Grup ekle (örn. &quot;1-FİLTRASYON SİSTEMİ MALZEMELERİ&quot;)
         </button>
       )}
@@ -620,7 +624,7 @@ function GroupCard({
   return (
     <div className={`${CARD} p-0`}>
       <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
-        <input disabled={ro} value={group.title} onChange={(e) => ug((g) => (g.title = e.target.value))} className={`${INPUT} font-semibold text-violet-900`} placeholder="Grup başlığı" />
+        <input disabled={ro} value={group.title} onChange={(e) => ug((g) => (g.title = e.target.value))} className={`${INPUT} font-semibold text-brand-900`} placeholder="Grup başlığı" />
         {showCosts && (
           <>
             <select
@@ -702,7 +706,7 @@ function GroupCard({
                         onChange={(e) => ui((x) => (x.notes = e.target.value.split("\n")))}
                         onBlur={(e) => ui((x) => (x.notes = e.target.value.split("\n").map((n) => n.trim()).filter(Boolean)))}
                         placeholder="* Açıklama satırları (her satır bir not)"
-                        className="mt-1 w-full resize-y rounded-md border border-dashed border-gray-200 bg-gray-50/60 px-2 py-1 text-xs italic text-gray-600 focus:border-violet-300 focus:outline-none"
+                        className="mt-1 w-full resize-y rounded-md border border-dashed border-gray-200 bg-gray-50/60 px-2 py-1 text-xs italic text-gray-600 focus:border-brand-300 focus:outline-none"
                       />
                     )}
                   </td>
@@ -732,7 +736,7 @@ function GroupCard({
       </div>
       {!ro && (
         <div className="flex gap-3 border-t border-gray-100 px-5 py-2.5 text-sm">
-          <button onClick={() => ug((g) => g.items.push(emptyItem()))} className="text-violet-700 hover:underline">
+          <button onClick={() => ug((g) => g.items.push(emptyItem()))} className="text-brand-700 hover:underline">
             + Kalem
           </button>
           <button onClick={() => ug((g) => g.items.push(emptyItem(true)))} className="text-gray-600 hover:underline">
@@ -797,7 +801,7 @@ function Row({ k, v, bold }: { k: string; v: string; bold?: boolean }) {
   return (
     <div className="flex justify-between gap-3">
       <dt className={bold ? "font-semibold text-gray-900" : "text-gray-500"}>{k}</dt>
-      <dd className={bold ? "text-lg font-bold text-violet-800" : "font-medium text-gray-900"}>{v}</dd>
+      <dd className={bold ? "text-lg font-bold text-brand-800" : "font-medium text-gray-900"}>{v}</dd>
     </div>
   );
 }

@@ -23,7 +23,7 @@ export function OnboardingChecklist({ data }: { data: Onboarding }) {
   }
 
   return (
-    <div className="rounded-2xl border border-violet-200 bg-white shadow-theme-xs">
+    <div className="rounded-2xl border border-brand-200 bg-white shadow-theme-xs">
       <div className="flex flex-wrap items-center gap-4 px-5 py-4">
         <div className="min-w-0 flex-1">
           <h2 className="text-[15px] font-semibold text-gray-900">
@@ -33,7 +33,7 @@ export function OnboardingChecklist({ data }: { data: Onboarding }) {
             </span>
           </h2>
           <div className="mt-2 h-2 w-full max-w-md overflow-hidden rounded-full bg-gray-100">
-            <div className="h-full rounded-full bg-violet-600 transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-full bg-brand-600 transition-all" style={{ width: `${pct}%` }} />
           </div>
         </div>
         {next && !open && (
@@ -54,7 +54,7 @@ export function OnboardingChecklist({ data }: { data: Onboarding }) {
             <li key={s.key} className="flex items-center gap-4 px-5 py-3">
               <span
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                  s.done ? "bg-emerald-100 text-emerald-700" : s === next ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-500"
+                  s.done ? "bg-emerald-100 text-emerald-700" : s === next ? "bg-brand-600 text-white" : "bg-gray-100 text-gray-500"
                 }`}
               >
                 {s.done ? <Check size={14} /> : i + 1}

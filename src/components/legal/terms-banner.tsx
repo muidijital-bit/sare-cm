@@ -21,7 +21,7 @@ export function TermsBanner() {
 
   if (done) return null;
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">
       <p>
         <a href="/yasal/kullanim-kosullari" target="_blank" className="font-medium underline">
           Kullanım Koşulları

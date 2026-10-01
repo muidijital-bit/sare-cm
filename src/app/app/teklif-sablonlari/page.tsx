@@ -59,7 +59,7 @@ export default async function TeklifSablonlariPage({ searchParams }: { searchPar
           <Link
             key={k}
             href={href}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === k ? "bg-brand-800 text-white" : "border border-gray-200 bg-white text-gray-700 hover:border-violet-300"}`}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === k ? "bg-brand-800 text-white" : "border border-gray-200 bg-white text-gray-700 hover:border-brand-300"}`}
           >
             {l}
           </Link>
@@ -91,7 +91,7 @@ export default async function TeklifSablonlariPage({ searchParams }: { searchPar
                     <>
                       Henüz şablon yok.{" "}
                       {canManage && (
-                        <Link href="/app/teklif-sablonlari/yeni" className="text-violet-700 hover:underline">
+                        <Link href="/app/teklif-sablonlari/yeni" className="text-brand-700 hover:underline">
                           Yeni şablon oluşturun
                         </Link>
                       )}{" "}

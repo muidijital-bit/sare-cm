@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import { BRAND_TAILWIND } from './src/lib/theme'
 
 /**
  * TailAdmin (ücretsiz, Next.js, MIT) tasarım dilinden PORT EDİLDİ — paket olarak
@@ -52,20 +53,8 @@ const config: Config = {
         // `brand` anahtar adı korundu, yalnızca değerler TailAdmin'in mavisinden bu mor
         // rampasına kaydırıldı; tüm `bg-brand-800`, `focus:ring-brand-600` vb. kullanımlar
         // (butonlar, linkler, odak halkaları, "blue" rozet varyantı) otomatik güncellendi.
-        brand: {
-          25: '#f8f5ff',
-          50: '#f1ebff',
-          100: '#e4d8ff',
-          200: '#cbb3ff',
-          300: '#ab82ff',
-          400: '#9061fa',
-          500: '#7c3aed',
-          600: '#6d28d9',
-          700: '#5b21b6',
-          800: '#4c1d95',
-          900: '#3b1370',
-          950: '#2a0e52',
-        },
+        // Firma tema rengi: değerler CSS değişkenlerinden (bkz. src/lib/theme.ts, Şirket Ayarları → Tema rengi).
+        brand: BRAND_TAILWIND,
         gray: {
           25: '#fcfcfd',
           50: '#f9fafb',

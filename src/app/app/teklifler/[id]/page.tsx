@@ -38,7 +38,7 @@ export default async function TeklifDetayPage({ params }: { params: { id: string
         <div className="flex flex-wrap items-center gap-2">
           {workbook && (
             <>
-              <Link href={`/app/teklif-sablonlari/${workbook.id}`} className="rounded-lg border border-violet-200 px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-50">
+              <Link href={`/app/teklif-sablonlari/${workbook.id}`} className="rounded-lg border border-brand-200 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50">
                 Sayfalı teklifi aç
               </Link>
               <a href={`/api/quote-templates/${workbook.id}/export?mode=customer`} className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50">

@@ -10,6 +10,7 @@ import { NAV_ITEMS, NAV_GROUPS, MOBILE_PRIMARY_COUNT, isNavItemVisible, type Nav
 import { tr } from "@/lib/i18n/tr";
 import { BRAND } from "@/lib/brand";
 import { LEGAL_LINKS } from "@/lib/legal";
+import { LogoImage } from "@/components/ui/logo-image";
 
 interface AppShellProps {
   companyName: string;
@@ -128,7 +129,7 @@ export function AppShell({ companyName, companyLogo, role, userName, userEmail, 
         title={compact ? item.label : undefined}
         className={`flex items-center rounded-lg px-3 py-2.5 text-theme-sm font-medium transition-all ${
           compact ? "justify-center" : "gap-3"
-        } ${active ? "bg-violet-50 text-violet-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}
+        } ${active ? "bg-brand-50 text-brand-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}
       >
         <Icon size={17} className="shrink-0" />
         {!compact && <span className="truncate">{item.label}</span>}
@@ -232,10 +233,7 @@ export function AppShell({ companyName, companyLogo, role, userName, userEmail, 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:h-screen lg:min-h-0">
         <header className="hidden flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3 shadow-theme-xs sm:px-6 lg:flex">
           <div className="flex items-center gap-3">
-            {companyLogo && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={companyLogo} alt="" className="h-9 max-w-[120px] object-contain" />
-            )}
+            {companyLogo && <LogoImage src={companyLogo} className="h-9 max-w-[140px]" />}
             <div>
               <p className="text-theme-sm font-semibold text-gray-800">{companyName}</p>
               <p className="text-theme-xs text-gray-500">{role}</p>
@@ -248,7 +246,7 @@ export function AppShell({ companyName, companyLogo, role, userName, userEmail, 
               </Link>
             )}
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-sm font-semibold text-white">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-800 text-sm font-semibold text-white">
                 {userName.trim().charAt(0).toUpperCase() || "?"}
               </span>
               <div className="text-right">
@@ -267,10 +265,7 @@ export function AppShell({ companyName, companyLogo, role, userName, userEmail, 
 
         {/* Mobilde şirket adı — üst çubuğun kalabalıklaşmaması için ince bir şerit */}
         <div className="flex items-center gap-2 border-b border-gray-200 bg-white px-4 py-2 sm:px-6 lg:hidden">
-          {companyLogo && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={companyLogo} alt="" className="h-6 max-w-[80px] object-contain" />
-          )}
+          {companyLogo && <LogoImage src={companyLogo} className="h-6 max-w-[90px]" />}
           <p className="truncate text-sm font-semibold text-gray-800">{companyName}</p>
         </div>
 
@@ -301,9 +296,9 @@ export function AppShell({ companyName, companyLogo, role, userName, userEmail, 
             <Link
               key={item.key}
               href={item.href}
-              className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${active ? "text-violet-700" : "text-gray-500"}`}
+              className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${active ? "text-brand-700" : "text-gray-500"}`}
             >
-              <span className={`flex h-7 w-11 items-center justify-center rounded-full transition-colors ${active ? "bg-violet-50" : ""}`}>
+              <span className={`flex h-7 w-11 items-center justify-center rounded-full transition-colors ${active ? "bg-brand-50" : ""}`}>
                 <Icon size={18} />
               </span>
               <span className="truncate">{item.label}</span>

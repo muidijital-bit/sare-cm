@@ -3,6 +3,7 @@ import { AppShell } from "@/components/app-shell/app-shell";
 import { TermsBanner } from "@/components/legal/terms-banner";
 import { prisma } from "@/lib/db/prisma";
 import { withTenant } from "@/lib/db/tenant-context";
+import { themeCss, themeKeyOf } from "@/lib/theme";
 import { LEGAL } from "@/lib/legal";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Güncel yasal metin sürümü onaylanmamışsa (eski kullanıcılar / metin güncellemesi) şerit gösterilir.
   const [user, company] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.userId }, select: { termsVersion: true } }),
-    withTenant(session.companyId, (tx) => tx.company.findUnique({ where: { id: session.companyId }, select: { logoUrl: true } })),
+    withTenant(session.companyId, (tx) => tx.company.findUnique({ where: { id: session.companyId }, select: { logoUrl: true, settings: true } })),
   ]);
   const needsTerms = user?.termsVersion !== LEGAL.version;
 
@@ -31,6 +32,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       hasMultipleCompanies={session.membershipCount > 1}
       enabledModules={session.enabledModules}
     >
+      {/* Firma tema rengi: brand-* renklerinin CSS değişkenleri (bkz. src/lib/theme.ts) */}
+      <style dangerouslySetInnerHTML={{ __html: themeCss(themeKeyOf(company?.settings)) }} />
       {needsTerms && <TermsBanner />}
       {children}
     </AppShell>

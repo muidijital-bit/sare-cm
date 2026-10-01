@@ -96,7 +96,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   const firstName = session.userName.split(" ")[0];
 
   const quickActions = [
-    { href: "/app/musteriler/yeni", label: "Yeni Müşteri", icon: UserPlus, tone: "bg-violet-50 text-violet-600", module: "customer" },
+    { href: "/app/musteriler/yeni", label: "Yeni Müşteri", icon: UserPlus, tone: "bg-brand-50 text-brand-600", module: "customer" },
     { href: "/app/teklifler/yeni", label: "Yeni Teklif", icon: FileText, tone: "bg-sky-50 text-sky-600", module: "quote" },
     { href: "/app/siparisler/yeni", label: "Yeni Sipariş", icon: ShoppingBag, tone: "bg-fuchsia-50 text-fuchsia-600", module: "order" },
     { href: "/app/tahsilatlar/yeni", label: "Tahsilat Gir", icon: DollarSign, tone: "bg-emerald-50 text-emerald-600", module: "payment" },
@@ -235,12 +235,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                 <Link
                   key={a.href}
                   href={a.href}
-                  className="group flex flex-col items-center gap-2 rounded-xl border border-gray-100 p-3 text-center transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-theme-md"
+                  className="group flex flex-col items-center gap-2 rounded-xl border border-gray-100 p-3 text-center transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-theme-md"
                 >
                   <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${a.tone}`}>
                     <a.icon size={18} />
                   </span>
-                  <span className="text-xs font-medium text-gray-700 group-hover:text-violet-700">{a.label}</span>
+                  <span className="text-xs font-medium text-gray-700 group-hover:text-brand-700">{a.label}</span>
                 </Link>
               ))}
             </div>
@@ -259,7 +259,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
           <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-sm">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-[15px] font-semibold text-gray-900">{tr.taxObligation.upcomingTitle}</h3>
-              <Link href="/app/vergi-sgk" className="text-xs font-medium text-violet-600 hover:underline">
+              <Link href="/app/vergi-sgk" className="text-xs font-medium text-brand-600 hover:underline">
                 Tümü →
               </Link>
             </div>
@@ -272,7 +272,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                   return (
                     <li key={o.id} className="flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2.5 text-sm">
                       <span className="flex items-center gap-2.5">
-                        <span className={`h-2 w-2 rounded-full ${overdue ? "bg-rose-500" : "bg-violet-500"}`} />
+                        <span className={`h-2 w-2 rounded-full ${overdue ? "bg-rose-500" : "bg-brand-500"}`} />
                         <span className="font-medium text-gray-800">
                           {tr.taxObligation.type[o.type as keyof typeof tr.taxObligation.type]}
                         </span>
@@ -298,7 +298,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
 
 type Tone = "violet" | "emerald" | "sky" | "rose" | "amber" | "indigo";
 const TONE_CHIP: Record<Tone, string> = {
-  violet: "bg-violet-100 text-violet-600",
+  violet: "bg-brand-100 text-brand-600",
   emerald: "bg-emerald-100 text-emerald-600",
   sky: "bg-sky-100 text-sky-600",
   rose: "bg-rose-100 text-rose-600",
