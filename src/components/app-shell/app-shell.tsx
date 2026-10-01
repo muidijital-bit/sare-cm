@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, X, MoreHorizontal, LogOut, Repeat } from "react-feather";
 import type { MembershipRole } from "@/lib/auth/rbac";
 import { NAV_ITEMS, NAV_GROUPS, MOBILE_PRIMARY_COUNT, isNavItemVisible, type NavItem } from "@/lib/nav-items";
@@ -62,6 +62,13 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // İçerik kolonu kendi içinde kaydığından tarayıcının "yeni sayfada başa dön" davranışı işlemez —
+  // sayfa değişince elle başa alınır.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [pathname]);
 
   // Masaüstü daraltma tercihi yalnızca bu tarayıcıya özgü bir konfor ayarı — sunucudan
   // farklı bir ilk render'a (hydration mismatch) yol açmaması için mount SONRASI okunur.
@@ -144,7 +151,9 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 lg:flex">
+    // Masaüstünde kabuk ekran yüksekliğine sabitlenir: sol menü ve üst çubuk yerinde kalır, yalnızca
+    // içerik kolonu kendi içinde kayar. Mobilde sayfa normal (gövde) kaydırmasıyla çalışır.
+    <div className="min-h-screen bg-gray-50 lg:flex lg:h-screen lg:overflow-hidden">
       {/* Mobil üst çubuk — yalnızca <lg genişlikte görünür */}
       <div className={`flex items-center justify-between border-b px-4 py-3 lg:hidden ${SIDEBAR_BG}`}>
         <LogoMark />
@@ -194,7 +203,7 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
 
       {/* Masaüstü sol menü — daraltılabilir */}
       <aside
-        className={`relative hidden shrink-0 transition-[width] duration-200 ease-out lg:flex lg:min-h-screen lg:flex-col border-r ${SIDEBAR_BG} ${
+        className={`relative hidden shrink-0 transition-[width] duration-200 ease-out lg:flex lg:h-screen lg:flex-col border-r ${SIDEBAR_BG} ${
           collapsed ? "lg:w-[72px]" : "lg:w-64"
         }`}
       >
@@ -218,7 +227,7 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
       </aside>
 
       {/* Ana kolon: header + içerik + footer */}
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:h-screen lg:min-h-0">
         <header className="hidden flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3 shadow-theme-xs sm:px-6 lg:flex">
           <div>
             <p className="text-theme-sm font-semibold text-gray-800">{companyName}</p>
@@ -253,9 +262,10 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
           <p className="truncate text-sm font-semibold text-gray-800">{companyName}</p>
         </div>
 
-        <main className="flex-1 px-4 py-6 pb-24 sm:px-6 lg:pb-6">{children}</main>
+        <div ref={scrollRef} className="flex flex-1 flex-col lg:min-h-0 lg:overflow-y-auto">
+          <main className="flex-1 px-4 py-6 pb-24 sm:px-6 lg:pb-6">{children}</main>
 
-        <footer className="hidden border-t border-gray-200 px-4 py-3 text-center text-xs text-gray-400 sm:px-6 lg:block">
+          <footer className="hidden border-t border-gray-200 px-4 py-3 text-center text-xs text-gray-400 sm:px-6 lg:block">
           {BRAND.name} · V1
           {LEGAL_LINKS.map((l) => (
             <span key={l.href}>
@@ -265,7 +275,8 @@ export function AppShell({ companyName, role, userName, userEmail, hasMultipleCo
               </a>
             </span>
           ))}
-        </footer>
+          </footer>
+        </div>
       </div>
 
       {/* Mobil alt sekme çubuğu — en önemli modüllere tek dokunuşla erişim */}
