@@ -50,9 +50,9 @@ function HamburgerIcon() {
  */
 function LogoMark({ compact = false }: { compact?: boolean }) {
   if (compact) {
-    // Daraltılmış menüde tam logoyu sıkıştırmak yerine "mu" amblemi kullanılır.
+    // Daraltılmış menüde tam logo yerine yalnızca logodaki "m" harfi (kare simge).
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={BRAND.mark} alt={BRAND.name} className="h-5 w-auto shrink-0 invert" />;
+    return <img src={BRAND.icon} alt={BRAND.name} className="h-8 w-8 shrink-0" />;
   }
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={BRAND.logoDark} alt={BRAND.name} className="h-6 w-auto shrink-0" />;

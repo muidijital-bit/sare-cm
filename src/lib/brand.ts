@@ -11,4 +11,6 @@ export const BRAND = {
   logoDark: "/muiflow-logo.png",
   /** Daraltılmış menü / küçük alanlar için "mu" amblemi (beyaz). */
   mark: "/muiflow-mark.png",
+  /** Daraltılmış sol menüdeki tek harf "m" simgesi (siyah, kare). */
+  icon: "/muiflow-m.png",
 } as const;
