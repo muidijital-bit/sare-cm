@@ -258,6 +258,7 @@ model Company {
   projects          Project[]
   projectMaterials  ProjectMaterial[]
   projectLabors     ProjectLabor[]
+  quoteWorkbooks    QuoteWorkbook[]
 
   @@map("companies")
 }
@@ -392,15 +393,16 @@ model Customer {
   deletedAt DateTime? @map("deleted_at")
   deletedBy String?   @map("deleted_by") @db.Uuid
 
-  company    Company         @relation(fields: [companyId], references: [id])
-  source     CustomerSource? @relation(fields: [sourceId], references: [id])
-  contacts   Contact[]
-  activities Activity[]
-  tags       CustomerTag[]
-  quotes     Quote[]
-  orders     Order[]
-  payments   Payment[]
-  projects   Project[]
+  company        Company         @relation(fields: [companyId], references: [id])
+  source         CustomerSource? @relation(fields: [sourceId], references: [id])
+  contacts       Contact[]
+  activities     Activity[]
+  tags           CustomerTag[]
+  quotes         Quote[]
+  orders         Order[]
+  payments       Payment[]
+  projects       Project[]
+  quoteWorkbooks QuoteWorkbook[]
 
   @@index([companyId, status])
   @@index([companyId, ownerUserId])
@@ -1296,4 +1298,40 @@ model ProjectLabor {
 
   @@index([companyId, projectId])
   @@map("project_labors")
+}
+
+// =========================================================
+// Teklif şablonları (çok sayfalı Excel tarzı teklifler)
+// =========================================================
+
+enum QuoteWorkbookKind {
+  TEMPLATE // şirketin standart şablonu (antet, kapak, sayfalar)
+  QUOTE // bir şablondan bir müşteri için hazırlanmış teklif belgesi
+}
+
+/// Antet/logo/kapak + çok sayfalı içerik `content` JSON'unda (şema: src/lib/modules/quote-templates/types.ts).
+/// QUOTE türü satış teklifine dönüştürülünce `convertedQuoteId` dolar (Teklifler modülüne bağlanır).
+model QuoteWorkbook {
+  id               String            @id @default(uuid()) @db.Uuid
+  companyId        String            @map("company_id") @db.Uuid
+  kind             QuoteWorkbookKind
+  name             String
+  description      String?
+  content          Json
+  customerId       String?           @map("customer_id") @db.Uuid
+  sourceTemplateId String?           @map("source_template_id") @db.Uuid
+  convertedQuoteId String?           @map("converted_quote_id") @db.Uuid
+  ownerUserId      String            @map("owner_user_id") @db.Uuid
+
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([companyId, kind])
+  @@map("quote_workbooks")
 }

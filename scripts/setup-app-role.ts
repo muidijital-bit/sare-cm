@@ -26,10 +26,16 @@ async function main() {
     SELECT rolname FROM pg_roles WHERE rolname = ${ROLE_NAME}
   `;
 
+  const resetPassword = process.argv.includes("--reset-password");
   let password: string;
-  if (existing.length > 0) {
+  if (existing.length > 0 && resetPassword) {
+    // Parola uyuşmazlığında (28P01) — yeni rastgele parola; yetkiler/RLS rolde kalır, rol yeniden OLUŞTURULMAZ.
+    password = randomBytes(24).toString("hex");
+    await ownerDb.$executeRawUnsafe(`ALTER ROLE "${ROLE_NAME}" WITH LOGIN PASSWORD '${password}'`);
+    console.log(`Rol '${ROLE_NAME}' parolası yenilendi.`);
+  } else if (existing.length > 0) {
     console.log(`Rol '${ROLE_NAME}' zaten var — parola SIFIRLANMAYACAK, yalnızca yetkiler tazelenecek.`);
-    console.log("(Parolayı unuttuysanız Neon konsolundan veya ALTER ROLE ile sıfırlayabilirsiniz.)");
+    console.log("(Parola uyuşmuyorsa: npx tsx scripts/setup-app-role.ts --reset-password)");
     password = "<mevcut-parola-degismedi>";
   } else {
     password = randomBytes(24).toString("hex"); // yalnızca hex karakterler — SQL string literal'inde güvenli
@@ -47,14 +53,34 @@ async function main() {
   );
   console.log("Yetkiler (SELECT/INSERT/UPDATE/DELETE + gelecekteki tablolar için varsayılan) verildi.");
 
-  if (existing.length === 0) {
-    console.log("\n--- .env'e ekleyin (APP_DATABASE_URL) ---");
-    console.log(`Kullanıcı adı: ${ROLE_NAME}`);
-    console.log(`Parola: ${password}`);
-    console.log("Host/DB kısmını mevcut DATABASE_URL ile aynı tutup yalnızca kullanıcı/parolayı değiştirin.");
-  }
-
   await ownerDb.$disconnect();
+
+  if (existing.length === 0 || resetPassword) {
+    // Hazır bağlantı adresi: sahip adresinin host/db kısmı + yeni kullanıcı/parola. channel_binding
+    // parametresi çıkarılır — Prisma 5 bu parametreyle Neon'a bağlanamıyor (P1001), sslmode=require yeter.
+    const owner = new URL(process.env.DATABASE_URL!);
+    const appUrl = new URL(owner.toString());
+    appUrl.username = ROLE_NAME;
+    appUrl.password = password;
+    appUrl.searchParams.delete("channel_binding");
+    appUrl.searchParams.set("sslmode", "require");
+    const ownerClean = new URL(owner.toString());
+    ownerClean.searchParams.delete("channel_binding");
+
+    // Yeni parolayla gerçekten bağlanılabildiğini doğrula (veri okumaz).
+    const appDb = new PrismaClient({ datasources: { db: { url: appUrl.toString() } } });
+    const ok = await appDb.$queryRaw<{ ok: number }[]>`SELECT 1 AS ok`.then(() => true).catch((e) => (console.error(e), false));
+    await appDb.$disconnect();
+    console.log(ok ? "\n✅ app_user yeni parolayla bağlandı." : "\n❌ app_user bağlantı testi BAŞARISIZ — aşağıdaki adresi kullanmayın.");
+
+    console.log(`\nVeritabanı sunucusu: ${owner.hostname.split(".")[0]}`);
+    console.log("\n--- Yerel .env (canlı satırları) ---");
+    console.log(`PROD_DATABASE_URL="${ownerClean.toString()}"`);
+    console.log(`PROD_APP_DATABASE_URL="${appUrl.toString()}"`);
+    console.log("\n--- Vercel → Environment Variables (Production) ---");
+    console.log(`DATABASE_URL      = ${ownerClean.toString()}`);
+    console.log(`APP_DATABASE_URL  = ${appUrl.toString()}`);
+  }
 }
 
 main().catch((e) => {

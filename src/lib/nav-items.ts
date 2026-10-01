@@ -17,6 +17,7 @@ import {
   Box,
   Archive,
   Layers,
+  Layout,
 } from "react-feather";
 import type { MembershipRole, Module } from "@/lib/auth/rbac";
 import { getRequiredScope } from "@/lib/auth/rbac";
@@ -65,6 +66,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "customers", label: "Müşteriler", href: "/app/musteriler", group: "sales", module: "customer", built: true, icon: Users },
   { key: "products", label: "Ürünler", href: "/app/urunler", group: "sales", module: "product", built: true, icon: Box },
   { key: "quotes", label: "Teklifler", href: "/app/teklifler", group: "sales", module: "quote", built: true, icon: FileText },
+  { key: "quoteTemplates", label: "Teklif Şablonları", href: "/app/teklif-sablonlari", group: "sales", module: "quote", built: true, icon: Layout },
   { key: "orders", label: "Siparişler", href: "/app/siparisler", group: "sales", module: "order", built: true, icon: ShoppingBag },
   { key: "projects", label: "Projeler", href: "/app/projeler", group: "sales", module: "project", built: true, icon: Layers },
 
