@@ -29,6 +29,10 @@ export type TemplateItem = z.infer<typeof itemSchema>;
 export const groupSchema = z.object({
   title: str(300),
   items: z.array(itemSchema).max(400).default([]),
+  // "cost": satış = maliyet × kâr çarpanı (varsayılan). "list": bu grup müşteriye liste fiyatından
+  // iskontolu satılır (örn. seramik: liste × %50) — kâr çarpanı uygulanmaz, maliyet yine net alıştır.
+  saleBasis: z.enum(["cost", "list"]).default("cost"),
+  listDiscountPct: num.default(0),
 });
 export type TemplateGroup = z.infer<typeof groupSchema>;
 

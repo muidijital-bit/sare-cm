@@ -572,7 +572,7 @@ function SheetTab({
         <GroupCard key={gi} group={g} gi={gi} ro={ro} showCosts={showCosts} discountPct={p.discountPct} cur={cur} update={update} />
       ))}
       {!ro && (
-        <button onClick={() => update((s) => s.groups.push({ title: `${s.groups.length + 1}- `, items: [emptyItem()] }))} className="w-full rounded-2xl border border-dashed border-gray-300 py-3 text-sm text-gray-600 hover:border-violet-300 hover:text-violet-700">
+        <button onClick={() => update((s) => s.groups.push({ title: `${s.groups.length + 1}- `, items: [emptyItem()], saleBasis: "cost", listDiscountPct: 0 }))} className="w-full rounded-2xl border border-dashed border-gray-300 py-3 text-sm text-gray-600 hover:border-violet-300 hover:text-violet-700">
           + Grup ekle (örn. &quot;1-FİLTRASYON SİSTEMİ MALZEMELERİ&quot;)
         </button>
       )}
@@ -621,7 +621,35 @@ function GroupCard({
     <div className={`${CARD} p-0`}>
       <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
         <input disabled={ro} value={group.title} onChange={(e) => ug((g) => (g.title = e.target.value))} className={`${INPUT} font-semibold text-violet-900`} placeholder="Grup başlığı" />
-        {showCosts && <span className="shrink-0 text-sm text-gray-500">{groupTotal.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} {cur}</span>}
+        {showCosts && (
+          <>
+            <select
+              disabled={ro}
+              value={group.saleBasis}
+              onChange={(e) => ug((g) => (g.saleBasis = e.target.value as TemplateGroup["saleBasis"]))}
+              className="shrink-0 rounded-lg border border-gray-300 px-2 py-1.5 text-xs text-gray-700"
+              title="Bu grubun müşteriye satış fiyatı nasıl hesaplanır"
+            >
+              <option value="cost">Satış: maliyet × kâr</option>
+              <option value="list">Satış: liste − iskonto</option>
+            </select>
+            {group.saleBasis === "list" && (
+              <label className="flex shrink-0 items-center gap-1 text-xs text-gray-500">
+                %
+                <input
+                  disabled={ro}
+                  type="number"
+                  value={group.listDiscountPct}
+                  onChange={(e) => ug((g) => (g.listDiscountPct = Number(e.target.value) || 0))}
+                  className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-right text-xs"
+                />
+              </label>
+            )}
+            <span className="shrink-0 text-sm text-gray-500" title="Net alış toplamı (maliyet)">
+              {groupTotal.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} {cur}
+            </span>
+          </>
+        )}
         {!ro && (
           <IconBtn title="Grubu sil" danger onClick={() => update((s) => s.groups.splice(gi, 1))}>
             <Trash2 size={14} />

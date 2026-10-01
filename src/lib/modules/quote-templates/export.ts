@@ -188,6 +188,8 @@ function buildSheet(wb: ExcelJS.Workbook, content: WorkbookContent, s: TemplateS
 
   const header = internal ? ["", "MALZEMENİN CİNSİ", "MİKTAR", "BİRİM", "LİSTE FİYATI", "NET ALIŞ", "TUTAR"] : ["", "MALZEMENİN CİNSİ", "MİKTAR", "BİRİM"];
   const totalCells: string[] = [];
+  const listCostCells: string[] = [];
+  const listSaleParts: string[] = [];
   for (const g of s.groups) {
     if (g.title) {
       ws.mergeCells(r, 1, r, last);
@@ -206,6 +208,8 @@ function buildSheet(wb: ExcelJS.Workbook, content: WorkbookContent, s: TemplateS
     r++;
     const first = r;
     for (const it of g.items) {
+      // Miktarı 0 olan seçenekler (örn. "Seçim 2") müşteri sürümünde gösterilmez
+      if (!internal && !it.isHeading && it.quantity === 0) continue;
       if (it.isHeading) {
         ws.mergeCells(r, 1, r, last);
         ws.getCell(r, 1).value = it.description;
@@ -240,6 +244,10 @@ function buildSheet(wb: ExcelJS.Workbook, content: WorkbookContent, s: TemplateS
       ws.getCell(r, 7).numFmt = cur;
       ws.getCell(r, 7).font = { bold: true };
       totalCells.push(`G${r}`);
+      if (g.saleBasis === "list") {
+        listCostCells.push(`G${r}`);
+        listSaleParts.push(`SUMPRODUCT(C${first}:C${r - 1},E${first}:E${r - 1})*${1 - (g.listDiscountPct || 0) / 100}`);
+      }
       r++;
     }
     r++;
@@ -264,12 +272,19 @@ function buildSheet(wb: ExcelJS.Workbook, content: WorkbookContent, s: TemplateS
     rows.push(["MALİYET", { formula: `G${matRow + 2}+G${matRow + 3}+G${matRow + 4}` }, TL]);
     rows.push(["Kâr çarpanı", p.profitMultiplier, "0.00"]);
     rows.push(["Genel gider", p.overheadCost, TL]);
-    rows.push(["SATIŞ TOPLAMI (KDV hariç)", { formula: `G${matRow + 5}*G${matRow + 6}+G${matRow + 7}` }, TL]);
+    if (listCostCells.length) {
+      // Liste fiyatından satılan gruplar kâr çarpanının dışında: maliyetten düşülür, satışları eklenir
+      rows.push(["Liste fiyatlı grupların maliyeti (TL)", { formula: `(${listCostCells.join("+")})*G${matRow + 1}` }, TL]);
+      rows.push(["Liste fiyatlı grupların satışı (TL)", { formula: `(${listSaleParts.join("+")})*G${matRow + 1}` }, TL]);
+      rows.push(["SATIŞ TOPLAMI (KDV hariç)", { formula: `(G${matRow + 5}-G${matRow + 8})*G${matRow + 6}+G${matRow + 9}+G${matRow + 7}` }, TL]);
+    } else {
+      rows.push(["SATIŞ TOPLAMI (KDV hariç)", { formula: `G${matRow + 5}*G${matRow + 6}+G${matRow + 7}` }, TL]);
+    }
     rows.forEach(([l, v, fmt], i) => {
       lab(r, l);
       ws.getCell(r, last).value = v;
       ws.getCell(r, last).numFmt = fmt;
-      if (i === 5 || i === 8) [1, last].forEach((c) => (ws.getCell(r, c).font = { bold: true }));
+      if (i === 5 || i === rows.length - 1) [1, last].forEach((c) => (ws.getCell(r, c).font = { bold: true }));
       r++;
     });
     ws.getCell(r - 1, last).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BRAND_SOFT } };

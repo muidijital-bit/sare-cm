@@ -1,4 +1,4 @@
-import { sheetSchema, workbookContentSchema, type TemplateItem, type TemplateSheet, type WorkbookContent } from "./types";
+import { sheetSchema, workbookContentSchema, type TemplateGroup, type TemplateItem, type TemplateSheet, type WorkbookContent } from "./types";
 
 /**
  * Excel teklif dosyasından (çok sayfalı) şablon içeriği çıkarır. SheetJS'e BAĞLI DEĞİL: girdi her
@@ -54,7 +54,7 @@ const textCells = (cs: C[]) => cs.filter((x) => typeof x.v === "string");
 const round = (n: number) => Math.round(n * 1e6) / 1e6;
 
 const FOOTER_LABEL = /^(TEL|GSM|E-?MAİL|E-?MAIL|WEB|FAKS|FAX)$/;
-const TOTAL_LIKE = /TOPLAM|İSKONTO|ISKONTO|^KUR$|^KAR$|^KÂR$|EKSTRA GİDER|GENEL GİDER|ŞEHİR DIŞI|SERAMİK NAK|^İŞÇİLİK$/;
+const TOTAL_LIKE = /TOPLAM|İSKONTO|ISKONTO|^KUR$|^KAR$|^KÂR$|^KAR\s*%|EKSTRA GİDER|GENEL GİDER|ŞEHİR DIŞI|SERAMİK NAK|^İŞÇİLİK$|İŞÇİLİĞİ$/;
 
 function isFooterRow(cs: C[]) {
   return cs.some((x) => typeof x.v === "string" && FOOTER_LABEL.test(x.t));
@@ -99,22 +99,27 @@ function numRightOf(cs: C[], col: number): number | null {
   return x ? (x.v as number) : null;
 }
 
-function applyPricing(cs: C[], sheet: TemplateSheet): boolean {
+function applyPricing(cs: C[], sheet: TemplateSheet, group?: TemplateGroup | null): boolean {
   let used = false;
   for (const x of textCells(cs)) {
     const n = numRightOf(cs, x.c);
     const pct = /İSKONTO|ISKONTO/.test(x.t) ? x.t.match(/%\s*(\d+(?:[.,]\d+)?)/) : null;
     if (pct) {
-      sheet.pricing.discountPct = Number(pct[1].replace(",", "."));
+      const d = Number(pct[1].replace(",", "."));
+      // Liste fiyatlı bir grubun altındaki "İSKONTO (%50)": grup müşteriye liste − %50'den satılır.
+      if (group && group.items.some((it) => it.listPrice != null)) (group.saleBasis = "list"), (group.listDiscountPct = d);
+      else sheet.pricing.discountPct = d;
       used = true;
       continue;
     }
     if (n == null) continue;
     if (/^KUR$/.test(x.t)) (sheet.pricing.exchangeRate = n), (used = true);
     else if (/^KA[RR]$|^KÂR$/.test(x.t) && n > 0.5 && n < 10) (sheet.pricing.profitMultiplier = n), (used = true);
-    else if (/^İŞÇİLİK$/.test(x.t)) (sheet.pricing.laborCost += n), (used = true);
-    else if (/EKSTRA GİDER|SERAMİK NAK/.test(x.t)) (sheet.pricing.extraCost += n), (used = true);
-    else if (/GENEL GİDER|ŞEHİR DIŞI/.test(x.t)) (sheet.pricing.overheadCost += n), (used = true);
+    else if (/^KAR\s*%/.test(x.t) && n > 0 && n < 500) (sheet.pricing.profitMultiplier = round(1 + n / 100)), (used = true);
+    else if (/^İŞÇİLİK$|İŞÇİLİĞİ$/.test(x.t)) (sheet.pricing.laborCost += n), (used = true);
+    else if (/EKSTRA GİDER/.test(x.t)) (sheet.pricing.extraCost += n), (used = true);
+    // Seramik nakliyesi kâr çarpanından SONRA eklenir (örnek dosyada genel giderle toplanıyor)
+    else if (/GENEL GİDER|ŞEHİR DIŞI|SERAMİK NAK/.test(x.t)) (sheet.pricing.overheadCost += n), (used = true);
   }
   return used;
 }
@@ -193,7 +198,7 @@ function parseSheet(raw: RawSheet, content: WorkbookContent, footerLines: string
   const sheet = sheetSchema.parse({ name: raw.name.trim().slice(0, 31) || "Sayfa" });
   let map: ColMap | null = null;
   let prevMap: ColMap | null = null;
-  let group: { title: string; items: TemplateItem[] } | null = null;
+  let group: TemplateGroup | null = null;
   let lastItem: TemplateItem | null = null;
   let seenTable = false;
 
@@ -202,7 +207,7 @@ function parseSheet(raw: RawSheet, content: WorkbookContent, footerLines: string
       group.title = title; // boş grup başlığını (örn. bölüm başlığı) yenisiyle değiştir
       return;
     }
-    group = { title, items: [] };
+    group = { title, items: [], saleBasis: "cost", listDiscountPct: 0 };
     sheet.groups.push(group);
     lastItem = null;
   };
@@ -225,6 +230,10 @@ function parseSheet(raw: RawSheet, content: WorkbookContent, footerLines: string
       map = prevMap ? { ...hm, list: hm.list ?? prevMap.list, net: hm.net ?? prevMap.net, unit: hm.unit ?? prevMap.unit } : hm;
       prevMap = map;
       seenTable = true;
+      // Başlık satırında fiyat sütunlarının sağındaki tek sayı = kâr çarpanı ("TUTAR ¦ 1.3")
+      const lastCol = Math.max(map.qty, map.list ?? 0, map.net ?? 0);
+      const mult = cs.find((x) => x.c > lastCol && isNum(x) && (x.v as number) > 1 && (x.v as number) < 10);
+      if (mult && sheet.pricing.profitMultiplier === 1) sheet.pricing.profitMultiplier = mult.v as number;
       if (!group) pushGroup("");
       continue;
     }
@@ -235,7 +244,7 @@ function parseSheet(raw: RawSheet, content: WorkbookContent, footerLines: string
     // Fiyat ayarı / toplam satırları (kalem değil)
     const qtyHere = map ? numAt(cs, map.qty) : null;
     if (texts.some((x) => TOTAL_LIKE.test(x.t)) && qtyHere == null) {
-      applyPricing(cs, sheet);
+      applyPricing(cs, sheet, group);
       continue;
     }
 

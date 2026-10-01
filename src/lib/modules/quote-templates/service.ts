@@ -112,6 +112,9 @@ function canWrite(session: TenantSession, kind: QuoteWorkbookKind, ownerUserId?:
   return scope === "all" || !ownerUserId || ownerUserId === session.userId;
 }
 
+// İçerik JSON'u (logo + çok sayfa) yüzlerce KB olabilir; yavaş bağlantıda 15 sn'lik varsayılan aşılıyordu.
+const WRITE_TX = { timeoutMs: 60_000 };
+
 export async function createWorkbook(session: TenantSession, kind: QuoteWorkbookKind, input: WorkbookInput): Promise<ServiceResult<{ id: string }>> {
   if (!canWrite(session, kind)) return forbidden();
   return withTenant(session.companyId, async (tx) => {
@@ -130,7 +133,7 @@ export async function createWorkbook(session: TenantSession, kind: QuoteWorkbook
     });
     await writeAuditLog(tx, { companyId: session.companyId, userId: session.userId, action: "CREATE", entityType: "quote_workbook", entityId: r.id });
     return { ok: true as const, data: { id: r.id } };
-  });
+  }, WRITE_TX);
 }
 
 export async function updateWorkbook(session: TenantSession, id: string, input: WorkbookInput): Promise<ServiceResult<{ id: string }>> {
@@ -151,7 +154,7 @@ export async function updateWorkbook(session: TenantSession, id: string, input: 
     });
     await writeAuditLog(tx, { companyId: session.companyId, userId: session.userId, action: "UPDATE", entityType: "quote_workbook", entityId: id });
     return { ok: true as const, data: { id } };
-  });
+  }, WRITE_TX);
 }
 
 export async function deleteWorkbook(session: TenantSession, id: string): Promise<ServiceResult<{ id: string }>> {
